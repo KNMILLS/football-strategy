@@ -1,0 +1,27 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="football strategy"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.4", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
+GameState="*res://scripts/GameState.gd"
+Rules="*res://scripts/Rules.gd"
+SeedManager="*res://scripts/SeedManager.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gdai-mcp-plugin-godot/plugin.cfg")

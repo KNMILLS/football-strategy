@@ -1,0 +1,229 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Main.gd" id="1_5o0bi"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_5o0bi")
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+
+[node name="VMain" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 8
+
+[node name="HeaderBar" type="HBoxContainer" parent="RootMargin/VMain"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+text = "Gridiron Strategy"
+size_flags_horizontal = 3
+
+[node name="Score" type="Label" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+text = "Home 0 - 0 Away"
+
+[node name="Drive" type="Label" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+text = "Drive 0 / 0"
+
+[node name="Spacer" type="Control" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SeedLabel" type="Label" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+text = "Seed"
+
+[node name="SeedInput" type="LineEdit" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+placeholder_text = "auto"
+custom_minimum_size = Vector2(90, 0)
+
+[node name="DrivesLabel" type="Label" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+text = "Drives"
+
+[node name="DrivesSpin" type="SpinBox" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+min_value = 1.0
+max_value = 20.0
+step = 1.0
+value = 4.0
+custom_minimum_size = Vector2(80, 0)
+
+[node name="ModeLabel" type="Label" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+text = "Mode"
+
+[node name="ModeOption" type="OptionButton" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+item_count = 2
+selected = 0
+popup/item_0/text = "Human vs AI"
+popup/item_0/id = 0
+popup/item_1/text = "Hot Seat"
+popup/item_1/id = 1
+
+[node name="StartButton" type="Button" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+text = "Start"
+
+[node name="ResetSeedButton" type="Button" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+text = "Reset Seed"
+
+[node name="HelpButton" type="Button" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+text = "Help (H)"
+
+[node name="FieldPanel" type="Panel" parent="RootMargin/VMain"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 36)
+
+[node name="FieldHBox" type="HBoxContainer" parent="RootMargin/VMain/FieldPanel"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 6.0
+offset_right = -8.0
+offset_bottom = -6.0
+theme_override_constants/separation = 16
+
+[node name="SpotLabel" type="Label" parent="RootMargin/VMain/FieldPanel/FieldHBox"]
+layout_mode = 2
+text = "Ball: OWN 25"
+
+[node name="DownLabel" type="Label" parent="RootMargin/VMain/FieldPanel/FieldHBox"]
+layout_mode = 2
+text = "1st & 10"
+
+[node name="Separator1" type="HSeparator" parent="RootMargin/VMain"]
+layout_mode = 2
+
+[node name="OffensePanel" type="HBoxContainer" parent="RootMargin/VMain"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnRunIn" type="Button" parent="RootMargin/VMain/OffensePanel"]
+layout_mode = 2
+text = "1) Run Inside"
+
+[node name="BtnRunOut" type="Button" parent="RootMargin/VMain/OffensePanel"]
+layout_mode = 2
+text = "2) Run Outside"
+
+[node name="BtnPassShort" type="Button" parent="RootMargin/VMain/OffensePanel"]
+layout_mode = 2
+text = "3) Short Pass"
+
+[node name="BtnPassLong" type="Button" parent="RootMargin/VMain/OffensePanel"]
+layout_mode = 2
+text = "4) Long Pass"
+
+[node name="BtnPunt" type="Button" parent="RootMargin/VMain/OffensePanel"]
+layout_mode = 2
+text = "5) Punt"
+
+[node name="BtnFG" type="Button" parent="RootMargin/VMain/OffensePanel"]
+layout_mode = 2
+text = "6) Field Goal"
+
+[node name="BannerPanel" type="Panel" parent="RootMargin/VMain"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 28)
+modulate = Color(1, 1, 1, 0)
+
+[node name="BannerLabel" type="Label" parent="RootMargin/VMain/BannerPanel"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 4.0
+offset_right = -8.0
+offset_bottom = -4.0
+horizontal_alignment = 1
+
+[node name="ActionLog" type="RichTextLabel" parent="RootMargin/VMain"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 220)
+bbcode_enabled = true
+scroll_following = true
+
+[node name="DefenseModal" type="Window" parent="."]
+title = "Defense Select (Q-W-E-R)"
+initial_position = 1
+size = Vector2i(420, 140)
+visible = false
+
+[node name="DMVBox" type="VBoxContainer" parent="DefenseModal"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+theme_override_constants/separation = 6
+
+[node name="DMButtons" type="HBoxContainer" parent="DefenseModal/DMVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnRunBlitz" type="Button" parent="DefenseModal/DMVBox/DMButtons"]
+layout_mode = 2
+text = "Q) Run Blitz"
+
+[node name="BtnBalanced" type="Button" parent="DefenseModal/DMVBox/DMButtons"]
+layout_mode = 2
+text = "W) Balanced"
+
+[node name="BtnPassShell" type="Button" parent="DefenseModal/DMVBox/DMButtons"]
+layout_mode = 2
+text = "E) Pass Shell"
+
+[node name="BtnAllOut" type="Button" parent="DefenseModal/DMVBox/DMButtons"]
+layout_mode = 2
+text = "R) All Out Rush"
+
+[node name="HelpOverlay" type="Panel" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+visible = false
+modulate = Color(1, 1, 1, 0.95)
+
+[node name="HelpText" type="RichTextLabel" parent="HelpOverlay"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+bbcode_enabled = true
+text = "[b]Help[/b]\n- 1..6 choose offense.\n- Q/W/E/R choose defense in Hot Seat.\n- First & 10 at own 25. Four downs to get 10.\n- TD = 7, FG = 3 (range by distance).\n- Penalties replay down. Fumbles 50% recovery.\n- H toggles this overlay."
+
+
