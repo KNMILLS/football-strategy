@@ -1,0 +1,15 @@
+{
+  "team_id": "rpo_cover2",
+  "display_name": "RPO/Spread / Cover-2",
+  "offense_scheme": "RPO_SPREAD",
+  "defense_scheme": "COVER2",
+  "call_bias": {
+    "offense": { "RUN_IN": -0.02, "RUN_OUT": 0.02, "PASS_SHORT": 0.06, "PASS_LONG": -0.02 },
+    "defense": { "RUN_BLITZ": -0.02, "BALANCED": 0.03, "PASS_SHELL": 0.02, "ALL_OUT_RUSH": -0.03 }
+  },
+  "result_tuning": {
+    "PASS_SHORT": { "comp_rate": 0.02 }
+  }
+}
+
+

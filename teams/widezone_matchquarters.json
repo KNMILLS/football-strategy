@@ -1,0 +1,15 @@
+{
+  "team_id": "widezone_matchquarters",
+  "display_name": "Wide Zone / Match Quarters",
+  "offense_scheme": "WIDE_ZONE",
+  "defense_scheme": "MATCH_QUARTERS",
+  "call_bias": {
+    "offense": { "RUN_IN": -0.01, "RUN_OUT": 0.06, "PASS_SHORT": 0.00, "PASS_LONG": -0.02 },
+    "defense": { "RUN_BLITZ": -0.02, "BALANCED": 0.00, "PASS_SHELL": 0.04, "ALL_OUT_RUSH": -0.02 }
+  },
+  "result_tuning": {
+    "PASS_LONG": { "int_rate": -0.01 }
+  }
+}
+
+

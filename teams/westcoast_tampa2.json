@@ -1,0 +1,16 @@
+{
+  "team_id": "westcoast_tampa2",
+  "display_name": "West Coast / Tampa-2",
+  "offense_scheme": "WEST_COAST",
+  "defense_scheme": "TAMPA2",
+  "call_bias": {
+    "offense": { "RUN_IN": -0.02, "RUN_OUT": -0.01, "PASS_SHORT": 0.08, "PASS_LONG": -0.03 },
+    "defense": { "RUN_BLITZ": -0.03, "BALANCED": 0.04, "PASS_SHELL": 0.05, "ALL_OUT_RUSH": -0.06 }
+  },
+  "result_tuning": {
+    "PASS_SHORT": { "comp_rate": 0.03 },
+    "DEFENSE": { "penalty_def_plus5": 0.01 }
+  }
+}
+
+

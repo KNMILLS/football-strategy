@@ -21,6 +21,8 @@ GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
 GameState="*res://scripts/GameState.gd"
 Rules="*res://scripts/Rules.gd"
 SeedManager="*res://scripts/SeedManager.gd"
+TeamLoader="*res://scripts/TeamLoader.gd"
+Difficulty="*res://scripts/Difficulty.gd"
 
 [editor_plugins]
 

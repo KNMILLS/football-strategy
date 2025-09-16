@@ -87,6 +87,13 @@ static func _sm() -> Object:
 	var tree := Engine.get_main_loop() as SceneTree
 	return tree.root.get_node("/root/SeedManager")
 
+static func _session_rules() -> Object:
+	var tree := Engine.get_main_loop() as SceneTree
+	var gs := tree.root.get_node("/root/GameState")
+	if gs != null and gs.has_method("get_session_rules"):
+		return gs.call("get_session_rules")
+	return null
+
 static func recompute_to_go(state: Object) -> void:
 	var raw: int = int((state.line_to_gain - state.ball_on) * state.offense_dir)
 	state.to_go = max(1, int(raw))
@@ -99,8 +106,19 @@ static func start_new_series(state: Object) -> void:
 
 static func assert_state(state: Object) -> void:
 	assert(state.ball_on >= 0 and state.ball_on <= 100)
-	assert(state.down >= 1 and state.down <= 4)
+	# Allow a transient 5th down only when the drive has ended due to turnover on downs
+	if state.drive_ended and state.turnover_on_downs:
+		assert(state.down == 5)
+	else:
+		assert(state.down >= 1 and state.down <= 4)
 	assert(state.to_go >= 1)
+	# Coherence checks that do not mutate state
+	# series_start and line_to_gain should be consistent after first downs
+	if state.down == 1:
+		assert(state.line_to_gain == clamp(state.series_start + 10 * state.offense_dir, 0, 100))
+	# When drive_ended is set, ball_on still within bounds and down valid
+	if state.drive_ended:
+		assert(state.ball_on >= 0 and state.ball_on <= 100)
 
 static func do_punt(ball_on: int, offense_dir: int) -> Dictionary:
 	var choice = _sm().weighted_choice(DATA["special"]["PUNT"])
@@ -174,7 +192,11 @@ static func resolve_play(off_play: String, def_play: String, ball_on: int, offen
 			outcome.yards_delta = 0
 			outcome.penalty_replay = true
 			return outcome
-		var res = _sm().weighted_choice(DATA["special"]["FG"][buck])
+		var base_fg_table: Array = DATA["special"]["FG"][buck]
+		var sr := _session_rules()
+		if sr != null and sr.has_method("adjusted_fg_bucket_table"):
+			base_fg_table = sr.call("adjusted_fg_bucket_table", buck, base_fg_table)
+		var res = _sm().weighted_choice(base_fg_table)
 		outcome.event_name = String(res)
 		outcome.field_goal = String(res)
 		outcome.turnover = true
@@ -183,8 +205,11 @@ static func resolve_play(off_play: String, def_play: String, ball_on: int, offen
 		outcome.descriptive_text = "Field Goal %s" % [String(res)]
 		return outcome
 	# Matrix-based plays
-	var table: Array = DATA["matrix"][off_play][def_play]
-	var token: String = String(weighted_choice(table))
+	var base_table: Array = DATA["matrix"][off_play][def_play]
+	var sr2 := _session_rules()
+	if sr2 != null and sr2.has_method("adjusted_matrix_table"):
+		base_table = sr2.call("adjusted_matrix_table", base_table, off_play)
+	var token: String = String(weighted_choice(base_table))
 	var parsed := _parse_result_token(token)
 	match parsed.event_name:
 		"YARDS":

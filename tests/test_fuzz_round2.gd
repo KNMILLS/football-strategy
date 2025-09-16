@@ -4,8 +4,9 @@ func test_long_fuzz_no_invariant_violations() -> void:
 	var sm: Object = get_node("/root/SeedManager")
 	var rules: Object = get_node("/root/Rules")
 	var gs: Object = get_node("/root/GameState")
-	sm.set_seed(123456)
-	gs.new_session(123456, 20, 0)
+	var QA := load("res://qa/QAConfig.gd")
+	sm.set_seed(QA.SEED_FUZZ)
+	gs.new_session(QA.SEED_FUZZ, 20, 0)
 	var offense_plays := ["RUN_IN", "RUN_OUT", "PASS_SHORT", "PASS_LONG", "PUNT", "FG"]
 	for i in 10000:
 		var off_idx := int(sm.randi_range(0, offense_plays.size() - 1))

@@ -256,3 +256,112 @@ offset_bottom = -4.0
 text = "Seed: 0 RNG#: 0"
 
 
+[node name="SplashOverlay" type="Panel" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+modulate = Color(1, 1, 1, 1)
+
+[node name="SplashLabel" type="Label" parent="SplashOverlay"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+text = "GRIDIRON FOOTBALL"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 36
+
+[node name="SetupOverlay" type="Panel" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+visible = false
+
+[node name="SetupVBox" type="VBoxContainer" parent="SetupOverlay"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+theme_override_constants/separation = 12
+
+[node name="SetupTitle" type="Label" parent="SetupOverlay/SetupVBox"]
+layout_mode = 2
+text = "GAME SETUP"
+horizontal_alignment = 1
+
+[node name="TileGrid" type="GridContainer" parent="SetupOverlay/SetupVBox"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 10
+
+[node name="Team1Panel" type="PanelContainer" parent="SetupOverlay/SetupVBox/TileGrid"]
+layout_mode = 2
+
+[node name="Team1VBox" type="VBoxContainer" parent="SetupOverlay/SetupVBox/TileGrid/Team1Panel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Team1Label" type="Label" parent="SetupOverlay/SetupVBox/TileGrid/Team1Panel/Team1VBox"]
+layout_mode = 2
+text = "TEAM 1"
+
+[node name="Team1Option" type="OptionButton" parent="SetupOverlay/SetupVBox/TileGrid/Team1Panel/Team1VBox"]
+layout_mode = 2
+
+[node name="Team2Panel" type="PanelContainer" parent="SetupOverlay/SetupVBox/TileGrid"]
+layout_mode = 2
+
+[node name="Team2VBox" type="VBoxContainer" parent="SetupOverlay/SetupVBox/TileGrid/Team2Panel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Team2Label" type="Label" parent="SetupOverlay/SetupVBox/TileGrid/Team2Panel/Team2VBox"]
+layout_mode = 2
+text = "TEAM 2"
+
+[node name="Team2Option" type="OptionButton" parent="SetupOverlay/SetupVBox/TileGrid/Team2Panel/Team2VBox"]
+layout_mode = 2
+
+[node name="DifficultyPanel" type="PanelContainer" parent="SetupOverlay/SetupVBox/TileGrid"]
+layout_mode = 2
+
+[node name="DifficultyVBox" type="VBoxContainer" parent="SetupOverlay/SetupVBox/TileGrid/DifficultyPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="DifficultyLabel" type="Label" parent="SetupOverlay/SetupVBox/TileGrid/DifficultyPanel/DifficultyVBox"]
+layout_mode = 2
+text = "DIFFICULTY"
+
+[node name="DifficultyOption" type="OptionButton" parent="SetupOverlay/SetupVBox/TileGrid/DifficultyPanel/DifficultyVBox"]
+layout_mode = 2
+item_count = 3
+selected = 1
+popup/item_0/text = "ROOKIE"
+popup/item_0/id = 0
+popup/item_1/text = "PRO"
+popup/item_1/id = 1
+popup/item_2/text = "LEGEND"
+popup/item_2/id = 2
+
+[node name="Spacer" type="Control" parent="SetupOverlay/SetupVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StartSetupButton" type="Button" parent="SetupOverlay/SetupVBox"]
+layout_mode = 2
+text = "START"
+custom_minimum_size = Vector2(0, 34)
+

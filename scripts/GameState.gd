@@ -30,6 +30,12 @@ var current_defense_play: String = ""
 var drive_ended: bool = false
 var turnover_on_downs: bool = false
 
+# Session selections and rules
+var selected_home_team_id: String = ""
+var selected_away_team_id: String = ""
+var difficulty_level: int = 1 # Difficulty.Level.PRO by default
+var _session_rules_obj: Object = null
+
 func _ready() -> void:
 	_emit_all()
 
@@ -46,6 +52,17 @@ func new_session(seed_value: int, drives: int, new_mode: int) -> void:
 	home_score = 0
 	away_score = 0
 	offense_is_home = true
+	# Default teams if not configured
+	if selected_home_team_id == "" or selected_away_team_id == "":
+		var tl: Object = get_node("/root/TeamLoader")
+		var ids: Array = tl.call("get_team_ids")
+		if ids.size() >= 2:
+			selected_home_team_id = String(ids[0])
+			selected_away_team_id = String(ids[1])
+	# Ensure Difficulty autoload reflects level
+	var diff: Object = get_node("/root/Difficulty")
+	diff.call("set_level", int(difficulty_level))
+	_rebuild_session_rules()
 	_start_drive()
 	emit_signal("ui_state_changed", "PRESNAP")
 
@@ -80,7 +97,7 @@ func offense_select(play_key: String) -> void:
 		return
 	current_offense_play = play_key
 	last_offensive_calls.append(play_key)
-	if last_offensive_calls.size() > 5:
+	if last_offensive_calls.size() > 12:
 		last_offensive_calls.pop_front()
 	if mode == 0:
 		var da: Script = load("res://scripts/DefenseAI.gd")
@@ -150,3 +167,23 @@ func _resolve() -> void:
 
 func _emit_log(line: String) -> void:
 	emit_signal("ui_update_log", line)
+
+func set_session_config(home_team_id: String, away_team_id: String, new_difficulty_level: int) -> void:
+	selected_home_team_id = String(home_team_id)
+	selected_away_team_id = String(away_team_id)
+	difficulty_level = int(new_difficulty_level)
+	var diff: Object = get_node("/root/Difficulty")
+	diff.call("set_level", difficulty_level)
+	_rebuild_session_rules()
+
+func _rebuild_session_rules() -> void:
+	var sr_script: Script = load("res://scripts/SessionRules.gd")
+	var new_sr: Object = sr_script.new()
+	var tl: Object = get_node("/root/TeamLoader")
+	var team1: Dictionary = tl.call("get_team_dict", selected_home_team_id)
+	var team2: Dictionary = tl.call("get_team_dict", selected_away_team_id)
+	new_sr.call("build", get_node("/root/Rules"), team1, team2, int(difficulty_level))
+	_session_rules_obj = new_sr
+
+func get_session_rules() -> Object:
+	return _session_rules_obj

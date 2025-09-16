@@ -51,3 +51,9 @@ func weighted_choice(options: Array) -> Variant:
 		if pick <= cumulative:
 			return item[0]
 	return options.back()[0]
+
+func get_seed() -> int:
+	return int(current_seed)
+
+func get_rng_call_count() -> int:
+	return int(rng_call_count)

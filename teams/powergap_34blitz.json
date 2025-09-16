@@ -1,0 +1,15 @@
+{
+  "team_id": "powergap_34blitz",
+  "display_name": "Power/Gap / 3-4 Blitz",
+  "offense_scheme": "POWER_GAP",
+  "defense_scheme": "ZONE_BLITZ_34",
+  "call_bias": {
+    "offense": { "RUN_IN": 0.08, "RUN_OUT": -0.03, "PASS_SHORT": -0.02, "PASS_LONG": -0.03 },
+    "defense": { "RUN_BLITZ": 0.05, "BALANCED": -0.02, "PASS_SHELL": -0.02, "ALL_OUT_RUSH": -0.01 }
+  },
+  "result_tuning": {
+    "DEFENSE": { "sack_rate": 0.02, "penalty_def_plus5": 0.01 }
+  }
+}
+
+

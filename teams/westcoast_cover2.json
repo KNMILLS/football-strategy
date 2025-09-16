@@ -1,0 +1,18 @@
+{
+  "team_id": "westcoast_cover2",
+  "display_name": "West Coast / Cover-2",
+  "offense_scheme": "WEST_COAST",
+  "defense_scheme": "COVER2",
+  "call_bias": {
+    "offense": { "RUN_IN": -0.02, "RUN_OUT": -0.02, "PASS_SHORT": 0.10, "PASS_LONG": -0.03, "PUNT": -0.01, "FG": -0.02 },
+    "defense": { "RUN_BLITZ": -0.03, "BALANCED": 0.05, "PASS_SHELL": 0.05, "ALL_OUT_RUSH": -0.05 }
+  },
+  "result_tuning": {
+    "PASS_SHORT": { "comp_rate": 0.04 },
+    "PASS_LONG": { "int_rate": -0.01 },
+    "DEFENSE": { "sack_rate": -0.01, "penalty_def_plus5": 0.01 },
+    "FG_BUCKETS": { "0_39": 0.00, "40_49": 0.00, "50_57": 0.00 }
+  }
+}
+
+
