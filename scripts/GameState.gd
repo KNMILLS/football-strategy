@@ -20,6 +20,8 @@ var ball_on: int = 25 # absolute yards from home goal line
 var offense_dir: int = 1 # +1 towards 100 if home offense, -1 towards 0 if away offense
 var down: int = 1
 var to_go: int = 10
+var series_start: int = 25
+var line_to_gain: int = 35
 
 var last_offensive_calls: Array = []
 var current_offense_play: String = ""
@@ -51,8 +53,8 @@ func _start_drive() -> void:
 	drive_index += 1
 	ball_on = 25 if offense_is_home else 75
 	offense_dir = 1 if offense_is_home else -1
-	down = 1
-	to_go = 10
+	var rules: Object = get_node("/root/Rules")
+	rules.start_new_series(self)
 	current_offense_play = ""
 	current_defense_play = ""
 	drive_ended = false
@@ -98,20 +100,27 @@ func _resolve() -> void:
 	var rules: Object = get_node("/root/Rules")
 	var outcome: Dictionary = rules.resolve_play(current_offense_play, current_defense_play, ball_on, offense_dir)
 	rules.apply_outcome(self, outcome)
+	rules.assert_state(self)
 	# Build banner text
 	var banner := "%s → %s" % [desc_header, outcome.descriptive_text]
 	emit_signal("ui_banner", banner)
 	# Update field
 	_emit_all()
+	# Delay logging to respect 1s reveal banner
+	await get_tree().create_timer(1.0).timeout
 	# Handle end of drive
 	if current_offense_play == "FG":
-		if outcome.field_goal == "GOOD":
+		if outcome.event_name == "OUT_OF_RANGE":
+			_emit_log("🏈 FG out of range")
+		elif outcome.field_goal == "GOOD":
 			_emit_log("🏈 FG GOOD (+3)")
 		else:
 			_emit_log("🏈 FG MISS")
 	elif current_offense_play == "PUNT":
 		if outcome.event_name == "BLOCK":
 			_emit_log("🏈 Punt BLOCKED")
+		elif outcome.has("touchback") and bool(outcome["touchback"]):
+			_emit_log("🏈 Punt touchback")
 		else:
 			_emit_log("🏈 Punt %s" % [outcome.event_name])
 	else:

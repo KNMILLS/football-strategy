@@ -124,6 +124,15 @@ Implemented via `scripts/GameState.gd` autoload.
 - Simple UI sounds via AudioStreamGenerator.
 - HTML5 export with single page instructions.
 
+## Round 2 Additions
+- First down model: line_to_gain based on series_start; penalties replay down and can produce first downs by yardage.
+- Field goal guardrails: kick_distance = 17 + yards-to-goal (min 18). Out of range (>57) disallowed.
+- Punt touchbacks: net crossing receiving goal sets ball at 20. Spots always within 0..100.
+- State invariants: assert_state checks for spot, down, and to_go sanity.
+- Hot Seat reveal: 1 second banner reveal before logging.
+- Quick Play (Enter) and Determinism HUD (F1) show Seed and RNG call count.
+- Optional Offense AI for soak tests.
+
 ## Non-Goals (MVP)
 - No game clock, no extra points, no return yards on turnovers.
 - No deep playbook or personnel. No network multiplayer.

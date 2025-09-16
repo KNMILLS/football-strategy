@@ -65,33 +65,58 @@ static func yards_to_string(offense_dir: int, ball_on: int, _offense_is_home: bo
 			num = clamp(ball_on, 1, 49)
 	return "%s %d" % [side, num]
 
-static func field_goal_bucket(ball_on: int, offense_dir: int) -> String:
+static func kick_distance(ball_on: int, offense_dir: int) -> int:
 	var yards_to_goal := (100 - ball_on) if offense_dir == 1 else ball_on
 	var distance := 17 + yards_to_goal
-	if distance < 0:
+	if distance < 18:
+		distance = 18
+	return distance
+
+static func field_goal_bucket(ball_on: int, offense_dir: int) -> String:
+	var distance := kick_distance(ball_on, offense_dir)
+	if distance > 57:
 		return ""
 	if distance <= 39:
 		return "0_39"
 	elif distance <= 49:
 		return "40_49"
-	elif distance <= 57:
+	else:
 		return "50_57"
-	return ""
 
 static func _sm() -> Object:
 	var tree := Engine.get_main_loop() as SceneTree
 	return tree.root.get_node("/root/SeedManager")
 
+static func recompute_to_go(state: Object) -> void:
+	var raw: int = int((state.line_to_gain - state.ball_on) * state.offense_dir)
+	state.to_go = max(1, int(raw))
+
+static func start_new_series(state: Object) -> void:
+	state.series_start = state.ball_on
+	state.line_to_gain = clamp(state.series_start + 10 * state.offense_dir, 0, 100)
+	state.down = 1
+	recompute_to_go(state)
+
+static func assert_state(state: Object) -> void:
+	assert(state.ball_on >= 0 and state.ball_on <= 100)
+	assert(state.down >= 1 and state.down <= 4)
+	assert(state.to_go >= 1)
+
 static func do_punt(ball_on: int, offense_dir: int) -> Dictionary:
 	var choice = _sm().weighted_choice(DATA["special"]["PUNT"])
 	if String(choice).begins_with("NET_"):
 		var net := int(String(choice).get_slice("_", 1))
-		var new_spot := ball_on + net if offense_dir == 1 else ball_on - net
+		var travel := net * offense_dir
+		var tentative := ball_on + travel
+		var crosses_goal := (offense_dir == 1 and tentative >= 100) or (offense_dir == -1 and tentative <= 0)
+		var new_spot := tentative
+		if crosses_goal:
+			new_spot = 80 if offense_dir == 1 else 20
 		new_spot = clamp(new_spot, 0, 100)
-		return {"blocked": false, "new_spot": new_spot, "event_name": String(choice)}
+		return {"blocked": false, "new_spot": new_spot, "event_name": String(choice), "touchback": crosses_goal}
 	elif choice == "BLOCK":
-		return {"blocked": true, "new_spot": ball_on, "event_name": "BLOCK"}
-	return {"blocked": false, "new_spot": ball_on, "event_name": "UNKNOWN"}
+		return {"blocked": true, "new_spot": ball_on, "event_name": "BLOCK", "touchback": false}
+	return {"blocked": false, "new_spot": ball_on, "event_name": "UNKNOWN", "touchback": false}
 
 static func weighted_choice(options: Array) -> Variant:
 	return _sm().weighted_choice(options)
@@ -130,20 +155,24 @@ static func resolve_play(off_play: String, def_play: String, ball_on: int, offen
 		if punt.blocked:
 			outcome.descriptive_text = "Punt BLOCKED! Possession changes at LOS."
 		else:
-			outcome.descriptive_text = "Punt for %s." % [punt.event_name]
+			if punt.touchback:
+				outcome.descriptive_text = "Punt touchback"
+			else:
+				outcome.descriptive_text = "Punt for %s." % [punt.event_name]
 		outcome.turnover = true
 		outcome.yards_delta = 0
 		outcome["new_spot_after_special"] = int(punt.new_spot)
+		outcome["touchback"] = bool(punt.touchback)
 		return outcome
 	if off_play == "FG":
 		var buck := field_goal_bucket(ball_on, offense_dir)
 		if buck == "":
-			outcome.event_name = "MISS"
+			outcome.event_name = "OUT_OF_RANGE"
 			outcome.field_goal = "MISS"
-			outcome.turnover = true
-			outcome.descriptive_text = "Field Goal out of range: MISS"
+			outcome.turnover = false
+			outcome.descriptive_text = "Field Goal out of range"
 			outcome.yards_delta = 0
-			outcome["new_spot_after_special"] = ball_on
+			outcome.penalty_replay = true
 			return outcome
 		var res = _sm().weighted_choice(DATA["special"]["FG"][buck])
 		outcome.event_name = String(res)
@@ -208,18 +237,14 @@ static func fumble_offense_recovers() -> bool:
 	return _sm().chance(0.5)
 
 static func apply_outcome(state: Object, outcome: Dictionary) -> void:
-	# Expects state to expose: ball_on:int, offense_dir:int, down:int, to_go:int, offense_is_home:bool,
-	# home_score:int, away_score:int, drive_ended:bool, turnover_on_downs:bool, last_result_text:String
 	var ball_on: int = state.ball_on
 	var dir: int = state.offense_dir
 	var down: int = state.down
-	var to_go: int = state.to_go
 	var drive_ended := false
 	var turnover_on_downs := false
 
 	if outcome.has("new_spot_after_special"):
-		ball_on = int(outcome["new_spot_after_special"]) # possession will switch; spot fixed
-		# FG or PUNT always end drive as turnover or score handled externally
+		ball_on = int(outcome["new_spot_after_special"]) # special teams change of possession
 		if outcome.field_goal == "GOOD":
 			if state.offense_is_home:
 				state.home_score += 3
@@ -233,9 +258,8 @@ static func apply_outcome(state: Object, outcome: Dictionary) -> void:
 		state.drive_ended = drive_ended
 		return
 
-	# Non-special plays
+	# Non-special plays and penalties
 	var yards_delta := int(outcome.yards_delta)
-	# Apply yardage in absolute space
 	ball_on += yards_delta * dir
 	ball_on = clamp(ball_on, 0, 100)
 
@@ -252,46 +276,28 @@ static func apply_outcome(state: Object, outcome: Dictionary) -> void:
 		return
 
 	if outcome.penalty_replay:
-		# Down does not advance; adjust spot and to_go; First down if gained enough
-		to_go -= (yards_delta if yards_delta > 0 else 0)
-		# Offensive penalty yards_delta negative; Defensive positive; move ball accordingly
-		ball_on += yards_delta * dir
-		ball_on = clamp(ball_on, 0, 100)
-		if to_go <= 0:
-			# New set of downs
-			down = 1
-			to_go = 10
 		state.ball_on = ball_on
-		state.down = down
-		state.to_go = to_go
+		recompute_to_go(state)
+		if state.to_go <= 0:
+			start_new_series(state)
 		state.drive_ended = false
 		state.turnover_on_downs = false
 		return
 
-	# Normal down advancement
-	if yards_delta >= 0:
-		to_go -= yards_delta
-	else:
-		to_go -= 0 # negative yardage increases field distance but not to_go beyond original; treat as no gain to distance
-
-	if to_go <= 0:
-		# New first down
-		down = 1
-		to_go = 10
-	else:
-		down += 1
-
-	if outcome.turnover and outcome.event_name == "INT":
-		drive_ended = true
-	elif outcome.turnover and outcome.event_name == "FUMBLE":
-		drive_ended = true
-
-	if not drive_ended and down > 4:
-		turnover_on_downs = true
-		drive_ended = true
-
+	# Normal down advancement using line_to_gain
 	state.ball_on = ball_on
+	recompute_to_go(state)
+	if outcome.turnover:
+		drive_ended = true
+	else:
+		if state.to_go <= 0:
+			start_new_series(state)
+		else:
+			down += 1
+			if down > 4:
+				turnover_on_downs = true
+				drive_ended = true
+
 	state.down = down
-	state.to_go = to_go
 	state.drive_ended = drive_ended
 	state.turnover_on_downs = turnover_on_downs
