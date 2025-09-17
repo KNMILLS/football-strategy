@@ -338,3 +338,137 @@ docs/Design.md (this file)
 * When adding data, bump `schema_version` and update `SchemaGuard` and tests.
 * Add tests for all new logic; use golden replay where applicable.
 * Split multi-system changes across phases.
+
+---
+
+## 22) Phased Work Plan & Agent Prompts (for Cursor gpt-5-high)
+
+The following phased plan enumerates deliverables, acceptance checks, risks, and concrete prompts future agents should use. Agents must: keep determinism sacred; run tests; commit/push after green; and update this GDD when scope changes.
+
+### Phase 4.0 — 12×6 Matrix + Big Play (stabilize)
+- Deliverables:
+  - Finalize `rules_12x6.json` buckets; confirm `Rules12x6.gd` resolver and Big Play precedence/caps.
+  - EventLogger banners/log lines consistent and localized.
+- Acceptance:
+  - All 12×6 integrity tests pass; Big Play rates/types within bands; determinism call-count tests green.
+- Risks:
+  - Weight collapse after multipliers; token predicates mis-match with buckets.
+- Agent prompt:
+  - "Implement and validate 12×6 matrix integrity and Big Play caps. Run tests: matrix, bigplay rates, bigplay types, determinism. If any fail, adjust `SessionRules` multipliers or `rules_12x6.json` weights conservatively. Commit when green."
+
+### Phase 4.Timing — Clock + Two-Minute
+- Deliverables:
+  - Ensure `Timing.gd` tick mapping and `apply_modifiers` (+5s on in-bounds offense BP) are correct.
+  - TWO-MINUTE WARNING banners at Q2/Q4/OT.
+- Acceptance:
+  - `test_two_minute_ticks.gd`, `test_clock_determinism.gd` pass.
+- Risks:
+  - Reordering RNG calls while adding timing.
+- Agent prompt:
+  - "Verify two-minute tick mapping and +5s big play modifier. Ensure banners at Q2/Q4/OT. Run timing suite and determinism tests. Commit when green."
+
+### Phase 4.1 — Quarter Presets & Remove Drives UI
+- Deliverables:
+  - Remove Drives spinner/label from HUD; rely on clock/quarter.
+  - `GameConfig.gd` ensures preset selection persists; UI exposes Quick/Standard/Full.
+- Acceptance:
+  - Quarter preset tests pass; no references to Drives in UI; UX verified in `MainUI.tscn`.
+- Risks:
+  - Hidden assumptions on `num_drives` in code/tests.
+- Agent prompt:
+  - "Remove Drives UI and any logic gating on drives. Ensure quarter presets control clock length. Update tests/UI. Run quarter preset tests. Commit when green."
+
+### Phase 4.2 — Overtime (2025 Fair-Possession)
+- Deliverables:
+  - Keep current OT implementation; add pre-game coin toss path parity with OT modal and wire `perform_coin_toss` for regulation start.
+- Acceptance:
+  - OT tests pass (fair possession, sudden death, timeouts, two-minute OT warning, tie). Add tests for pre-game coin toss path.
+- Risks:
+  - Incorrect first/second possession assignment; timeout state leakage.
+- Agent prompt:
+  - "Add pre-game coin flip flow analogous to OT coin toss; winner choice starts series at OWN 25 until kickoffs exist. Run OT suite and new coin-flip tests. Commit when green."
+
+### Phase 4.3 — Try & Free Kicks
+- Deliverables:
+  - Implement `FreeKick.gd` and `data/free_kick.json`: XP/2-pt, kickoff, onside.
+  - Update `Timing.gd` to support `KICKOFF_RESOLVED:15`. Bump `timing.json` schema to 1.2 and update `SchemaGuard` expectation.
+- Acceptance:
+  - After-TD and Free Kick tests pass; kickoff outcomes and spots align; onside trailing-only gating enforced.
+- Risks:
+  - Schema/version mismatches; timing tag omissions.
+- Agent prompt:
+  - "Add FreeKick system and data. Map timing tags per spec. Bump `timing.json` schema to 1.2 and update SchemaGuard. Add tests for XP/2-pt, kickoff distributions, onside gating. Commit when green."
+
+### Phase 5 — 32 Teams + BalanceRunner
+- Deliverables:
+  - Create `data/teams_32.json`; add loader or migration from current `teams/*.json`.
+  - Implement `BalanceRunner.gd` smoke sims and `SimReport.gd` summaries.
+- Acceptance:
+  - Unique (Offense, Defense) pairs enforced; smoke win-rate 45–55% vs field subset.
+- Risks:
+  - Bias overfitting; loader transition.
+- Agent prompt:
+  - "Introduce `teams_32.json` and uniqueness enforcement. Add BalanceRunner to produce smoke reports. Tune call_bias/result_tuning minimally to achieve 45–55% vs field. Commit with reports."
+
+### Phase 5.1 — Real Teams & Coaches (private)
+- Deliverables:
+  - Add `coaches/real/*.json` and `CoachLoader.gd`. Apply tendencies within clamps.
+  - Update Setup/HUD to display coach names.
+- Acceptance:
+  - AI mix shifts ≥3 p.p. in long sims; determinism preserved.
+- Risks:
+  - Over-powering tendencies; licensing (kept private).
+- Agent prompt:
+  - "Add CoachLoader and coach JSONs (private). Apply tendencies post Team/Difficulty with clamps. Show coach name in Setup/HUD. Validate measurable but bounded impact. Commit privately."
+
+### Phase 6 — AI v2 + Difficulty Polish
+- Deliverables:
+  - Expand Offense/Defense AI heuristics for 12 plays; upgrade exploration/bluff by difficulty.
+- Acceptance:
+  - PREVENT gating; difficulty-separated behavior; tests green.
+- Risks:
+  - Non-deterministic selection; runaway exploration.
+- Agent prompt:
+  - "Refine AI for full playbook; ensure deterministic selection given seed. Strengthen difficulty separation and PREVENT gating heuristics. Add/adjust tests. Commit when green."
+
+### Phase 7 — Visual/Audio Polish
+- Deliverables:
+  - Field art, LOS/LTG lines, micro-tweens, minimal SFX.
+- Acceptance:
+  - No performance regressions; UI remains readable.
+- Agent prompt:
+  - "Add retro-clean visuals and minimal SFX. Verify performance and readability. Commit assets and scene updates."
+
+### Phase 8 — Balance & UX Pass
+- Deliverables:
+  - Onboarding help, accessibility (high contrast, hotkey cheatsheet), small delta autotuning.
+- Acceptance:
+  - Usability improvements verified; BalanceRunner within target bands.
+- Agent prompt:
+  - "Improve help overlay, contrast, and hotkey hints. Add autotune pass bounded by clamps. Re-run BalanceRunner. Commit results."
+
+### Phase 9 — Refactor (Godot 4.4 Best Practices)
+- Deliverables:
+  - Style/typing cleanup, reduce globals, prefer `class_name` and Resources, scene/signal audit.
+- Acceptance:
+  - All tests green; no regressions.
+- Agent prompt:
+  - "Refactor to Godot 4.4 best practices; improve typing, reduce globals. Keep tests green. Commit in small chunks."
+
+### Phase 10 — Packaging & Docs
+- Deliverables:
+  - Export targets (Win/macOS/Linux/HTML5), README quick start, finalize v1.2 GDD, CI gates for full test suite.
+- Agent prompt:
+  - "Configure exports and CI to run full tests. Update README and finalize this GDD. Tag release."
+
+---
+
+### Global Agent Prompt (baseline)
+
+"You are a Cursor gpt-5-high coding agent working on Gridiron Strategy. Follow docs/Design.md (authoritative). Keep determinism sacred: all randomness via SeedManager; do not reorder RNG calls. For your phase:
+- Read relevant sections (scope, acceptance) and Known Deviations.
+- Make minimal, incremental edits; preserve formatting and indentation.
+- Update JSON schema versions and SchemaGuard when data changes.
+- Run all affected tests; add tests for new logic.
+- Commit and push when green with clear messages.
+- Update docs/Design.md (this file) to reflect changes and acceptance."
