@@ -18,14 +18,14 @@ func clear_panel() -> void:
 func set_team(team: Dictionary) -> void:
 	_team = team.duplicate(true)
 	var disp: String = String(_team.get("city", ""))
-	var name: String = String(_team.get("name", ""))
+	var team_name: String = String(_team.get("name", ""))
 	var abbr: String = String(_team.get("abbr", ""))
 	var offense: String = String(_team.get("offense", ""))
 	var defense: String = String(_team.get("defense", ""))
-	name_label.text = (disp + (" " if disp != "" else "") + name).strip_edges()
+	name_label.text = (disp + (" " if disp != "" else "") + team_name).strip_edges()
 	tags_label.text = (abbr + (" — " if abbr != "" else "") + offense + (" / " if offense != "" and defense != "" else "") + defense).strip_edges()
-	var strengths := _team.get("strengths", [])
-	var weaknesses := _team.get("weaknesses", [])
+	var strengths: Variant = _team.get("strengths", [])
+	var weaknesses: Variant = _team.get("weaknesses", [])
 	var strengths_str := String(", ".join(strengths)) if typeof(strengths) == TYPE_ARRAY else String(strengths)
 	var weaknesses_str := String(", ".join(weaknesses)) if typeof(weaknesses) == TYPE_ARRAY else String(weaknesses)
 	info_label.text = "[b]Strengths[/b]: %s\n[b]Weaknesses[/b]: %s" % [strengths_str, weaknesses_str]
@@ -42,5 +42,3 @@ func set_team(team: Dictionary) -> void:
 	else:
 		logo.texture = null
 		logo.visible = false
-
-

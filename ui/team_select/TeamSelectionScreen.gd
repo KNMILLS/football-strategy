@@ -1,5 +1,8 @@
 extends Control
 
+signal confirmed(home_team_id: String, away_team_id: String)
+signal selection_changed(p1_team_id: String, opp_team_id: String)
+
 enum SelectState { IDLE, P1_SELECTED, BOTH_SELECTED }
 
 @onready var header_label: Label = $RootV/HeaderLabel
@@ -66,15 +69,25 @@ func _build_grid() -> void:
 	_update_grid_columns()
 
 func _update_grid_columns() -> void:
-	var total_w: float = float(team_grid.get_parent().size.x)
+	if not is_instance_valid(team_grid):
+		return
+	var parent_node := team_grid.get_parent()
+	var parent_w: float = 0.0
+	if parent_node is Control:
+		parent_w = float((parent_node as Control).size.x)
+	else:
+		parent_w = float(size.x)
 	var min_tile: float = 128.0
-	var max_cols: int = int(clamp(floor(total_w / (min_tile + 16.0)), 4.0, 8.0))
+	var max_cols: int = int(clamp(floor(parent_w / (min_tile + 16.0)), 4.0, 8.0))
 	team_grid.columns = max(4, max_cols)
+	var avail_w: float = parent_w
 	for t in _tiles:
-		(t as Control).custom_minimum_size = Vector2(clamp((team_grid.get_parent().size.x - (team_grid.columns - 1) * 12.0) / team_grid.columns, 128.0, 196.0), clamp((team_grid.get_parent().size.x - (team_grid.columns - 1) * 12.0) / team_grid.columns, 128.0, 196.0))
+		(t as Control).custom_minimum_size = Vector2(clamp((avail_w - (team_grid.columns - 1) * 12.0) / team_grid.columns, 128.0, 196.0), clamp((avail_w - (team_grid.columns - 1) * 12.0) / team_grid.columns, 128.0, 196.0))
 
 func _update_layout_reflow() -> void:
 	# Stack P1 and Opponent under the grid when narrow
+	if not is_instance_valid(main_row) or not is_instance_valid(p1_panel) or not is_instance_valid(opp_panel):
+		return
 	var total_w: float = float(size.x)
 	var use_stack: bool = total_w < 1000.0
 	if use_stack:
@@ -134,6 +147,7 @@ func _on_tile_clicked(team_id: String) -> void:
 	_update_options_assignment()
 	_update_tile_selection_visuals()
 	start_button.disabled = not _can_start()
+	emit_signal("selection_changed", String(p1_team), String(opp_team))
 
 func _can_start() -> bool:
 	return state == SelectState.BOTH_SELECTED and String(p1_team) != "" and String(opp_team) != ""
@@ -152,12 +166,12 @@ func _update_panels() -> void:
 		p1_panel.call("clear_panel")
 		opp_panel.call("clear_panel")
 	elif state == SelectState.P1_SELECTED:
-		var t1 := T.get_by_id(p1_team)
+		var t1: Dictionary = T.get_by_id(p1_team)
 		p1_panel.call("set_team", t1)
 		opp_panel.call("clear_panel")
 	else:
-		var t1 := T.get_by_id(p1_team)
-		var t2 := T.get_by_id(opp_team)
+		var t1: Dictionary = T.get_by_id(p1_team)
+		var t2: Dictionary = T.get_by_id(opp_team)
 		p1_panel.call("set_team", t1)
 		opp_panel.call("set_team", t2)
 
@@ -211,11 +225,23 @@ func _on_start() -> void:
 	if MC != null:
 		var mc: Object = MC.new()
 		mc.call("apply_from_team_selection", cfg)
-	# TODO: transition to next gameplay scene as per project flow
+	# Emit compatibility signal for Main.gd
+	var home_id: String = String(_abbr_to_id.get(String(home_opt.call("get_value")), String(opp_team)))
+	var away_id: String = String(_abbr_to_id.get(String(visitor_opt.call("get_value")), String(p1_team)))
+	emit_signal("confirmed", home_id, away_id)
+	# Transition is handled by listener (Main.gd)
 
 func _show_notice(text: String) -> void:
 	# Minimal UX: use push_warning; UI toast could be added later
 	push_warning(text)
+
+func get_selected_team_ids() -> Array[String]:
+	# Compatibility helper used by Main.gd when starting via setup button
+	if not _can_start():
+		return ["", ""]
+	var home_id: String = String(_abbr_to_id.get(String(home_opt.call("get_value")), String(opp_team)))
+	var away_id: String = String(_abbr_to_id.get(String(visitor_opt.call("get_value")), String(p1_team)))
+	return [home_id, away_id]
 
 # ---- Test helpers ----
 func debug_force_layout(width_px: int) -> Dictionary:
@@ -226,5 +252,3 @@ func debug_force_layout(width_px: int) -> Dictionary:
 		"columns": int(team_grid.columns),
 		"stacked": bool(stack_area.visible)
 	}
-
-
