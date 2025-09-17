@@ -9,7 +9,7 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 ## 0) Known Deviations (current build)
 
 - Drives UI has been removed. Regulation is clock/quarter-driven only.
-- Regulation timeouts are not implemented yet; OT timeouts (2/team) are implemented and visible in the HUD.
+- OT timeouts (2/team) are implemented and visible in the HUD.
 - Teams load from `res://teams/*.json` (no single `teams_32.json` yet). Legendary coaches are not implemented.
 - Timing JSON `schema_version` is "1.0" today; will bump when free kicks are added.
 - MK-style Team Selection implemented: grid hover preview with P1/P2 lock and matchup confirm is live.
@@ -70,6 +70,14 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 - Per-play base times (examples): RUN_INBOUNDS 33s; PASS_COMPLETE_SHORT_MED 30s; PASS_COMPLETE_DEEP 33s; QB_SNEAK 22s; SACK/INCOMPLETE/OUT_OF_BOUNDS/PENALTY_ACCEPTED/TURNOVER 15s; PUNT_RESOLVED 15s; PUNT_TOUCHBACK 0s; FIELD_GOAL_ATTEMPT 15s; TOUCHDOWN 0s; KICKOFF_RESOLVED 15s; KICKOFF_TOUCHBACK 0s.
 - Two-minute mode: when clock ≤ 2:00 in Q2, Q4 (and OT warning at 2:00), switch to tick timing: 7s per tick with mapping (RUN_INBOUNDS 5, PASS_SHORT_MED 4, PASS_DEEP 5, QB_SNEAK 3, SACK 3, INCOMP/OUT 1, PUNT_RESOLVED 2, FG_ATTEMPT 2, TD 0).
 - Deterministic: timing has no RNG; applied after outcome resolution without altering draw order. UI shows MM:SS and quarter; one-time TWO-MINUTE WARNING banner appears at entry.
+
+##### Regulation Timeouts (Phase 4.5)
+- 3 timeouts per team per half; resets at halftime (start of Q3).
+- Separate and distinct from OT timeouts; OT keeps 2 per team.
+- Timeouts are pre-snap administrative actions consuming 0s in our model.
+- Only permitted during regulation PRESNAP; disallowed during resolution/selection and during OT.
+- UI: Header shows `TO: H x | A y` during regulation; in OT it shows `OT TO: H x | A y`.
+- Determinism: spending a timeout must not change RNG order/call counts.
 
 -##### Overtime (2025 NFL fair-possession; one period)
 - Trigger: at end of Q4 if tied. Coin Toss: visiting team calls; winner chooses Receive or Defend. Series start at OWN 25 (kickoffs stay abstracted this phase).

@@ -13,6 +13,7 @@ var log_lines: Array[String] = []
 @onready var reset_seed_button: Button = $RootMargin/VMain/HeaderBar/ResetSeedButton
 @onready var help_button: Button = $RootMargin/VMain/HeaderBar/HelpButton
 @onready var quick_play_button: Button = $RootMargin/VMain/HeaderBar/QuickPlayButton
+@onready var timeout_button: Button = $RootMargin/VMain/HeaderBar/TimeoutButton
 @onready var auto_offense_check: CheckButton = $RootMargin/VMain/HeaderBar/AutoOffense
 @onready var seed_value_label: Label = $RootMargin/VMain/HeaderBar/SeedValue
 @onready var copy_seed_button: Button = $RootMargin/VMain/HeaderBar/CopySeed
@@ -85,6 +86,7 @@ func _connect_signals() -> void:
 	reset_seed_button.pressed.connect(_on_reset_seed)
 	help_button.pressed.connect(_toggle_help)
 	quick_play_button.pressed.connect(_quick_play)
+	timeout_button.pressed.connect(_press_timeout)
 	copy_seed_button.pressed.connect(_copy_seed_to_clipboard)
 
 	btn_inside_power.pressed.connect(func(): _offense_pick("INSIDE_POWER"))
@@ -157,6 +159,12 @@ func _setup_shortcuts() -> void:
 	_assign_shortcut(btn_all_out, KEY_R)
 	_assign_shortcut(btn_zone_blitz, KEY_T)
 	_assign_shortcut(btn_prevent, KEY_Y)
+	# Header timeout hotkey (T also used in defense modal; only active when no modal)
+	var sc := Shortcut.new()
+	var ev := InputEventKey.new()
+	ev.physical_keycode = KEY_T
+	sc.events = [ev]
+	timeout_button.shortcut = sc
 
 func _show_splash_then_setup() -> void:
 	# Show splash for ~1.2s then show setup
@@ -307,7 +315,7 @@ func _update_header() -> void:
 	quarter_label.text = gs.get_quarter_text()
 	seed_value_label.text = "Seed: %s" % str(get_node("/root/SeedManager").current_seed)
 	_update_preset_label()
-	_update_ot_timeouts()
+	_update_timeouts_label()
 	_update_hud()
 
 func _update_field() -> void:
@@ -318,7 +326,7 @@ func _update_field() -> void:
 	quarter_label.text = gs.get_quarter_text()
 	seed_value_label.text = "Seed: %s" % str(get_node("/root/SeedManager").current_seed)
 	_update_preset_label()
-	_update_ot_timeouts()
+	_update_timeouts_label()
 	_update_hud()
 
 func _append_log(new_line: String) -> void:
@@ -374,6 +382,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.physical_keycode == KEY_O:
 			if free_kick_modal.visible and not btn_onside.disabled:
 				_free_kick_pick("ONSIDE")
+		elif event.physical_keycode == KEY_T:
+			_press_timeout()
 
 func _try_pick(kind: String) -> void:
 	try_modal.hide()
@@ -417,16 +427,18 @@ func _coin_choice(choice: String) -> void:
 	else:
 		gs.call("enter_regulation_with_choice", String(choice))
 	coin_toss_modal.hide()
-	_update_ot_timeouts()
+	_update_timeouts_label()
 
-func _update_ot_timeouts() -> void:
+func _update_timeouts_label() -> void:
 	var gs: Object = get_node("/root/GameState")
 	if bool(gs.get("is_overtime")):
 		var h := int(gs.call("ot_timeouts_remaining", 0))
 		var a := int(gs.call("ot_timeouts_remaining", 1))
 		ot_timeouts_label.text = "OT TO: H %d | A %d" % [h, a]
 	else:
-		ot_timeouts_label.text = ""
+		var h2 := int(gs.call("reg_timeouts_remaining", 0))
+		var a2 := int(gs.call("reg_timeouts_remaining", 1))
+		ot_timeouts_label.text = "TO: H %d | A %d" % [h2, a2]
 
 func _update_preset_label() -> void:
 	var gc := get_node_or_null("/root/GameConfig")
@@ -450,3 +462,15 @@ func _copy_seed_to_clipboard() -> void:
 	var sm: Object = get_node("/root/SeedManager")
 	DisplayServer.clipboard_set(str(sm.current_seed))
 	_show_banner("Seed copied: %s" % str(sm.current_seed))
+
+func _press_timeout() -> void:
+	# Only allow when no selection modals are open
+	if defense_modal.visible or try_modal.visible or free_kick_modal.visible or coin_toss_modal.visible:
+		return
+	var gs: Object = get_node("/root/GameState")
+	# Only regulation pre-snap; spend for current offense team
+	if not bool(gs.get("is_overtime")):
+		var offense_idx := int(0 if bool(gs.get("offense_is_home")) else 1)
+		var ok := bool(gs.call("spend_reg_timeout", offense_idx))
+		if ok:
+			_update_timeouts_label()

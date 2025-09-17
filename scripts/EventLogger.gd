@@ -38,4 +38,8 @@ static func coin_toss_text(visitor_called_heads: bool, winner_index: int) -> Str
 	var who := "Away" if int(winner_index) == 1 else "Home"
 	return "🪙 Coin Toss: Visitor calls %s — %s wins" % [call_text, who]
 
+static func timeout_text(team_index: int) -> String:
+	var who := "Home" if int(team_index) == 0 else "Away"
+	return "⏱️ Timeout — %s" % who
+
 

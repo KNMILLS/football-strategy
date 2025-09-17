@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://ui/TeamSelect.gd" id="1_selgd"]
+[ext_resource type="PackedScene" path="res://ui/components/TeamPreview.tscn" id="2_prev"]
 
 [node name="TeamSelect" type="Control"]
 layout_mode = 2
@@ -20,13 +21,23 @@ offset_right = -8.0
 offset_bottom = -8.0
 theme_override_constants/separation = 10
 
+[node name="TitleLabel" type="Label" parent="VBox"]
+layout_mode = 2
+text = "SELECT YOUR TEAM"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+
 [node name="TopHBox" type="HBoxContainer" parent="VBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
+[node name="LeftPreview" parent="VBox/TopHBox" instance=ExtResource("2_prev")]
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
+
 [node name="Grid" type="GridContainer" parent="VBox/TopHBox"]
 layout_mode = 2
-columns = 4
+columns = 8
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
 
@@ -34,6 +45,10 @@ theme_override_constants/v_separation = 8
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
 theme_override_constants/separation = 6
+
+[node name="RightPreview" parent="VBox/TopHBox" instance=ExtResource("2_prev")]
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
 
 [node name="HeroLabel" type="Label" parent="VBox/TopHBox/Hero"]
 layout_mode = 2

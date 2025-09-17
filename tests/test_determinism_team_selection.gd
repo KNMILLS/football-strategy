@@ -18,5 +18,3 @@ func test_team_selection_ui_makes_no_rng_calls() -> void:
 	team_select.call("debug_handle_key", "RESELECT")
 	var after := int(sm.get_rng_call_count())
 	assert(before == after)
-
-

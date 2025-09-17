@@ -115,9 +115,7 @@ func test_scripted_sequence_no_crash_and_progress() -> void:
 	gs.offense_select("RUN_IN")
 	gs.defense_select("BALANCED")
 	gs.offense_select("FG")
-    # After FG drive ends, a new series begins automatically
-    assert(gs.down >= 1 and gs.ball_on >= 0 and gs.ball_on <= 100)
+	# After FG drive ends, a new series begins automatically
+	assert(gs.down >= 1 and gs.ball_on >= 0 and gs.ball_on <= 100)
 	assert(gs.home_score == 3 or gs.home_score == 0)
 	assert(gs.ball_on >= 0 and gs.ball_on <= 100)
-
-

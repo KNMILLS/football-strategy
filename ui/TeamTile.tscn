@@ -29,4 +29,42 @@ horizontal_alignment = 0
 text = ""
 visible = false
 
+[node name="FrameAway" type="Panel" parent="."]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -2.0
+visible = false
+
+[node name="FrameHome" type="Panel" parent="."]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
+visible = false
+
+[node name="LockBadgeAway" type="Label" parent="."]
+layout_mode = 2
+offset_right = -6.0
+offset_top = 4.0
+horizontal_alignment = 2
+text = "A"
+visible = false
+
+[node name="LockBadgeHome" type="Label" parent="."]
+layout_mode = 2
+offset_right = -6.0
+offset_top = 18.0
+horizontal_alignment = 2
+text = "H"
+visible = false
+
 

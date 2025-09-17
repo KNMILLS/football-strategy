@@ -112,6 +112,10 @@ text = "Help (H)"
 layout_mode = 2
 text = "Quick Play (Enter)"
 
+[node name="TimeoutButton" type="Button" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+text = "Timeout (T)"
+
 [node name="AutoOffense" type="CheckButton" parent="RootMargin/VMain/HeaderBar"]
 layout_mode = 2
 text = "Auto Offense Tests"

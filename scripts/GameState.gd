@@ -61,6 +61,7 @@ var ot_second_pos_done: bool = false
 var ot_score_first: int = 0
 var ot_score_second: int = 0
 var ot_timeouts: Dictionary = {0: 2, 1: 2}
+var reg_timeouts: Dictionary = {0: 3, 1: 3}
 var coin_toss_winner: int = 0 # 0 home, 1 away
 var coin_toss_choice: String = "RECEIVE" # RECEIVE | DEFEND
 var _ot_announced_sudden: bool = false
@@ -97,6 +98,9 @@ func new_session(seed_value: int, _drives: int, new_mode: int) -> void:
 	quarter = 1
 	_ensure_timing_loaded()
 	clock_remaining = _quarter_seconds_cfg
+	# Initialize regulation timeouts per half from timing config
+	var n := _timeouts_per_half()
+	reg_timeouts = {0: n, 1: n}
 	_two_minute_warn_q2 = false
 	_two_minute_warn_q4 = false
 	_two_minute_warn_ot = false
@@ -152,6 +156,9 @@ func _start_drive() -> void:
 func _prepare_regulation_entry() -> void:
 	# Prepare regulation start: request pre-game coin toss
 	is_overtime = false
+	# Reset regulation timeouts at session start
+	var n := _timeouts_per_half()
+	reg_timeouts = {0: n, 1: n}
 	# Ensure header/field UI reflects fresh session
 	_emit_all()
 	if has_signal("ui_coin_toss_needed"):
@@ -455,10 +462,16 @@ func _after_outcome_timing(_outcome: Dictionary) -> void:
 			clock_remaining = 0
 			_maybe_finalize_overtime_end_at_clock()
 		else:
-			var was_q4 := (quarter == 4)
+			var prev_q := int(quarter)
+			var was_q4 := (prev_q == 4)
 			quarter += 1
 			_ensure_timing_loaded()
 			clock_remaining = _quarter_seconds_cfg
+			# Halftime reset on rollover from Q2 -> Q3
+			if prev_q == 2:
+				var n := _timeouts_per_half()
+				reg_timeouts = {0: n, 1: n}
+				_emit_all()
 			if was_q4:
 				_maybe_enter_overtime_after_q4()
 
@@ -516,6 +529,7 @@ func enter_overtime_with_choice(winner_choice: String) -> void:
 func enter_regulation_with_choice(winner_choice: String) -> void:
 	# Winner choice flows into kickoff using FreeKick system
 	is_overtime = false
+	# Ensure regulation timeouts still reflect current half (no change here)
 	coin_toss_choice = String(winner_choice).to_upper()
 	# Determine receiving team index
 	var receiving_team: int = coin_toss_winner if coin_toss_choice == "RECEIVE" else (1 - coin_toss_winner)
@@ -672,6 +686,41 @@ func spend_ot_timeout(team_index: int) -> bool:
 	if rem <= 0:
 		return false
 	ot_timeouts[key] = rem - 1
+	_emit_all()
+	return true
+
+func _timeouts_per_half() -> int:
+	_ensure_timing_loaded()
+	if _timing != null and typeof(_timing.cfg) == TYPE_DICTIONARY:
+		return int((_timing.cfg as Dictionary).get("timeouts_per_half", 3))
+	return 3
+
+func reg_timeouts_remaining(team_index: int) -> int:
+	if is_overtime:
+		return 0
+	return int(reg_timeouts.get(int(team_index), 0))
+
+func can_spend_reg_timeout() -> bool:
+	# Only pre-snap administrative; allowed in regulation only
+	if is_overtime:
+		return false
+	# PRESNAP if offense play not yet chosen and no defense modal open
+	return current_offense_play == "" and current_defense_play == ""
+
+func spend_reg_timeout(team_index: int) -> bool:
+	if is_overtime:
+		return false
+	if not can_spend_reg_timeout():
+		return false
+	var key := int(team_index)
+	var rem := int(reg_timeouts.get(key, 0))
+	if rem <= 0:
+		return false
+	reg_timeouts[key] = rem - 1
+	# Announce banner/log without consuming clock or RNG
+	var who := ("Home" if key == 0 else "Away")
+	emit_signal("ui_banner", "Timeout — %s" % who)
+	_emit_log("Timeout — %s" % who)
 	_emit_all()
 	return true
 

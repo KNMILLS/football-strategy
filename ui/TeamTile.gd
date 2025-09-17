@@ -8,6 +8,10 @@ var team_display_name: String = ""
 
 @onready var name_label: Label = $Label
 @onready var badge_label: Label = $Badge
+@onready var frame_away: Panel = $FrameAway
+@onready var frame_home: Panel = $FrameHome
+@onready var lock_badge_away: Label = $LockBadgeAway
+@onready var lock_badge_home: Label = $LockBadgeHome
 
 func _ready() -> void:
     focus_mode = Control.FOCUS_ALL
@@ -33,6 +37,22 @@ func set_badge(badge_text: String) -> void:
     else:
         badge_label.visible = true
         badge_label.text = badge_text
+
+func set_focus_for(side: String, focused: bool) -> void:
+    var s := side.to_lower()
+    if s == "away":
+        frame_away.visible = focused
+        frame_away.modulate = Color8(60, 255, 115) # neon green tint
+    elif s == "home":
+        frame_home.visible = focused
+        frame_home.modulate = Color8(255, 211, 77) # gold tint
+
+func set_locked_for(side: String, locked: bool) -> void:
+    var s := side.to_lower()
+    if s == "away":
+        lock_badge_away.visible = locked
+    elif s == "home":
+        lock_badge_home.visible = locked
 
 func _on_mouse_entered() -> void:
     if team_id != "":

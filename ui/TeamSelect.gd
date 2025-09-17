@@ -5,8 +5,8 @@ signal selection_changed(p1_team_id: String, p2_team_id: String)
 signal hovered_team(team_id: String)
 
 @onready var grid: GridContainer = $VBox/TopHBox/Grid
-@onready var hero_label: Label = $VBox/TopHBox/Hero/HeroLabel
-@onready var hero_blurb: Label = $VBox/TopHBox/Hero/HeroBlurb
+@onready var left_preview: Control = $VBox/TopHBox/LeftPreview
+@onready var right_preview: Control = $VBox/TopHBox/RightPreview
 @onready var info_coach: Label = $VBox/InfoBar/CoachLabel
 @onready var info_offense: Label = $VBox/InfoBar/OffenseLabel
 @onready var info_defense: Label = $VBox/InfoBar/DefenseLabel
@@ -23,13 +23,18 @@ var tiles: Array = []
 var hovered_index: int = 0
 var p1_team_id: String = ""
 var p2_team_id: String = ""
+var active_side: String = "away"
+var cursor := {
+    "away": {"index": 0, "locked": false, "team_id": ""},
+    "home": {"index": 1, "locked": false, "team_id": ""}
+}
 
 func _ready() -> void:
     set_process_unhandled_input(true)
     _populate()
     _set_hover_index(0)
     if ordered_team_ids.size() > 0:
-        _update_preview(String(ordered_team_ids[0]))
+        _update_previews()
     _update_footer()
     btn_confirm.pressed.connect(_on_btn_confirm)
     btn_reselect.pressed.connect(_on_btn_reselect)
@@ -38,42 +43,47 @@ func _populate() -> void:
     tiles.clear()
     ordered_team_ids.clear()
     ordered_team_names.clear()
-    grid.columns = 4
+    grid.columns = 8
     var tl: Object = get_node("/root/TeamLoader")
-    var ids: Array = tl.call("get_team_ids")
-    for tid in ids:
-        var team_label: String = String(tl.call("get_display_name", String(tid)))
-        ordered_team_ids.append(String(tid))
+    var teams: Array = tl.call("list_teams")
+    for td in teams:
+        var tid := String((td as Dictionary).get("team_id", ""))
+        var team_label: String = String((td as Dictionary).get("display_name", tid))
+        ordered_team_ids.append(tid)
         ordered_team_names.append(team_label)
         var tile_scene := load("res://ui/TeamTile.tscn")
         var tile: Control = tile_scene.instantiate()
-        tile.call("set_team", String(tid), team_label)
+        tile.call("set_team", tid, team_label)
         tile.connect("tile_hovered", Callable(self, "_on_tile_hovered"))
         tile.connect("tile_pressed", Callable(self, "_on_tile_pressed"))
         grid.add_child(tile)
         tiles.append(tile)
     if tiles.size() > 0:
         (tiles[0] as Control).grab_focus()
+    _refresh_cursor_frames()
 
 func _on_tile_hovered(team_id: String) -> void:
     var idx := ordered_team_ids.find(team_id)
     if idx >= 0:
         _set_hover_index(int(idx))
-        _update_preview(team_id)
+        _update_previews()
         emit_signal("hovered_team", team_id)
 
 func _on_tile_pressed(team_id: String) -> void:
-    if p1_team_id == "":
-        p1_team_id = team_id
-        _set_badge(team_id, "P1 SELECTED")
-    elif p2_team_id == "":
+    var side := active_side
+    if side == "away" and not bool(cursor.away.locked):
+        cursor.away.team_id = team_id
+        cursor.away.locked = true
         p2_team_id = team_id
         _set_badge(team_id, "P2 SELECTED")
-    else:
-        # Already both selected; ignore tile presses until reselect
-        pass
+    elif side == "home" and not bool(cursor.home.locked):
+        cursor.home.team_id = team_id
+        cursor.home.locked = true
+        p1_team_id = team_id
+        _set_badge(team_id, "P1 SELECTED")
     _update_footer()
     emit_signal("selection_changed", p1_team_id, p2_team_id)
+    _refresh_cursor_frames()
 
 func _set_badge(team_id: String, text: String) -> void:
     var idx := ordered_team_ids.find(team_id)
@@ -97,23 +107,27 @@ func _update_footer() -> void:
         footer_label.text = "%s vs %s — Confirm or Reselect" % [n1, n2]
     btn_confirm.disabled = not have_both
 
-func _update_preview(team_id: String) -> void:
+func _team_dict_from_id(team_id: String) -> Dictionary:
     var tl: Object = get_node("/root/TeamLoader")
-    var d: Dictionary = tl.call("get_team_dict", String(team_id))
-    var team_name := String(d.get("display_name", team_id))
-    var coach := String(d.get("coach_display_name", "TBD"))
-    var o := String(d.get("offense_scheme", d.get("offense_archetype", "BALANCED")))
-    var de := String(d.get("defense_scheme", d.get("defense_archetype", "BALANCED")))
-    var s: Variant = d.get("strengths", _derive_strengths(o, de))
-    var w: Variant = d.get("weaknesses", _derive_weaknesses(o, de))
-    hero_label.text = team_name
-    var blurb := String(d.get("blurb", ""))
-    hero_blurb.text = blurb
-    info_coach.text = "Coach: %s" % coach
-    info_offense.text = "Offense: %s" % o
-    info_defense.text = "Defense: %s" % de
-    info_strengths.text = "Strengths: %s" % (_stringify_info(s))
-    info_weaknesses.text = "Weaknesses: %s" % (_stringify_info(w))
+    # Try list_teams first to include extra fields
+    var list: Array = tl.call("list_teams")
+    for td in list:
+        if String((td as Dictionary).get("team_id", "")) == team_id:
+            return td
+    return tl.call("get_team_dict", String(team_id))
+
+func _update_previews() -> void:
+    # Left = Away, Right = Home
+    if p2_team_id != "":
+        right_preview.call("set_team", _team_dict_from_id(p2_team_id))
+        right_preview.call("set_locked", bool(cursor.away.locked), "AWAY")
+    else:
+        right_preview.call("set_locked", false, "")
+    if p1_team_id != "":
+        left_preview.call("set_team", _team_dict_from_id(p1_team_id))
+        left_preview.call("set_locked", bool(cursor.home.locked), "HOME")
+    else:
+        left_preview.call("set_locked", false, "")
 
 func _stringify_info(v: Variant) -> String:
     if typeof(v) == TYPE_ARRAY:
@@ -178,6 +192,8 @@ func _unhandled_input(event: InputEvent) -> void:
             _move_hover(-grid.columns)
         elif key == KEY_DOWN:
             _move_hover(grid.columns)
+        elif key == KEY_TAB:
+            active_side = ("home" if active_side == "away" else "away")
         elif key == KEY_ENTER or key == KEY_KP_ENTER:
             _confirm_hover()
         elif key == KEY_ESCAPE or key == KEY_BACKSPACE:
@@ -186,9 +202,27 @@ func _unhandled_input(event: InputEvent) -> void:
 func _move_hover(delta: int) -> void:
     if tiles.size() == 0:
         return
-    var idx: int = clamp(hovered_index + int(delta), 0, tiles.size() - 1)
+    var total := tiles.size()
+    if total == 0:
+        return
+    var cols := int(max(1, grid.columns))
+    var rows := int(ceil(float(total) / float(cols)))
+    var c := hovered_index % cols
+    var r := int(hovered_index / cols)
+    if delta == -1:
+        c = (c - 1 + cols) % cols
+    elif delta == 1:
+        c = (c + 1) % cols
+    elif delta == -grid.columns:
+        r = (r - 1 + rows) % rows
+    elif delta == grid.columns:
+        r = (r + 1) % rows
+    var idx := r * cols + c
+    if idx >= total:
+        idx = total - 1
     _set_hover_index(idx)
-    _update_preview(ordered_team_ids[idx])
+    _refresh_cursor_frames()
+    _update_previews()
 
 func _set_hover_index(idx: int) -> void:
     hovered_index = int(idx)
@@ -207,17 +241,21 @@ func _on_btn_reselect() -> void:
     if p2_team_id != "":
         _clear_badge(p2_team_id)
         p2_team_id = ""
+        cursor.away.locked = false
     elif p1_team_id != "":
         _clear_badge(p1_team_id)
         p1_team_id = ""
+        cursor.home.locked = false
     _update_footer()
     emit_signal("selection_changed", p1_team_id, p2_team_id)
+    _refresh_cursor_frames()
+    _update_previews()
 
 # ---- Test helpers ----
 func debug_hover_index(idx: int) -> void:
     _set_hover_index(idx)
     if idx >= 0 and idx < ordered_team_ids.size():
-        _update_preview(String(ordered_team_ids[idx]))
+        _update_previews()
 
 func debug_confirm_current() -> void:
     _confirm_hover()
@@ -232,6 +270,8 @@ func debug_handle_key(key_name: String) -> void:
         _move_hover(-grid.columns)
     elif n == "DOWN":
         _move_hover(grid.columns)
+    elif n == "TAB":
+        active_side = ("home" if active_side == "away" else "away")
     elif n == "ENTER":
         _confirm_hover()
     elif n == "RESELECT":
@@ -263,5 +303,16 @@ func get_state() -> Dictionary:
 
 func get_selected_team_ids() -> Array[String]:
     return [String(p1_team_id), String(p2_team_id)]
+
+func _refresh_cursor_frames() -> void:
+    # Clear all
+    for i in tiles.size():
+        tiles[i].call("set_focus_for", "away", false)
+        tiles[i].call("set_focus_for", "home", false)
+        tiles[i].call("set_locked_for", "away", bool(cursor.away.locked) and ordered_team_ids[i] == p2_team_id)
+        tiles[i].call("set_locked_for", "home", bool(cursor.home.locked) and ordered_team_ids[i] == p1_team_id)
+    # Set active cursor frame on hovered index
+    if hovered_index >= 0 and hovered_index < tiles.size():
+        tiles[hovered_index].call("set_focus_for", active_side, true)
 
 
