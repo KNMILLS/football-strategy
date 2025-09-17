@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://ui/team_select/TeamSelectionScreen.tscn" id="1_mg5zv"]
+[ext_resource type="Script" path="res://mcp/TeamSelectionMCP.gd" id="2_3p1m6"]
+
+[node name="TeamSelectionTestScene" type="Node"]
+
+[node name="TeamSelectionScreen" parent="." instance=ExtResource("1_mg5zv")] 
+
+[node name="MCP" type="Node" parent="."]
+script = ExtResource("2_3p1m6")
+
+

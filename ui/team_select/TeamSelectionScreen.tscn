@@ -1,0 +1,77 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://ui/team_select/TeamSelectionScreen.gd" id="1_6a0rs"]
+[ext_resource type="PackedScene" path="res://ui/team_select/SelectionPanel.tscn" id="2_2o0d0"]
+[ext_resource type="PackedScene" path="res://ui/team_select/OptionSelector.tscn" id="3_3c1pz"]
+
+[node name="TeamSelectionScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_6a0rs")
+
+[node name="RootV" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HeaderLabel" type="Label" parent="RootV"]
+layout_mode = 2
+text = "Select Team"
+horizontal_alignment = 1
+size_flags_horizontal = 3
+theme_type_variation = "HeaderLarge"
+
+[node name="MainRow" type="HBoxContainer" parent="RootV"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="P1Panel" parent="RootV/MainRow" instance=ExtResource("2_2o0d0")] 
+
+[node name="Scroll" type="ScrollContainer" parent="RootV/MainRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="TeamGrid" type="GridContainer" parent="RootV/MainRow/Scroll"]
+layout_mode = 2
+columns = 6
+
+[node name="OpponentPanel" parent="RootV/MainRow" instance=ExtResource("2_2o0d0")] 
+
+[node name="StackArea" type="VBoxContainer" parent="RootV"]
+layout_mode = 2
+visible = false
+
+[node name="Footer" type="VBoxContainer" parent="RootV"]
+layout_mode = 2
+
+[node name="OptionsRow" type="HBoxContainer" parent="RootV/Footer"]
+layout_mode = 2
+
+[node name="PlayModeOption" parent="RootV/Footer/OptionsRow" instance=ExtResource("3_3c1pz")] 
+
+[node name="HomeTeamOption" parent="RootV/Footer/OptionsRow" instance=ExtResource("3_3c1pz")] 
+
+[node name="VisitorTeamOption" parent="RootV/Footer/OptionsRow" instance=ExtResource("3_3c1pz")] 
+
+[node name="GameLengthOption" parent="RootV/Footer/OptionsRow" instance=ExtResource("3_3c1pz")] 
+
+[node name="WeatherOption" parent="RootV/Footer/OptionsRow" instance=ExtResource("3_3c1pz")] 
+
+[node name="ControlRow" type="HBoxContainer" parent="RootV/Footer"]
+layout_mode = 2
+alignment = 1
+
+[node name="ResetButton" type="Button" parent="RootV/Footer/ControlRow"]
+layout_mode = 2
+text = "Reset"
+
+[node name="StartButton" type="Button" parent="RootV/Footer/ControlRow"]
+layout_mode = 2
+text = "Start"
+disabled = true
+
+
