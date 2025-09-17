@@ -1,4 +1,5 @@
 {
+  "schema_version": "1.0",
   "team_id": "balancedpro_multiple",
   "display_name": "Balanced Pro / Multiple",
   "offense_scheme": "BALANCED_PRO",

@@ -1,4 +1,4 @@
-### Gridiron Strategy — v1.1b (Phase-4)
+### Gridiron Strategy — v1.1c (Phase-4)
 
 This document summarizes the shipped v1.0 scope. For the full design narrative and references, see `docs/Gridiron_Strategy_GDD_v1.md`.
 
@@ -44,6 +44,12 @@ This document summarizes the shipped v1.0 scope. For the full design narrative a
 
 #### Tests (see `tests/`)
 - Retro UI layout (4/6/2 groups; T/Y fronts), matrix integrity 12×6, big-play trigger rates/types sanity, scheme effects, determinism callcounts.
+
+#### Consistency & Guardrails
+- SchemaGuard enforces `schema_version` on rules (`1.1`), timing (`1.0`), and team JSONs (`1.0`). Mismatch is a hard fail.
+- OutcomeBuilder normalizes resolver outputs for timing/logging determinism. All outcomes include: `event_name`, `yards_delta`, `turnover`, `touchdown`, `penalty_replay`, `timing_tag`, `ended_inbounds`, `big_play`.
+- EventLogger standardizes banners/logs with consistent emojis/verbs.
+- Determinism contract: same seed + same play inputs ⇒ identical outcomes and RNG call counts. This is asserted in tests.
 
 #### Acceptance
 - 12 offense plays × 6 defense fronts; grouped UI & hotkeys correct.

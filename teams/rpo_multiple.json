@@ -1,4 +1,5 @@
 {
+  "schema_version": "1.0",
   "team_id": "rpo_multiple",
   "display_name": "RPO/Spread / Multiple",
   "offense_scheme": "RPO_SPREAD",

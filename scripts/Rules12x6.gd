@@ -20,7 +20,12 @@ static func _load_rules_json(path: String) -> Dictionary:
 	if typeof(data) != TYPE_DICTIONARY:
 		push_error("Invalid rules JSON structure")
 		return {}
-	return data as Dictionary
+	var d: Dictionary = data as Dictionary
+	# Enforce schema version for rules JSON
+	var sg := load("res://scripts/SchemaGuard.gd")
+	if sg != null and sg.has_method("require"):
+		sg.call("require", d, "1.1", "rules_12x6.json")
+	return d
 
 static func yards_to_string(offense_dir: int, ball_on: int, _offense_is_home: bool) -> String:
 	if ball_on == 50:
@@ -201,11 +206,11 @@ func _materialize_bucket(bucket: Dictionary) -> Dictionary:
 		out.event_name = "YARDS"
 		out.yards_delta = int(yd)
 		out.descriptive_text = "%d yards" % [int(yd)]
-		return out
+		return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", out)
 	if kind == "INCOMP":
 		out.event_name = "INCOMP"
 		out.descriptive_text = "Incomplete"
-		return out
+		return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", out)
 	if kind == "SACK":
 		var r2 := bucket.get("yards_range", [-8, -5]) as Array
 		var slo := int(r2[0])
@@ -216,12 +221,12 @@ func _materialize_bucket(bucket: Dictionary) -> Dictionary:
 		out.descriptive_text = "SACK for %d" % [abs(int(sval))]
 		if bucket.has("sack_fumble_chance") and _sm().chance(float(bucket["sack_fumble_chance"])):
 			out["sack_fumble"] = true
-		return out
+		return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", out)
 	if kind == "INT":
 		out.event_name = "INT"
 		out.turnover = true
 		out.descriptive_text = "Interception"
-		return out
+		return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", out)
 	if kind == "FUMBLE":
 		out.event_name = "FUMBLE"
 		var rec := float(bucket.get("offense_recovers", 0.5))
@@ -231,7 +236,7 @@ func _materialize_bucket(bucket: Dictionary) -> Dictionary:
 		else:
 			out.descriptive_text = "Fumble, defense recovers"
 			out.turnover = true
-		return out
+		return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", out)
 	if kind == "PENALTY_DEF" or kind == "PENALTY_OFF":
 		var p := bucket.get("penalty", {}) as Dictionary
 		var amt_str := String(p.get("kind", "+0"))
@@ -241,7 +246,7 @@ func _materialize_bucket(bucket: Dictionary) -> Dictionary:
 		out.penalty_replay = bool(p.get("replay_down", true))
 		out.descriptive_text = ("Defensive penalty %d" if kind == "PENALTY_DEF" else "Offensive penalty %d") % [int(amt)]
 		return out
-	return out
+	return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", out)
 
 func _do_punt(ball_on: int, offense_dir: int) -> Dictionary:
 	var punt_cfg := (RULES.get("special_teams", {}) as Dictionary).get("punt", {}) as Dictionary
@@ -277,7 +282,7 @@ func _field_goal_resolve(ball_on: int, offense_dir: int) -> Dictionary:
 		out["turnover"] = false
 		out.descriptive_text = "Field Goal out of range"
 		out["timing_tag"] = "FIELD_GOAL_ATTEMPT"
-		return out
+		return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", out)
 	var fg_cfg := (RULES.get("special_teams", {}) as Dictionary).get("field_goal", {}) as Dictionary
 	var dist := fg_cfg.get(buck, {}) as Dictionary
 	var sr := _session_rules()
@@ -296,7 +301,7 @@ func _field_goal_resolve(ball_on: int, offense_dir: int) -> Dictionary:
 	out.field_goal = pick
 	out.descriptive_text = "Field Goal %s" % [pick]
 	out["timing_tag"] = "FIELD_GOAL_ATTEMPT"
-	return out
+	return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", out)
 
 func _bp_matchup_mult(off_play: String, def_front: String) -> float:
 	var tbl := (RULES.get("big_play", {}) as Dictionary).get("matchup_multipliers", {}) as Dictionary
@@ -430,7 +435,7 @@ func resolve_play(off_play: String, def_play: String, ball_on: int, offense_dir:
 				# Big Play: chance to return for TD
 				outcome = _maybe_big_play(outcome, off_play, def_play, ball_on, offense_dir, "BLOCK")
 				outcome["timing_tag"] = "TURNOVER"
-				return outcome
+				return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", outcome)
 			outcome.event_name = "PUNT"
 			outcome.turnover = true
 			outcome.yards_delta = 0
@@ -438,15 +443,15 @@ func resolve_play(off_play: String, def_play: String, ball_on: int, offense_dir:
 			outcome["touchback"] = bool(punt.get("touchback", false))
 			outcome.descriptive_text = "Punt touchback" if bool(punt.get("touchback", false)) else "Punt"
 			outcome["timing_tag"] = "PUNT_TOUCHBACK" if bool(punt.get("touchback", false)) else "PUNT_RESOLVED"
-			return outcome
+			return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", outcome)
 		else:
 			var fg := _field_goal_resolve(ball_on, offense_dir)
 			if String(fg.get("event_name")) == "BLOCK":
 				# Big Play chance on block
 				outcome = fg
 				outcome = _maybe_big_play(outcome, off_play, def_play, ball_on, offense_dir, "BLOCK")
-				return outcome
-			return fg
+				return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", outcome)
+			return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", fg)
 
 	# Normal matrix-based plays
 	var entry := _get_matrix_entry(off_play, def_play)
@@ -455,7 +460,7 @@ func resolve_play(off_play: String, def_play: String, ball_on: int, offense_dir:
 	var idx := _pick_bucket_index(adjusted)
 	if idx < 0:
 		outcome.descriptive_text = "No outcome"
-		return outcome
+		return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", outcome)
 	var bucket := adjusted[idx] as Dictionary
 	outcome = _materialize_bucket(bucket)
 
@@ -499,7 +504,7 @@ func resolve_play(off_play: String, def_play: String, ball_on: int, offense_dir:
 			else:
 				outcome["timing_tag"] = "PASS_COMPLETE_SHORT_MED"
 		outcome["ended_inbounds"] = true
-	return outcome
+	return (load("res://scripts/OutcomeBuilder.gd") as Script).call("make", outcome)
 
 static func apply_outcome(state: Object, outcome: Dictionary) -> void:
 	var ball_on: int = state.ball_on

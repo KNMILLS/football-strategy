@@ -15,6 +15,10 @@ func load_cfg(path: String = "res://data/timing.json") -> void:
 		cfg = {}
 		return
 	cfg = data as Dictionary
+	# Enforce schema
+	var sg := load("res://scripts/SchemaGuard.gd")
+	if sg != null and sg.has_method("require"):
+		sg.call("require", cfg, "1.0", "timing.json")
 
 func is_two_minute(clock_remaining: int) -> bool:
 	return int(clock_remaining) <= 120

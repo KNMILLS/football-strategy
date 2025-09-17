@@ -89,6 +89,9 @@ static func choose_defense(down: int, to_go: int, _ball_on: int, _offense_dir: i
 	if _sm().chance(eps):
 		var idx: int = int(_sm().randi_range(0, all_fronts.size() - 1))
 		best_front = String(all_fronts[int(idx)])
+	# Sanity guard: Prevent only on long-yardage or end-drive posture
+	if best_front == "PREVENT" and to_go < 12:
+		best_front = "PASS_SHELL"
 	return best_front
 
 static func _expected_yards_for(off_play: String, def_front: String) -> float:

@@ -1,4 +1,5 @@
 {
+  "schema_version": "1.0",
   "team_id": "airraid_quarters",
   "display_name": "Air Raid / Quarters",
   "offense_scheme": "AIR_RAID",

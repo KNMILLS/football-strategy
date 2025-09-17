@@ -14,6 +14,8 @@ var log_lines: Array[String] = []
 @onready var help_button: Button = $RootMargin/VMain/HeaderBar/HelpButton
 @onready var quick_play_button: Button = $RootMargin/VMain/HeaderBar/QuickPlayButton
 @onready var auto_offense_check: CheckButton = $RootMargin/VMain/HeaderBar/AutoOffense
+@onready var seed_value_label: Label = $RootMargin/VMain/HeaderBar/SeedValue
+@onready var copy_seed_button: Button = $RootMargin/VMain/HeaderBar/CopySeed
 
 @onready var spot_label: Label = $RootMargin/VMain/FieldPanel/FieldHBox/SpotLabel
 @onready var down_label: Label = $RootMargin/VMain/FieldPanel/FieldHBox/DownLabel
@@ -69,6 +71,7 @@ func _connect_signals() -> void:
 	reset_seed_button.pressed.connect(_on_reset_seed)
 	help_button.pressed.connect(_toggle_help)
 	quick_play_button.pressed.connect(_quick_play)
+	copy_seed_button.pressed.connect(_copy_seed_to_clipboard)
 
 	btn_inside_power.pressed.connect(func(): _offense_pick("INSIDE_POWER"))
 	btn_outside_zone.pressed.connect(func(): _offense_pick("OUTSIDE_ZONE"))
@@ -185,6 +188,7 @@ func _on_start_pressed() -> void:
 	var gs: Object = get_node("/root/GameState")
 	gs.new_session(seed_val, drives, int(mode))
 	_update_hud()
+	_update_header()
 
 func _quick_play() -> void:
 	var sm: Object = get_node("/root/SeedManager")
@@ -195,12 +199,14 @@ func _quick_play() -> void:
 	var gs: Object = get_node("/root/GameState")
 	gs.new_session(int(sm.current_seed), 4, 0)
 	_update_hud()
+	_update_header()
 
 func _on_reset_seed() -> void:
 	var sm: Object = get_node("/root/SeedManager")
 	sm.reseed_with_time()
 	seed_input.text = str(sm.current_seed)
 	_update_hud()
+	_update_header()
 
 func _offense_pick(play_key: String) -> void:
 	var gs: Object = get_node("/root/GameState")
@@ -217,6 +223,7 @@ func _update_header() -> void:
 	drive_label.text = gs.get_drive_text()
 	clock_label.text = gs.get_clock_text()
 	quarter_label.text = gs.get_quarter_text()
+	seed_value_label.text = "Seed: %s" % str(get_node("/root/SeedManager").current_seed)
 	_update_hud()
 
 func _update_field() -> void:
@@ -225,6 +232,7 @@ func _update_field() -> void:
 	down_label.text = gs.get_down_text()
 	clock_label.text = gs.get_clock_text()
 	quarter_label.text = gs.get_quarter_text()
+	seed_value_label.text = "Seed: %s" % str(get_node("/root/SeedManager").current_seed)
 	_update_hud()
 
 func _append_log(new_line: String) -> void:
@@ -272,3 +280,8 @@ func _update_hud() -> void:
 func set_debug_hud_visible(visible_flag: bool) -> void:
 	hud_panel.visible = visible_flag
 	_update_hud()
+
+func _copy_seed_to_clipboard() -> void:
+	var sm: Object = get_node("/root/SeedManager")
+	DisplayServer.clipboard_set(str(sm.current_seed))
+	_show_banner("Seed copied: %s" % str(sm.current_seed))

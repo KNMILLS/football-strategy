@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cy72sjymlkbe6"]
+
+[ext_resource type="Script" uid="uid://3r3s8lb06ht" path="res://tests/generate_golden_20.gd" id="1_6g58a"]
+
+[node name="Gen" type="Node"]
+script = ExtResource("1_6g58a")

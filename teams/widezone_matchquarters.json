@@ -1,4 +1,5 @@
 {
+  "schema_version": "1.0",
   "team_id": "widezone_matchquarters",
   "display_name": "Wide Zone / Match Quarters",
   "offense_scheme": "WIDE_ZONE",

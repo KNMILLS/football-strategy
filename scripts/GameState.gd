@@ -142,44 +142,20 @@ func defense_select(play_key: String) -> void:
 
 func _resolve() -> void:
 	_check_two_minute_warning()
-	var desc_header := "%s vs %s" % [current_offense_play, current_defense_play]
 	var rules: Object = get_node("/root/Rules")
 	var outcome: Dictionary = rules.resolve_play(current_offense_play, current_defense_play, ball_on, offense_dir)
 	rules.apply_outcome(self, outcome)
 	rules.assert_state(self)
-	# Build banner text
-	var banner := "%s → %s" % [desc_header, outcome.descriptive_text]
+	# Build standardized banner/log via EventLogger
+	var EL: Script = load("res://scripts/EventLogger.gd")
+	var banner := String(EL.call("banner", current_offense_play, current_defense_play, outcome))
 	emit_signal("ui_banner", banner)
 	# Update field
 	_emit_all()
 	# Delay logging to respect 1s reveal banner
 	await get_tree().create_timer(1.0).timeout
-	# Handle end of drive
-	if current_offense_play == "FG":
-		if outcome.event_name == "OUT_OF_RANGE":
-			_emit_log("🏈 FG out of range")
-		elif outcome.field_goal == "GOOD":
-			_emit_log("🏈 FG GOOD (+3)")
-		else:
-			_emit_log("🏈 FG MISS")
-	elif current_offense_play == "PUNT":
-		if outcome.event_name == "BLOCK":
-			_emit_log("🏈 Punt BLOCKED")
-		elif outcome.has("touchback") and bool(outcome["touchback"]):
-			_emit_log("🏈 Punt touchback")
-		else:
-			_emit_log("🏈 Punt %s" % [outcome.event_name])
-	else:
-		if outcome.event_name == "SACK":
-			_emit_log("💥 %s" % [banner])
-		elif outcome.event_name == "INT":
-			_emit_log("🛑 %s" % [banner])
-		elif outcome.event_name == "FUMBLE":
-			_emit_log("⚠️ %s" % [banner])
-		elif outcome.event_name.begins_with("PENALTY"):
-			_emit_log("🚩 %s" % [banner])
-		else:
-			_emit_log("📈 %s" % [banner])
+	# Log line via EventLogger
+	_emit_log(String(EL.call("log_line", current_offense_play, current_defense_play, outcome)))
 
 	if drive_ended:
 		# Switch possession and maybe next drive

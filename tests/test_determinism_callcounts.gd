@@ -1,6 +1,6 @@
 extends Node
 
-func test_rerun_same_seed_same_calls() -> void:
+func determinism_rng_callcount_smoke() -> void:
 	var sm := get_tree().root.get_node("/root/SeedManager")
 	var rules := get_tree().root.get_node("/root/Rules")
 	sm.set_seed(777777)
@@ -22,5 +22,3 @@ func test_rerun_same_seed_same_calls() -> void:
 		rules.resolve_play(String(s2[0]), String(s2[1]), 45, 1)
 	var c2: int = sm.get_rng_call_count()
 	assert(c1 == c2)
-
-

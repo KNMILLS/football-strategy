@@ -22,6 +22,11 @@ func _load_all() -> void:
 			var data: Variant = _read_json(full)
 			if typeof(data) == TYPE_DICTIONARY and data.has("team_id"):
 				var tid := String(data["team_id"]).strip_edges()
+				# Enforce schema for team files (default expected version 1.0)
+				var sg := load("res://scripts/SchemaGuard.gd")
+				if sg != null and sg.has_method("require"):
+					# Teams did not previously have schema_version; set expectation to "1.0"
+					sg.call("require", data as Dictionary, "1.0", f)
 				team_id_to_def[tid] = data
 				ordered_team_ids.append(tid)
 	# Sort stable by display name if present
