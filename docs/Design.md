@@ -139,3 +139,202 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
   "caps": { "offense_bp_max": 0.025, "defense_bp_max": 0.020 }
 }
 ```
+
+---
+
+## 2) Game Scope & Mode
+
+* Single, self-contained “Standard” game (no seasons/franchise ties).
+* Pre-game coin flip decides initial possession (planned; see §8.1). Current build starts with Home on offense.
+* We play by clock, quarters, and rules (OT if tied). Current build also shows a Drives header control (to be removed).
+* Local hot-seat (Offense vs Defense) and Solo (Offense vs AI, Defense chosen by AI).
+
+---
+
+## 3) High-Level Flow
+
+1. Splash (1–1.5s) → fades to Setup.
+2. Setup
+
+   * Select Home and Away teams (color swatches, archetype tags).
+   * Select Difficulty (Rookie/Pro/Legend).
+   * Select Quarter Length Preset: Quick (5:00) / Standard (10:00) / Full (15:00).
+   * Seed controls: input box + Copy seed (present). Randomize button planned.
+   * Start Game → (planned) Pre-game Coin Flip.
+3. Pre-game Coin Flip (visiting team calls). Winner chooses Receive or Defend.
+
+   * Until kickoffs (Phase 4.3), Receive starts a series at OWN 25. After 4.3, coin flip flows into kickoff.
+4. Playcalling Screen
+
+   * Offense selects 1 of 12 plays; Defense selects 1 of 6 fronts.
+   * Reveal → Resolve → Banner + Action Log → Clock consumes → Next snap or administration (Try/Kickoff/OT).
+5. End of Regulation → OT if tied (Phase 4.2 rules).
+6. Game End → Final banner + summary panel. Optional “Replay seed” button.
+
+---
+
+## 5) Teams, Schemes & Legendary Coaches
+
+### 5.1 Teams (Phase 5)
+
+* Data: `res://data/teams_32.json` with 32 teams, each with a unique (Offense, Defense) pairing. Current build: `res://teams/*.json`.
+* Fields (per team):
+
+  * `team_id`, `city`, `name`, `display_name`, `abbrev`
+  * `offense_archetype`, `defense_archetype`
+  * `call_bias` (tiny pre-draw deltas)
+  * `result_tuning` (tiny post-draw nudges)
+  * `colors` { `primary`, `secondary`, `accent` }, `logo_hint`
+* Uniqueness: planned loader check to enforce unique (O,D) pairs.
+
+### 5.2 Legendary Coaches (Phase 5.1, private)
+
+* Data: `res://coaches/real/*.json` (private use).
+* Fields: `coach_id`, `display_name`, `era_tag`, `team_hint`, scheme biases, situational tendencies, flavor.
+* Order: Difficulty → Team → Coach → QA overrides. Clamps preserve balance.
+
+---
+
+## 8) Administrative Rules
+
+### 8.1 Coin Flips
+
+* Pre-game coin flip (planned): visiting calls Heads/Tails. Winner chooses Receive/Defend.
+  * Before Phase 4.3: “Receive” starts at OWN 25; “Defend” gives opponent that start.
+  * After Phase 4.3: choice flows into kickoff.
+* Overtime coin flip (implemented): visiting calls at OT entry; winner chooses Receive/Defend for first series.
+
+### 8.2 Timeouts & Clock
+
+* Regulation: 3 per team per half (planned; value exists in `timing.json`).
+* OT: 2 per team (implemented), reset at OT start.
+* Two-minute warning banners at 2:00 of Q2, Q4, and OT.
+
+---
+
+## 10) Big Play System (clarifications)
+
+* Eligibility & precedence and caps match current implementation. Offensive BP adds +5s if ended inbounds (Timing.apply_modifiers).
+
+---
+
+## 11) Special Teams & After-TD (Phase 4.3)
+
+* Try after TD: Kick (1) ~33-yd from 15 (15s); Two-Point (2) from 2 (15s); TD consumes 0s.
+* Kickoffs: TB → B30 (0s), landing-zone returns ~B20–B30 (15s), OOB → B40 (15s unless admin).
+* Onside: trailing-only, ~10–15% success, spots A48/A45 (15s).
+* Data: `res://data/free_kick.json`; map `KICKOFF_RESOLVED` to 15s in `timing.json`.
+
+---
+
+## 16) Files & Structure (expanded)
+
+```
+res://Main.tscn, res://Main.gd
+res://scripts/
+  GameState.gd               (autoload; state machine)
+  Rules12x6.gd               (resolver + big play)
+  Rules.gd                   (compat wrapper for legacy IDs)
+  SessionRules.gd            (composition & clamps)
+  DefenseAI.gd, OffenseAI.gd
+  SeedManager.gd             (single RNG source)
+  Timing.gd                  (clock + two-minute)
+  SchemaGuard.gd
+  OutcomeBuilder.gd
+  EventLogger.gd
+  TeamLoader.gd
+  FreeKick.gd                (future)
+  CoachLoader.gd             (future)
+res://data/
+  rules_12x6.json
+  timing.json
+  free_kick.json             (future)
+  teams_32.json              (future)
+  coaches/real/*.json        (future)
+res://ui/
+  MainUI.tscn (+ header, setup, modals)
+res://tests/*.gd
+res://tools/
+  BalanceRunner.gd
+  SimReport.gd
+docs/Design.md (this file)
+```
+
+---
+
+## 17) Acceptance Checklists (phases)
+
+- Phase 4.0: 12×6 + Big Play deterministic; caps enforced; tests pass.
+- Phase 4.Timing: per-play seconds; two-minute ticks; mm:ss determinism.
+- Phase 4.1: quarter presets and remove Drives UI; rollover; tests pass.
+- Phase 4.2: OT fair-possession; OT coin toss; 2 OT TOs; tie at expiry.
+- Phase 4.3: Try/XP/2-pt and Free Kicks (kickoff/onside) with timing; tests pass.
+- Phase 5: 32 teams unique pairs; BalanceRunner targets; tests pass.
+- Phase 5.1: real teams/coaches (private) with measurable AI shifts.
+- Phase 6: AI v2 (12-play awareness) + difficulty polish.
+- Phase 7–10: polish, balance/UX, refactor, packaging & docs.
+
+---
+
+## 18) JSON Reference (snippets)
+
+### 18.2 Big Play Config (sketch) — unchanged
+
+```json
+"big_play": {
+  "offense_base": { "SCREEN": 0.008, "DEEP_POST": 0.010, "PA_DEEP": 0.012, "INSIDE_POWER": 0.004, "OUTSIDE_ZONE": 0.005, "QUICK_SLANT": 0.005, "MEDIUM_CROSS": 0.005, "DRAW": 0.006, "QB_SNEAK": 0.002, "PA_SHORT": 0.006, "PUNT": 0.0, "FIELD_GOAL": 0.0 },
+  "defense_base": { "ZONE_BLITZ": 0.006, "PRESS_MAN": 0.006, "RUN_BLITZ": 0.004, "BALANCED": 0.003, "PASS_SHELL": 0.003, "PREVENT": 0.002 },
+  "matchup_multipliers": { "SCREEN:ZONE_BLITZ": 1.8, "DEEP_POST:PRESS_MAN": 1.6, "INSIDE_POWER:PASS_SHELL": 1.4, "QUICK_SLANT:RUN_BLITZ": 1.4, "DRAW:ZONE_BLITZ": 1.5, "DEEP_POST:PREVENT": 0.5 },
+  "offense_types": [ {"kind":"RUN_BREAKAWAY","weight":5}, {"kind":"YAC_EXPLOSION","weight":5}, {"kind":"DEEP_BOMB_TD","weight":3} ],
+  "defense_types":  [ {"kind":"PICK_SIX","weight":4}, {"kind":"STRIP_SACK_TD","weight":4}, {"kind":"SCOOP_AND_SCORE","weight":3}, {"kind":"BLOCK_PUNT_TD","weight":1}, {"kind":"BLOCK_FG_TD","weight":1} ],
+  "caps": { "offense_bp_max": 0.025, "defense_bp_max": 0.020 }
+}
+```
+
+### 18.5 Timing (excerpt — current build)
+
+```json
+{
+  "schema_version": "1.0",
+  "quarter_presets": { "QUICK": 300, "STANDARD": 600, "FULL": 900 },
+  "default_preset": "STANDARD",
+  "base_tc": { "RUN_INBOUNDS":33, "PASS_COMPLETE_SHORT_MED":30, "PASS_COMPLETE_DEEP":33, "QB_SNEAK":22, "SACK":15, "INCOMPLETE":15, "OUT_OF_BOUNDS":15, "PENALTY_ACCEPTED":15, "TURNOVER":15, "PUNT_RESOLVED":15, "PUNT_TOUCHBACK":0, "FIELD_GOAL_ATTEMPT":15, "TOUCHDOWN":0, "SPIKE":5, "KNEEL":5 },
+  "two_minute_ticks": { "seconds_per_tick": 7, "map": { "RUN_INBOUNDS":5, "PASS_COMPLETE_SHORT_MED":4, "PASS_COMPLETE_DEEP":5, "QB_SNEAK":3, "SACK":3, "INCOMPLETE":1, "OUT_OF_BOUNDS":1, "PENALTY_ACCEPTED":1, "TURNOVER":1, "PUNT_RESOLVED":2, "FIELD_GOAL_ATTEMPT":2, "TOUCHDOWN":0, "SPIKE":1, "KNEEL":1 } }
+}
+```
+
+---
+
+## 19) Development Roadmap (phase overview)
+
+* P4.0 — 12×6 matrix + Big Play (off/def).
+* P4.Timing — Clock + two-minute tick system.
+* P4.1 — Quarter length presets (5/10/15) and remove Drives UI.
+* P4.2 — OT (2025 fair-possession), OT length = preset, OT coin flip, 2 timeouts, tie allowed.
+* P4.3 — After-TD (XP/2-pt), Kickoffs, Onside.
+* P5 — 32 teams (unique archetype pairs) + BalanceRunner.
+* P5.1 — Real teams & legendary coaches (private build).
+* P6 — AI v2 (12-play awareness) + difficulty polish.
+* P7 — Visual/Audio polish (retro-clean).
+* P8 — Balance & UX pass (onboarding, accessibility, autotune clamps).
+* P9 — Godot 4.4 refactor (best practices, readability/maintainability, profiler-guided perf).
+* P10 — Packaging & docs (exports, CI gates, GDD v1.2).
+
+---
+
+## 20) Non-Goals (for 1.0)
+
+* No franchise/season, no rosters or player ratings.
+* No network multiplayer.
+* No real-time twitch action; this is strategic, snap-to-snap.
+* No kick/punt return animations; outcomes are resolved with clean banners and spot updates.
+
+---
+
+## 21) Notes for Future Agents
+
+* Read this GDD first; reference sections and acceptance checklists in every phase prompt.
+* Keep determinism sacred: never introduce RNG outside `SeedManager`; never reorder existing random draws.
+* When adding data, bump `schema_version` and update `SchemaGuard` and tests.
+* Add tests for all new logic; use golden replay where applicable.
+* Split multi-system changes across phases.
