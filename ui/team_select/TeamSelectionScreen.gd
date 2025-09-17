@@ -13,7 +13,6 @@ enum SelectState { IDLE, P1_SELECTED, BOTH_SELECTED }
 @onready var stack_area: VBoxContainer = $RootV/StackArea
 @onready var footer: VBoxContainer = $RootV/Footer
 @onready var options_row: HBoxContainer = $RootV/Footer/OptionsRow
-@onready var play_mode_opt: HBoxContainer = $RootV/Footer/OptionsRow/PlayModeOption
 @onready var home_opt: HBoxContainer = $RootV/Footer/OptionsRow/HomeTeamOption
 @onready var visitor_opt: HBoxContainer = $RootV/Footer/OptionsRow/VisitorTeamOption
 @onready var length_opt: HBoxContainer = $RootV/Footer/OptionsRow/GameLengthOption
@@ -117,8 +116,6 @@ func _update_layout_reflow() -> void:
 		stack_area.visible = false
 
 func _configure_options() -> void:
-	play_mode_opt.call("set_option_name", "Play Mode")
-	play_mode_opt.call("set_values", ["Exhibition", "Season"])
 	home_opt.call("set_option_name", "Home Team")
 	visitor_opt.call("set_option_name", "Visitor Team")
 	length_opt.call("set_option_name", "Game Length")
@@ -213,7 +210,6 @@ func _on_start() -> void:
 	if not _can_start():
 		return
 	var cfg := {
-		"play_mode": String(play_mode_opt.call("get_value")),
 		"home_abbr": String(home_opt.call("get_value")),
 		"visitor_abbr": String(visitor_opt.call("get_value")),
 		"game_length_minutes": int(String(length_opt.call("get_value"))),

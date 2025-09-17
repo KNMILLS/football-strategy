@@ -51,8 +51,6 @@ layout_mode = 2
 [node name="OptionsRow" type="HBoxContainer" parent="RootV/Footer"]
 layout_mode = 2
 
-[node name="PlayModeOption" parent="RootV/Footer/OptionsRow" instance=ExtResource("3_3c1pz")] 
-
 [node name="HomeTeamOption" parent="RootV/Footer/OptionsRow" instance=ExtResource("3_3c1pz")] 
 
 [node name="VisitorTeamOption" parent="RootV/Footer/OptionsRow" instance=ExtResource("3_3c1pz")] 
