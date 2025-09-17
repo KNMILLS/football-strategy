@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://Main.gd" id="1_5o0bi"]
+[ext_resource type="PackedScene" path="res://ui/TeamSelect.tscn" id="2_teamselect"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -486,6 +487,9 @@ layout_mode = 2
 text = "GAME SETUP"
 horizontal_alignment = 1
 
+[node name="TeamSelect" parent="SetupOverlay/SetupVBox" instance=ExtResource("2_teamselect")]
+layout_mode = 2
+
 [node name="TileGrid" type="GridContainer" parent="SetupOverlay/SetupVBox"]
 layout_mode = 2
 columns = 2
@@ -494,6 +498,7 @@ theme_override_constants/v_separation = 10
 
 [node name="Team1Panel" type="PanelContainer" parent="SetupOverlay/SetupVBox/TileGrid"]
 layout_mode = 2
+visible = false
 
 [node name="Team1VBox" type="VBoxContainer" parent="SetupOverlay/SetupVBox/TileGrid/Team1Panel"]
 layout_mode = 2
@@ -508,6 +513,7 @@ layout_mode = 2
 
 [node name="Team2Panel" type="PanelContainer" parent="SetupOverlay/SetupVBox/TileGrid"]
 layout_mode = 2
+visible = false
 
 [node name="Team2VBox" type="VBoxContainer" parent="SetupOverlay/SetupVBox/TileGrid/Team2Panel"]
 layout_mode = 2

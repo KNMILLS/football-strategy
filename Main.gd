@@ -64,6 +64,7 @@ var log_lines: Array[String] = []
 
 @onready var splash_overlay: Panel = $SplashOverlay
 @onready var setup_overlay: Panel = $SetupOverlay
+@onready var team_select: Control = $SetupOverlay/SetupVBox/TeamSelect
 @onready var setup_team1: OptionButton = $SetupOverlay/SetupVBox/TileGrid/Team1Panel/Team1VBox/Team1Option
 @onready var setup_team2: OptionButton = $SetupOverlay/SetupVBox/TileGrid/Team2Panel/Team2VBox/Team2Option
 @onready var setup_difficulty: OptionButton = $SetupOverlay/SetupVBox/TileGrid/DifficultyPanel/DifficultyVBox/DifficultyOption
@@ -123,6 +124,9 @@ func _connect_signals() -> void:
 	btn_receive.pressed.connect(func(): _coin_choice("RECEIVE"))
 	btn_defend.pressed.connect(func(): _coin_choice("DEFEND"))
 	setup_start_button.pressed.connect(_on_setup_start)
+	# TeamSelect signals
+	if is_instance_valid(team_select):
+		team_select.connect("confirmed", Callable(self, "_on_teamselect_confirmed"))
 	# Update persistence immediately when selection changes
 	setup_quarter_option.item_selected.connect(func(_idx: int):
 		var id := int(setup_quarter_option.get_selected_id())
@@ -171,17 +175,6 @@ func _enter_setup() -> void:
 func _populate_setup() -> void:
 	setup_team1.clear()
 	setup_team2.clear()
-	var tl: Object = get_node("/root/TeamLoader")
-	var pairs: Array = tl.call("get_all_display_pairs")
-	var idx := 0
-	for p in pairs:
-		setup_team1.add_item(String(p[1]), idx)
-		setup_team1.set_item_metadata(idx, String(p[0]))
-		setup_team2.add_item(String(p[1]), idx)
-		setup_team2.set_item_metadata(idx, String(p[0]))
-		idx += 1
-	setup_team1.select(0)
-	setup_team2.select(min(1, max(0, pairs.size() - 1)))
 	setup_difficulty.select(1)
 	# Initialize quarter length from GameConfig
 	var gc: Object = get_node("/root/GameConfig")
@@ -196,8 +189,19 @@ func _populate_setup() -> void:
 func _on_setup_start() -> void:
 	# Apply selected teams and difficulty, then hide setup and start session
 	var gs: Object = get_node("/root/GameState")
-	var home_tid := String(setup_team1.get_item_metadata(setup_team1.get_selected_id()))
-	var away_tid := String(setup_team2.get_item_metadata(setup_team2.get_selected_id()))
+	var home_tid := ""
+	var away_tid := ""
+	if is_instance_valid(team_select) and team_select.has_method("get_selected_team_ids"):
+		var arr: Array = team_select.call("get_selected_team_ids")
+		if arr.size() >= 2:
+			home_tid = String(arr[0])
+			away_tid = String(arr[1])
+	if home_tid == "" or away_tid == "":
+		var tl: Object = get_node("/root/TeamLoader")
+		var ids: Array = tl.call("get_team_ids")
+		if ids.size() >= 2:
+			home_tid = String(ids[0])
+			away_tid = String(ids[1])
 	var diff_id := int(setup_difficulty.get_selected_id())
 	gs.call("set_session_config", home_tid, away_tid, diff_id)
 	# Persist quarter preset selection
@@ -219,6 +223,32 @@ func _on_setup_start() -> void:
 		var mode: int = 1 if mode_option.get_selected_id() == 1 else 0
 		gs.new_session(seed_val, 1, int(mode))
 	# Trigger regulation coin toss flow at session start
+	gs.call_deferred("prepare_regulation_coin_toss")
+	_update_hud()
+
+func _on_teamselect_confirmed(home_team_id: String, away_team_id: String) -> void:
+	# Called when MK-style selection has both teams locked and user presses Confirm
+	# Persist quarter preset selection
+	var gc2: Object = get_node("/root/GameConfig")
+	var qid := int(setup_quarter_option.get_selected_id())
+	var preset2 := "STANDARD"
+	if qid == 0:
+		preset2 = "QUICK"
+	elif qid == 2:
+		preset2 = "FULL"
+	gc2.call("set_quarter_preset", preset2)
+	# Apply selections and start session
+	var gs: Object = get_node("/root/GameState")
+	var diff_id := int(setup_difficulty.get_selected_id())
+	gs.call("set_session_config", String(home_team_id), String(away_team_id), diff_id)
+	setup_overlay.visible = false
+	var seed_text := seed_input.text.strip_edges()
+	var sm: Object = get_node("/root/SeedManager")
+	var seed_val: int = sm.current_seed
+	if seed_text != "":
+		seed_val = int(seed_text.to_int())
+	var mode: int = 1 if mode_option.get_selected_id() == 1 else 0
+	gs.new_session(seed_val, 1, int(mode))
 	gs.call_deferred("prepare_regulation_coin_toss")
 	_update_hud()
 

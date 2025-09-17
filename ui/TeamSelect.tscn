@@ -1,0 +1,93 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/TeamSelect.gd" id="1_selgd"]
+
+[node name="TeamSelect" type="Control"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_selgd")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+theme_override_constants/separation = 10
+
+[node name="TopHBox" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Grid" type="GridContainer" parent="VBox/TopHBox"]
+layout_mode = 2
+columns = 4
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="Hero" type="VBoxContainer" parent="VBox/TopHBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
+theme_override_constants/separation = 6
+
+[node name="HeroLabel" type="Label" parent="VBox/TopHBox/Hero"]
+layout_mode = 2
+text = "TEAM NAME"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 20
+
+[node name="HeroBlurb" type="Label" parent="VBox/TopHBox/Hero"]
+layout_mode = 2
+text = ""
+
+[node name="InfoBar" type="GridContainer" parent="VBox"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 4
+
+[node name="CoachLabel" type="Label" parent="VBox/InfoBar"]
+layout_mode = 2
+text = "Coach: TBD"
+
+[node name="OffenseLabel" type="Label" parent="VBox/InfoBar"]
+layout_mode = 2
+text = "Offense:"
+
+[node name="DefenseLabel" type="Label" parent="VBox/InfoBar"]
+layout_mode = 2
+text = "Defense:"
+
+[node name="StrengthsLabel" type="Label" parent="VBox/InfoBar"]
+layout_mode = 2
+text = "Strengths:"
+
+[node name="WeaknessesLabel" type="Label" parent="VBox/InfoBar"]
+layout_mode = 2
+text = "Weaknesses:"
+
+[node name="Footer" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+visible = false
+
+[node name="MatchupLabel" type="Label" parent="VBox/Footer"]
+layout_mode = 2
+text = "TEAM A vs TEAM B — Confirm or Reselect"
+size_flags_horizontal = 3
+
+[node name="BtnConfirm" type="Button" parent="VBox/Footer"]
+layout_mode = 2
+text = "Confirm"
+disabled = true
+
+[node name="BtnReselect" type="Button" parent="VBox/Footer"]
+layout_mode = 2
+text = "Reselect"
+
+

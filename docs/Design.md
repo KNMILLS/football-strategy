@@ -12,8 +12,8 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 - Regulation timeouts are not implemented yet; OT timeouts (2/team) are implemented and visible in the HUD.
 - Teams load from `res://teams/*.json` (no single `teams_32.json` yet). Legendary coaches are not implemented.
 - Timing JSON `schema_version` is "1.0" today; will bump when free kicks are added.
-- Team selection uses simple dropdowns; MK-style grid with hover preview/matchup confirm not yet implemented.
-- Score header displays selected team names (via `TeamLoader`) instead of generic Home/Away.
+- MK-style Team Selection implemented: grid hover preview with P1/P2 lock and matchup confirm is live.
+- Score header displays selected team names (via `TeamLoader`) instead of generic Home/Away. (Implemented)
 
 #### Vision & Pillars
 - Fast, readable strategy: hidden, simultaneous selection with compact outcomes.
@@ -220,6 +220,50 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 * Fields: `coach_id`, `display_name`, `era_tag`, `team_hint`, scheme biases, situational tendencies, flavor.
 * Order: Difficulty → Team → Coach → QA overrides. Clamps preserve balance.
 
+#### 5.2.1 Initial Set (private build)
+
+Use these `coach_id` slugs for filenames and JSON; portraits are optional but recommended for polish.
+
+- `vince_lombardi` — Vince Lombardi (Packers 1959–1967). Offense: Power Sweep. Defense: 4–3.
+- `bill_walsh` — Bill Walsh (49ers 1979–1988). Offense: West Coast. Defense: Multiple.
+- `bill_belichick` — Bill Belichick (Patriots 2000–2019). Offense: Multiple. Defense: Multiple/amoeba.
+- `don_shula` — Don Shula (Dolphins 1970–1995). Offense: 70s run → 80s Air. Defense: 4–3.
+- `tom_landry` — Tom Landry (Cowboys 1960–1988). Offense: motion/multiple. Defense: Flex 4–3.
+- `chuck_noll` — Chuck Noll (Steelers 1969–1991). Offense: power + PA. Defense: 4–3.
+- `joe_gibbs` — Joe Gibbs (Washington 1981–1992). Offense: Counter Trey + PA deep. Defense: 4–3.
+- `bill_parcells` — Bill Parcells (Giants 1983–1990). Offense: power/ball control. Defense: 3–4 two-gap.
+- `mike_shanahan` — Mike Shanahan (Broncos 1995–2008). Offense: Outside Zone + Boot. Defense: 4–3.
+- `andy_reid` — Andy Reid (Eagles/Chiefs 1999–present). Offense: WCO spread/RPO/screens. Defense: Multiple.
+- `sean_payton` — Sean Payton (Saints 2006–2021). Offense: aggressive WCO spread. Defense: Multiple.
+- `jimmy_johnson` — Jimmy Johnson (Cowboys 1989–1993). Offense: vertical shots + run. Defense: fast 4–3.
+- `marv_levy` — Marv Levy (Bills 1986–1997). Offense: K-Gun no-huddle. Defense: 3–4.
+- `hank_stram` — Hank Stram (Chiefs 1960–1974). Offense: traps/misdirection. Defense: Multiple.
+- `sid_gillman` — Sid Gillman (Chargers 1960–1969). Offense: Vertical (proto Air Coryell). Defense: 4–3.
+- `bud_grant` — Bud Grant (Vikings 1967–1983). Offense: balanced. Defense: 4–3 Purple People Eaters.
+- `tony_dungy` — Tony Dungy (Buccaneers/Colts 1996–2008). Offense: efficient WCO. Defense: Tampa 2.
+- `paul_brown` — Paul Brown (Browns/Bengals 1946–1975). Offense: modern pass concepts. Defense: Multiple.
+
+Asset guidelines (private build only)
+- Portraits: 3:4 aspect, ~512×682 PNG preferred, neutral or transparent background.
+- Suggested paths: `res://art/coaches/{coach_id}.png` and `res://data/coaches/real/{coach_id}.json`.
+
+JSON sketch (minimal):
+```json
+{
+  "schema_version": "1.0",
+  "coach_id": "bill_walsh",
+  "display_name": "Bill Walsh",
+  "era_tag": "1980s",
+  "team_hint": "49ers",
+  "tendencies": {
+    "offense_bias": { "SCREEN": +0.02, "MEDIUM_CROSS": +0.02 },
+    "defense_bias": { "PASS_SHELL": +0.02 },
+    "situational": { "4th_down_aggression": +0.05, "trick_rate": +0.02 }
+  },
+  "flavor": "Architect of the West Coast Offense"
+}
+```
+
 ---
 
 ## 8) Administrative Rules
@@ -280,8 +324,8 @@ res://data/
   coaches/real/*.json        (future)
 res://ui/
   MainUI.tscn (+ header, setup, modals)
-  TeamTile.tscn (future; reusable tile for MK-style grid)
-  TeamSelect.tscn (future; encapsulated selection grid/hero/info)
+  TeamTile.tscn (reusable tile for MK-style grid)
+  TeamSelect.tscn (encapsulated selection grid/hero/info)
 res://tests/*.gd
 res://tools/
   BalanceRunner.gd
