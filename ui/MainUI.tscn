@@ -308,7 +308,7 @@ offset_top = 24.0
 offset_right = -24.0
 offset_bottom = -24.0
 bbcode_enabled = true
-text = "[b]Help[/b]\n- 1..6 choose offense.\n- Q/W/E/R choose defense in Hot Seat.\n- First downs use line-to-gain markers; penalties replay and can award first by yardage.\n- TD = 7, FG = 3 (range by distance, out-of-range is disallowed).\n- Punts can result in touchback to the 20.\n- Fumbles 50% recovery.\n- H toggles this overlay.\n- Quick Play: Enter. HUD: F1."
+text = "[b]Help[/b]\n- 1..6 choose offense.\n- Q/W/E/R choose defense in Hot Seat.\n- First downs use line-to-gain markers; penalties replay and can award first by yardage.\n- TD = 6 + Try (XP or 2); FG = 3.\n- Kickoffs after Try: TB → B30 (0s), landing-zone returns ~B20–B30, OOB → B40.\n- Onside available only when trailing.\n- Punts can result in touchback to the 20.\n- Fumbles 50% recovery.\n- H toggles this overlay.\n- Quick Play: Enter. HUD: F1."
 
 [node name="DeterminismHUD" type="Panel" parent="."]
 layout_mode = 3
@@ -380,6 +380,73 @@ text = "Receive"
 [node name="BtnDefend" type="Button" parent="CoinTossModal/CTVBox/CTChoiceButtons"]
 layout_mode = 2
 text = "Defend"
+
+[node name="TryModal" type="Window" parent="."]
+title = "After-TD Try"
+initial_position = 1
+size = Vector2i(420, 140)
+visible = false
+
+[node name="TryVBox" type="VBoxContainer" parent="TryModal"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+theme_override_constants/separation = 8
+
+[node name="TryLabel" type="Label" parent="TryModal/TryVBox"]
+layout_mode = 2
+text = "Choose Try:"
+
+[node name="TryButtons" type="HBoxContainer" parent="TryModal/TryVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnTryXP" type="Button" parent="TryModal/TryVBox/TryButtons"]
+layout_mode = 2
+text = "Kick XP (X)"
+
+[node name="BtnTryTwo" type="Button" parent="TryModal/TryVBox/TryButtons"]
+layout_mode = 2
+text = "Go for 2 (2)"
+
+[node name="FreeKickModal" type="Window" parent="."]
+title = "Free Kick"
+initial_position = 1
+size = Vector2i(460, 160)
+visible = false
+
+[node name="FKVBox" type="VBoxContainer" parent="FreeKickModal"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+theme_override_constants/separation = 8
+
+[node name="FKLabel" type="Label" parent="FreeKickModal/FKVBox"]
+layout_mode = 2
+text = "Select Free Kick type:"
+
+[node name="FKButtons" type="HBoxContainer" parent="FreeKickModal/FKVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnKickoff" type="Button" parent="FreeKickModal/FKVBox/FKButtons"]
+layout_mode = 2
+text = "Kickoff (K)"
+
+[node name="BtnOnside" type="Button" parent="FreeKickModal/FKVBox/FKButtons"]
+layout_mode = 2
+text = "Onside (O)"
+disabled = false
 
 [node name="SplashOverlay" type="Panel" parent="."]
 layout_mode = 3

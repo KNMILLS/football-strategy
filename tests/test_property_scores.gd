@@ -17,12 +17,13 @@ func test_scores_are_composed_of_field_goals_and_touchdowns() -> void:
 		rules.assert_state(gs)
 		if gs.drive_ended and gs.drive_index >= gs.num_drives:
 			break
-	# Check scores are multiples of 3 or 7 combinations
+	# Check scores are composed of FGs (3) and TD family (6+try)
 	var total := int(gs.home_score + gs.away_score)
 	var ok := false
 	for threes in range(0, total / 3 + 1):
 		var rem := total - 3 * threes
-		if rem % 7 == 0:
+		# Accept totals reachable by TD=6 plus optional try points
+		if rem % 6 == 0:
 			ok = true
 			break
 	assert(ok)

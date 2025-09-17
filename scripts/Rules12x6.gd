@@ -518,9 +518,9 @@ static func apply_outcome(state: Object, outcome: Dictionary) -> void:
 		# Handle defensive TD from blocked kick big play
 		if bool(outcome.get("defense_td", false)):
 			if state.offense_is_home:
-				state.away_score += 7
+				state.away_score += 6
 			else:
-				state.home_score += 7
+				state.home_score += 6
 			drive_ended = true
 			outcome["touchdown"] = true
 			outcome["timing_tag"] = "TOUCHDOWN"
@@ -598,9 +598,9 @@ static func apply_outcome(state: Object, outcome: Dictionary) -> void:
 	# Touchdown check
 	if (dir == 1 and ball_on >= 100) or (dir == -1 and ball_on <= 0):
 		if state.offense_is_home:
-			state.home_score += 7
+			state.home_score += 6
 		else:
-			state.away_score += 7
+			state.away_score += 6
 		drive_ended = true
 		state.ball_on = ball_on
 		state.drive_ended = true

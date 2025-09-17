@@ -8,7 +8,7 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 
 ## 0) Known Deviations (current build)
 
-- Drives UI is present (header shows Drives and a spinner). Pre-game coin flip is not implemented yet; OT coin flip exists.
+- Drives UI is present (header shows Drives and a spinner).
 - Regulation timeouts are not implemented yet; OT timeouts (2/team) are implemented and visible in the HUD.
 - Teams load from `res://teams/*.json` (no single `teams_32.json` yet). Legendary coaches are not implemented.
 - Timing JSON `schema_version` is "1.0" today; will bump when free kicks are added.
@@ -51,6 +51,8 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 #### Specials
 - Field Goal: LOS + 17 distance; buckets for 0–39, 40–49, 50–57; out-of-range attempts are disallowed.
 - Punt: weighted net yards + block chance; scrimmage-kick touchback → ball at the 20.
+- After-TD Try (Phase 4.3): Kick XP from 15-yd spot (~33-yd FG) base 93% or Two-Point base 48% with rare defensive return for 2. Try consumes 15s; TD consumes 0s.
+- Free Kick (Phase 4.3): Board-friendly Kickoffs and Onside. Kickoff outcomes: Touchback to B30 (0s admin), landing-zone returns to ~B20–B30, out-of-bounds to B40; consumes 15s. Onside (trailing only) succeeds ~12% with recovery ~A48 else opponent at ~A45; consumes 15s.
 
 #### Big Play System (Offense & Defense)
 - Goal: Rare, deterministic, matchup-sensitive explosive outcomes.
@@ -63,12 +65,13 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 
 #### Timing, Two-Minute & Overtime
 - Game Length Presets (persisted until changed): Quick 5:00 (300s), Standard 10:00 (600s), Full 15:00 (900s). Configured in `data/timing.json` under `quarter_presets` with `default_preset`.
-- Per-play base times (examples): RUN_INBOUNDS 33s; PASS_COMPLETE_SHORT_MED 30s; PASS_COMPLETE_DEEP 33s; QB_SNEAK 22s; SACK/INCOMPLETE/OUT_OF_BOUNDS/PENALTY_ACCEPTED/TURNOVER 15s; PUNT_RESOLVED 15s; PUNT_TOUCHBACK 0s; FIELD_GOAL_ATTEMPT 15s; TOUCHDOWN 0s.
+- Per-play base times (examples): RUN_INBOUNDS 33s; PASS_COMPLETE_SHORT_MED 30s; PASS_COMPLETE_DEEP 33s; QB_SNEAK 22s; SACK/INCOMPLETE/OUT_OF_BOUNDS/PENALTY_ACCEPTED/TURNOVER 15s; PUNT_RESOLVED 15s; PUNT_TOUCHBACK 0s; FIELD_GOAL_ATTEMPT 15s; TOUCHDOWN 0s; KICKOFF_RESOLVED 15s; KICKOFF_TOUCHBACK 0s.
 - Two-minute mode: when clock ≤ 2:00 in Q2, Q4 (and OT warning at 2:00), switch to tick timing: 7s per tick with mapping (RUN_INBOUNDS 5, PASS_SHORT_MED 4, PASS_DEEP 5, QB_SNEAK 3, SACK 3, INCOMP/OUT 1, PUNT_RESOLVED 2, FG_ATTEMPT 2, TD 0).
 - Deterministic: timing has no RNG; applied after outcome resolution without altering draw order. UI shows MM:SS and quarter; one-time TWO-MINUTE WARNING banner appears at entry.
 
-##### Overtime (2025 NFL fair-possession; one period)
-- Trigger: at end of Q4 if tied. Coin Toss: visiting team calls; winner chooses Receive or Defend. Series start at OWN 25 (kickoffs coming in Phase 4.3).
+-##### Overtime (2025 NFL fair-possession; one period)
+- Trigger: at end of Q4 if tied. Coin Toss: visiting team calls; winner chooses Receive or Defend. Series start at OWN 25 (kickoffs stay abstracted this phase).
+- Scoring: TD = 6 then Try is attempted (XP/2-pt). After the first series Try, the second series proceeds; defensive TD/safety still ends immediately.
 - OT length: equals selected Game Length preset. Timeouts: 2 per team, separate from regulation; two-minute warning at 2:00 in OT uses tick mapping above.
 - Fair Possession: both teams guaranteed one possession unless the first series ends in a defensive TD or safety (game ends immediately).
 - After both possessions, if still tied: Sudden Death (next score wins) within remaining OT clock. Ties allowed if OT expires still tied.
@@ -98,12 +101,13 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 - `res://ui/MainUI.tscn`
 - `res://tests/*.gd`
 
-#### Acceptance Checklist (Phase 4)
+#### Acceptance Checklist (Phase 4.3)
 - 12 offense plays × 6 defense fronts; grouped UI with correct hotkeys.
 - Resolver uses context rules, `SessionRules` pre-draw multipliers, post-draw result tuning.
 - Big Play layer works (offense & defense), matchup-sensitive, capped, deterministic.
 - Defense/Offense AI consider the expanded set; `PREVENT` used only when appropriate.
-- All tests pass; artifacts saved; this `Design.md` reflects v1.1e.
+- Try & Free Kick systems implemented; timing tags added; onside gating enforced.
+- All tests pass; artifacts saved; this `Design.md` reflects v1.2.
 
 #### Future Notes (Phase 5+)
 - Expand to 32 franchise-inspired teams with unique offense+defense combos and brand metadata.
@@ -145,7 +149,7 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 ## 2) Game Scope & Mode
 
 * Single, self-contained “Standard” game (no seasons/franchise ties).
-* Pre-game coin flip decides initial possession (planned; see §8.1). Current build starts with Home on offense.
+* Pre-game coin flip decides initial possession (implemented; see §8.1). Regulation starts with coin flip into kickoff.
 * We play by clock, quarters, and rules (OT if tied). Current build also shows a Drives header control (to be removed).
 * Local hot-seat (Offense vs Defense) and Solo (Offense vs AI, Defense chosen by AI).
 
@@ -160,10 +164,8 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
    * Select Difficulty (Rookie/Pro/Legend).
    * Select Quarter Length Preset: Quick (5:00) / Standard (10:00) / Full (15:00).
    * Seed controls: input box + Copy seed (present). Randomize button planned.
-   * Start Game → (planned) Pre-game Coin Flip.
-3. Pre-game Coin Flip (visiting team calls). Winner chooses Receive or Defend.
-
-   * Until kickoffs (Phase 4.3), Receive starts a series at OWN 25. After 4.3, coin flip flows into kickoff.
+  * Start Game → Pre-game Coin Flip.
+3. Pre-game Coin Flip (visiting team calls). Winner chooses Receive or Defend → kickoff resolves and offense begins at the returned spot.
 4. Playcalling Screen
 
    * Offense selects 1 of 12 plays; Defense selects 1 of 6 fronts.
@@ -199,9 +201,9 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 
 ### 8.1 Coin Flips
 
-* Pre-game coin flip (planned): visiting calls Heads/Tails. Winner chooses Receive/Defend.
-  * Before Phase 4.3: “Receive” starts at OWN 25; “Defend” gives opponent that start.
-  * After Phase 4.3: choice flows into kickoff.
+* Pre-game coin flip (implemented): visiting calls Heads/Tails. Winner chooses Receive/Defend.
+  * Regulation begins with coin flip into kickoff using `FreeKick.resolve_kickoff`. Touchback → B30 (0s), otherwise kickoff consumes 15s per `timing.json`.
+  * Receiving team starts first series at the resolved spot. Choice "Defend" means your team kicks and opponent receives.
 * Overtime coin flip (implemented): visiting calls at OT entry; winner chooses Receive/Defend for first series.
 
 ### 8.2 Timeouts & Clock

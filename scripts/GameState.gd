@@ -7,7 +7,7 @@ signal ui_update_log(new_line: String)
 signal ui_banner(text: String)
 signal ui_coin_toss_needed()
 
-enum State { IDLE, PRESNAP, DEFENSE_SELECT, RESOLVE, DRIVE_END }
+enum State { IDLE, PRESNAP, DEFENSE_SELECT, RESOLVE, DRIVE_END, TRY_SELECT, TRY_RESOLVE, FREE_KICK_SELECT, FREE_KICK_RESOLVE }
 
 const TimingRes: Script = preload("res://scripts/Timing.gd")
 
@@ -67,6 +67,15 @@ var _ot_announced_sudden: bool = false
 var game_over: bool = false
 var game_result_text: String = ""
 
+# Try/Free Kick pending flow
+var pending_try: bool = false
+var pending_try_team: int = -1 # 0 home, 1 away
+var pending_ot_pre_home: int = 0
+var pending_ot_pre_away: int = 0
+var pending_ot_outcome: Dictionary = {}
+var pending_free_kick: bool = false
+var kicking_team_index: int = -1
+
 func _ready() -> void:
 	_ensure_timing_loaded()
 	_emit_all()
@@ -105,6 +114,14 @@ func new_session(seed_value: int, drives: int, new_mode: int) -> void:
 	_ot_announced_sudden = false
 	game_over = false
 	game_result_text = ""
+	# Reset Try/Free Kick state
+	pending_try = false
+	pending_try_team = -1
+	pending_ot_pre_home = 0
+	pending_ot_pre_away = 0
+	pending_ot_outcome = {}
+	pending_free_kick = false
+	kicking_team_index = -1
 	# Default teams if not configured
 	if selected_home_team_id == "" or selected_away_team_id == "":
 		var tl: Object = get_node("/root/TeamLoader")
@@ -116,8 +133,8 @@ func new_session(seed_value: int, drives: int, new_mode: int) -> void:
 	var diff: Object = get_node("/root/Difficulty")
 	diff.call("set_level", int(difficulty_level))
 	_rebuild_session_rules()
-	_start_drive()
-	emit_signal("ui_state_changed", "PRESNAP")
+	# Regulation starts with pre-game coin toss into kickoff
+	_prepare_regulation_entry()
 
 func _start_drive() -> void:
 	drive_index += 1
@@ -131,6 +148,18 @@ func _start_drive() -> void:
 	turnover_on_downs = false
 	_emit_all()
 
+func _prepare_regulation_entry() -> void:
+	# Prepare regulation start: request pre-game coin toss
+	is_overtime = false
+	# Ensure header/field UI reflects fresh session
+	_emit_all()
+	if has_signal("ui_coin_toss_needed"):
+		emit_signal("ui_coin_toss_needed")
+
+func prepare_regulation_coin_toss() -> void:
+	# Public entry to trigger regulation coin toss (used by UI/tests)
+	_prepare_regulation_entry()
+
 func start_series_for(team_index: int) -> void:
 	# team_index: 0 home offense, 1 away offense
 	offense_is_home = (int(team_index) == 0)
@@ -143,6 +172,18 @@ func start_series_for(team_index: int) -> void:
 	drive_ended = false
 	turnover_on_downs = false
 	_emit_all()
+
+func award_points(team_index: int, points: int) -> void:
+	if int(team_index) == 0:
+		home_score += int(points)
+	else:
+		away_score += int(points)
+	_emit_all()
+
+func _is_team_trailing(team_index: int) -> bool:
+	if int(team_index) == 0:
+		return home_score < away_score
+	return away_score < home_score
 
 func get_down_text() -> String:
 	var ords := ["", "1st", "2nd", "3rd", "4th"]
@@ -214,6 +255,22 @@ func _resolve() -> void:
 	_emit_log(String(EL.call("log_line", current_offense_play, current_defense_play, outcome)))
 
 	if drive_ended:
+		# Intercept TD to insert Try/Free Kick flow
+		var did_td := bool(outcome.get("touchdown", false))
+		if did_td:
+			# Determine scoring team (offense unless defense_td)
+			var scoring_team := _offense_team_index()
+			if bool(outcome.get("defense_td", false)):
+				scoring_team = _defense_team_index_for_current_offense()
+			pending_try = true
+			pending_try_team = int(scoring_team)
+			kicking_team_index = int(scoring_team)
+			# Capture OT bookkeeping to apply after Try
+			pending_ot_pre_home = int(pre_home)
+			pending_ot_pre_away = int(pre_away)
+			pending_ot_outcome = outcome.duplicate(true)
+			emit_signal("ui_state_changed", "TRY_SELECT")
+			return
 		if is_overtime:
 			_handle_overtime_drive_end(outcome, pre_home, pre_away)
 			if game_over:
@@ -230,6 +287,134 @@ func _resolve() -> void:
 		current_offense_play = ""
 		current_defense_play = ""
 		emit_signal("ui_state_changed", "PRESNAP")
+
+func try_select(kind: String) -> void:
+	if not pending_try:
+		return
+	var fk: Object = (load("res://scripts/FreeKick.gd") as Script).new()
+	var out: Dictionary = {}
+	var k := String(kind).to_upper()
+	if k == "XP":
+		out = fk.call("resolve_try_kick_xp", self)
+		if String(out.get("event_name", "")) == "GOOD":
+			award_points(pending_try_team, 1)
+	elif k == "TWO":
+		out = fk.call("resolve_try_two_point", self)
+		var ev := String(out.get("event_name", ""))
+		if ev == "GOOD":
+			award_points(pending_try_team, 2)
+		elif ev == "DEFENSE_TWO":
+			award_points(1 - pending_try_team, 2)
+	else:
+		return
+	# Consume timing for Try
+	_ensure_timing_loaded()
+	if _timing != null:
+		_timing.consume_clock(self, out)
+		_after_outcome_timing(out)
+	# Banner/Log
+	var EL: Script = load("res://scripts/EventLogger.gd")
+	var banner := String(EL.call("banner", "TRY", "-", out))
+	emit_signal("ui_banner", banner)
+	await get_tree().create_timer(0.6).timeout
+	_emit_log(String(EL.call("log_line", "TRY", "-", out)))
+	# Transition
+	if is_overtime:
+		# Apply deferred OT end logic using captured pre-scores
+		_handle_overtime_drive_end(pending_ot_outcome, pending_ot_pre_home, pending_ot_pre_away)
+		# Clear pending state
+		pending_try = false
+		pending_free_kick = false
+		pending_ot_outcome = {}
+		if not game_over:
+			emit_signal("ui_state_changed", "PRESNAP")
+		return
+	# Regulation: proceed to Free Kick selection
+	pending_free_kick = true
+	emit_signal("ui_state_changed", "FREE_KICK_SELECT")
+
+func free_kick_select(kind: String) -> void:
+	if not pending_free_kick:
+		return
+	var fk: Object = (load("res://scripts/FreeKick.gd") as Script).new()
+	var k := String(kind).to_upper()
+	var kicker_is_home := (kicking_team_index == 0)
+	var receiver_index := 1 - kicking_team_index
+	var receiver_is_home := (receiver_index == 0)
+	var out: Dictionary = {}
+	if k == "ONSIDE":
+		if not _is_team_trailing(kicking_team_index):
+			k = "KICKOFF"
+		else:
+			out = fk.call("resolve_onside", true)
+			# Apply timing
+			_ensure_timing_loaded()
+			if _timing != null:
+				_timing.consume_clock(self, out)
+				_after_outcome_timing(out)
+			# Decide possession/spot
+			var success := bool(out.get("onside_success", false))
+			if success:
+				# Kicking team retains at ~A48
+				offense_is_home = kicker_is_home
+				_start_drive()
+				var spot_text := String(out.get("success_spot_text", "A48"))
+				ball_on = int(fk.call("spot_text_to_ball_on", spot_text, false, kicker_is_home))
+				series_start = ball_on
+				line_to_gain = clamp(series_start + 10 * offense_dir, 0, 100)
+				down = 1
+				(get_node("/root/Rules") as Object).call("recompute_to_go", self)
+			else:
+				# Receiving team gets ball at ~A45
+				offense_is_home = receiver_is_home
+				_start_drive()
+				var spot_text2 := String(out.get("fail_spot_text", "A45"))
+				ball_on = int(fk.call("spot_text_to_ball_on", spot_text2, receiver_is_home, kicker_is_home))
+				series_start = ball_on
+				line_to_gain = clamp(series_start + 10 * offense_dir, 0, 100)
+				down = 1
+				(get_node("/root/Rules") as Object).call("recompute_to_go", self)
+			# Banner/Log
+			var EL: Script = load("res://scripts/EventLogger.gd")
+			var banner := String(EL.call("banner", "FREE_KICK", "-", out))
+			emit_signal("ui_banner", banner)
+			await get_tree().create_timer(0.6).timeout
+			_emit_log(String(EL.call("log_line", "FREE_KICK", "-", out)))
+			# Clear and resume
+			pending_free_kick = false
+			pending_try = false
+			kicking_team_index = -1
+			emit_signal("ui_state_changed", "PRESNAP")
+			_emit_all()
+			return
+	# Default: Standard Kickoff
+	out = fk.call("resolve_kickoff", kicker_is_home, _is_team_trailing(kicking_team_index))
+	# Apply timing
+	_ensure_timing_loaded()
+	if _timing != null:
+		_timing.consume_clock(self, out)
+		_after_outcome_timing(out)
+	# Compute spot and set receiving offense
+	var spot_text3 := String(out.get("new_series_spot_text", "B25"))
+	offense_is_home = receiver_is_home
+	_start_drive()
+	ball_on = int(fk.call("spot_text_to_ball_on", spot_text3, receiver_is_home, kicker_is_home))
+	series_start = ball_on
+	line_to_gain = clamp(series_start + 10 * offense_dir, 0, 100)
+	down = 1
+	(get_node("/root/Rules") as Object).call("recompute_to_go", self)
+	# Banner/Log
+	var EL2: Script = load("res://scripts/EventLogger.gd")
+	var banner2 := String(EL2.call("banner", "KICKOFF", "-", out))
+	emit_signal("ui_banner", banner2)
+	await get_tree().create_timer(0.6).timeout
+	_emit_log(String(EL2.call("log_line", "KICKOFF", "-", out)))
+	# Clear and resume
+	pending_free_kick = false
+	pending_try = false
+	kicking_team_index = -1
+	emit_signal("ui_state_changed", "PRESNAP")
+	_emit_all()
 
 func _emit_log(line: String) -> void:
 	emit_signal("ui_update_log", line)
@@ -315,6 +500,12 @@ func perform_coin_toss(visitor_called_heads: bool) -> int:
 	var toss: int = int(sm.randi_range(0, 1)) # 0 Heads, 1 Tails
 	var visitor_wins: bool = (toss == 0 and visitor_called_heads) or (toss == 1 and not visitor_called_heads)
 	coin_toss_winner = (1 if visitor_wins else 0)
+	# Announce via EventLogger
+	var EL: Script = load("res://scripts/EventLogger.gd")
+	if EL != null and EL.has_method("coin_toss_text"):
+		var text := String(EL.call("coin_toss_text", bool(visitor_called_heads), int(coin_toss_winner)))
+		emit_signal("ui_banner", text)
+		_emit_log(text)
 	return int(coin_toss_winner)
 
 func enter_overtime_with_choice(winner_choice: String) -> void:
@@ -323,6 +514,43 @@ func enter_overtime_with_choice(winner_choice: String) -> void:
 	coin_toss_choice = String(winner_choice).to_upper()
 	var first_team := coin_toss_winner if coin_toss_choice == "RECEIVE" else (1 - coin_toss_winner)
 	_enter_overtime_with_first_receiver(int(first_team))
+
+func enter_regulation_with_choice(winner_choice: String) -> void:
+	# Winner choice flows into kickoff using FreeKick system
+	is_overtime = false
+	coin_toss_choice = String(winner_choice).to_upper()
+	# Determine receiving team index
+	var receiving_team: int = coin_toss_winner if coin_toss_choice == "RECEIVE" else (1 - coin_toss_winner)
+	var receiving_is_home := (int(receiving_team) == 0)
+	var kicker_is_home := not receiving_is_home
+	# Resolve kickoff outcome deterministically
+	var fk: Object = (load("res://scripts/FreeKick.gd") as Script).new()
+	var out: Dictionary = fk.call("resolve_kickoff", bool(kicker_is_home), false)
+	# Apply timing (KICKOFF_RESOLVED 15s, TOUCHBACK 0s)
+	_ensure_timing_loaded()
+	if _timing != null:
+		_timing.consume_clock(self, out)
+		_after_outcome_timing(out)
+	# Set receiving team on offense and start first drive
+	offense_is_home = receiving_is_home
+	_start_drive()
+	# Place ball based on outcome spot text
+	var spot_text := String(out.get("new_series_spot_text", "B25"))
+	ball_on = int(fk.call("spot_text_to_ball_on", spot_text, bool(receiving_is_home), bool(kicker_is_home)))
+	series_start = ball_on
+	line_to_gain = clamp(series_start + 10 * offense_dir, 0, 100)
+	down = 1
+	(get_node("/root/Rules") as Object).call("recompute_to_go", self)
+	# Banner/Log for kickoff
+	var EL2: Script = load("res://scripts/EventLogger.gd")
+	if EL2 != null:
+		var banner2 := String(EL2.call("banner", "KICKOFF", "-", out))
+		emit_signal("ui_banner", banner2)
+		await get_tree().create_timer(0.6).timeout
+		_emit_log(String(EL2.call("log_line", "KICKOFF", "-", out)))
+	# Ready for first snap
+	emit_signal("ui_state_changed", "PRESNAP")
+	_emit_all()
 
 func _enter_overtime_with_first_receiver(first_receiver_team: int) -> void:
 	is_overtime = true
@@ -357,6 +585,11 @@ func _offense_team_index() -> int:
 	if offense_is_home:
 		return 0
 	return 1
+
+func is_onside_allowed() -> bool:
+	if not pending_free_kick:
+		return false
+	return _is_team_trailing(int(kicking_team_index))
 
 func _handle_overtime_drive_end(outcome: Dictionary, pre_home: int, pre_away: int) -> void:
 	# Immediate end if first series defensive TD or safety
@@ -460,15 +693,15 @@ func ot_debug_end_possession(kind: String) -> void:
 		outcome = {"event_name": "GOOD", "field_goal": "GOOD", "timing_tag": "FIELD_GOAL_ATTEMPT"}
 	elif k == "TD":
 		if offense_is_home:
-			home_score += 7
+			home_score += 6
 		else:
-			away_score += 7
+			away_score += 6
 		outcome = {"event_name": "TOUCHDOWN", "timing_tag": "TOUCHDOWN"}
 	elif k == "DEF_TD":
 		if offense_is_home:
-			away_score += 7
+			away_score += 6
 		else:
-			home_score += 7
+			home_score += 6
 		outcome = {"event_name": "TOUCHDOWN", "defense_td": true, "timing_tag": "TOUCHDOWN"}
 	elif k == "SAFETY":
 		if offense_is_home:

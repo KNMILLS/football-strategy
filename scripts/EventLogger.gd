@@ -19,7 +19,7 @@ static func _emoji(outcome: Dictionary) -> String:
 			pass
 	if ev.begins_with("PENALTY"):
 		return "🚩"
-	if ev == "PUNT" or ev == "BLOCK" or ev == "GOOD" or ev == "MISS" or ev == "OUT_OF_RANGE":
+	if ev == "PUNT" or ev == "BLOCK" or ev == "GOOD" or ev == "MISS" or ev == "OUT_OF_RANGE" or ev == "KICKOFF" or ev == "ONSIDE" or ev == "DEFENSE_TWO":
 		return "🏈"
 	return "📈"
 
@@ -31,5 +31,11 @@ static func banner(off_play: String, def_play: String, outcome: Dictionary) -> S
 static func log_line(off_play: String, def_play: String, outcome: Dictionary) -> String:
 	# Same as banner for now; could be richer later.
 	return banner(off_play, def_play, outcome)
+
+static func coin_toss_text(visitor_called_heads: bool, winner_index: int) -> String:
+	# winner_index: 0 Home, 1 Away
+	var call_text := "Heads" if visitor_called_heads else "Tails"
+	var who := "Away" if int(winner_index) == 1 else "Home"
+	return "🪙 Coin Toss: Visitor calls %s — %s wins" % [call_text, who]
 
 

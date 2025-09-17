@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "try": {
+    "xp_hash": { "base_make_pct": 0.93 },
+    "two_point": { "base_success_pct": 0.48 },
+    "timing_seconds": 15
+  },
+  "kickoff": {
+    "timing_seconds": 15,
+    "buckets": [
+      { "id": "TOUCHBACK_ENDZONE", "weight": 25, "spot": "B30", "admin": true },
+      { "id": "LANDING_ZONE_RETURN_SHORT", "weight": 20, "range": "GL..B10", "avg_return": 20 },
+      { "id": "LANDING_ZONE_RETURN_MED", "weight": 30, "range": "B11..B20", "avg_return": 18 },
+      { "id": "ENDZONE_RETURN", "weight": 10, "spot": "B25" },
+      { "id": "OUT_OF_BOUNDS", "weight": 5, "spot": "B40", "penalty": true }
+    ]
+  },
+  "onside": {
+    "timing_seconds": 15,
+    "base_success_pct": 0.12,
+    "penalty_fail_spot": "A45"
+  }
+}
+
+

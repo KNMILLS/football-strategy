@@ -40,6 +40,12 @@ var log_lines: Array[String] = []
 @onready var log_rtl: RichTextLabel = $RootMargin/VMain/ActionLog
 
 @onready var defense_modal: Window = $DefenseModal
+@onready var try_modal: Window = $TryModal
+@onready var btn_try_xp: Button = $TryModal/TryVBox/TryButtons/BtnTryXP
+@onready var btn_try_two: Button = $TryModal/TryVBox/TryButtons/BtnTryTwo
+@onready var free_kick_modal: Window = $FreeKickModal
+@onready var btn_kickoff: Button = $FreeKickModal/FKVBox/FKButtons/BtnKickoff
+@onready var btn_onside: Button = $FreeKickModal/FKVBox/FKButtons/BtnOnside
 @onready var coin_toss_modal: Window = $CoinTossModal
 @onready var btn_heads: Button = $CoinTossModal/CTVBox/CTButtons/BtnHeads
 @onready var btn_tails: Button = $CoinTossModal/CTVBox/CTButtons/BtnTails
@@ -106,6 +112,10 @@ func _connect_signals() -> void:
 	gs.ui_update_field.connect(_update_field)
 	gs.ui_update_log.connect(_append_log)
 	gs.ui_state_changed.connect(_on_state_changed)
+	btn_try_xp.pressed.connect(func(): _try_pick("XP"))
+	btn_try_two.pressed.connect(func(): _try_pick("TWO"))
+	btn_kickoff.pressed.connect(func(): _free_kick_pick("KICKOFF"))
+	btn_onside.pressed.connect(func(): _free_kick_pick("ONSIDE"))
 	gs.ui_banner.connect(_show_banner)
 	if gs.has_signal("ui_coin_toss_needed"):
 		gs.ui_coin_toss_needed.connect(_on_coin_toss_needed)
@@ -210,6 +220,8 @@ func _on_setup_start() -> void:
 	var drives: int = int(drives_spin.value)
 	var mode: int = 1 if mode_option.get_selected_id() == 1 else 0
 	gs.new_session(seed_val, drives, int(mode))
+	# Trigger regulation coin toss flow at session start
+	gs.call_deferred("prepare_regulation_coin_toss")
 	_update_hud()
 
 func _assign_shortcut(button: Button, keycode: Key) -> void:
@@ -229,6 +241,8 @@ func _on_start_pressed() -> void:
 	var mode: int = 1 if mode_option.get_selected_id() == 1 else 0
 	var gs: Object = get_node("/root/GameState")
 	gs.new_session(seed_val, drives, int(mode))
+	# Regulation: start with coin toss
+	gs.call_deferred("prepare_regulation_coin_toss")
 	_update_hud()
 	_update_header()
 
@@ -240,6 +254,7 @@ func _quick_play() -> void:
 	drives_spin.value = 4
 	var gs: Object = get_node("/root/GameState")
 	gs.new_session(int(sm.current_seed), 4, 0)
+	gs.call_deferred("prepare_regulation_coin_toss")
 	_update_hud()
 	_update_header()
 
@@ -290,6 +305,11 @@ func _append_log(new_line: String) -> void:
 func _on_state_changed(state_name: String) -> void:
 	if state_name == "DEFENSE_SELECT":
 		defense_modal.popup_centered()
+	elif state_name == "TRY_SELECT":
+		try_modal.popup_centered()
+	elif state_name == "FREE_KICK_SELECT":
+		_update_free_kick_modal()
+		free_kick_modal.popup_centered()
 
 func _show_banner(text: String) -> void:
 	banner_label.text = text
@@ -315,13 +335,41 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.physical_keycode == KEY_F1:
 			hud_panel.visible = !hud_panel.visible
 			_update_hud()
+		elif event.physical_keycode == KEY_X:
+			if try_modal.visible:
+				_try_pick("XP")
+		elif event.physical_keycode == KEY_2:
+			if try_modal.visible:
+				_try_pick("TWO")
+		elif event.physical_keycode == KEY_K:
+			if free_kick_modal.visible:
+				_free_kick_pick("KICKOFF")
+		elif event.physical_keycode == KEY_O:
+			if free_kick_modal.visible and not btn_onside.disabled:
+				_free_kick_pick("ONSIDE")
+
+func _try_pick(kind: String) -> void:
+	try_modal.hide()
+	var gs: Object = get_node("/root/GameState")
+	gs.call("try_select", String(kind))
+
+func _update_free_kick_modal() -> void:
+	var gs: Object = get_node("/root/GameState")
+	var allowed := bool(gs.call("is_onside_allowed"))
+	btn_onside.disabled = not allowed
+	btn_onside.hint_tooltip = "Available when trailing" if not allowed else ""
+
+func _free_kick_pick(kind: String) -> void:
+	free_kick_modal.hide()
+	var gs: Object = get_node("/root/GameState")
+	gs.call("free_kick_select", String(kind))
 
 func _update_hud() -> void:
 	var sm: Object = get_node("/root/SeedManager")
 	hud_label.text = "Seed: %s RNG#: %s" % [str(sm.current_seed), str(sm.rng_call_count)]
 
 func _on_coin_toss_needed() -> void:
-	ct_result_label.text = "Visitor calls: choose Heads or Tails"
+	ct_result_label.text = "Regulation Coin Toss — Visitor calls: Heads or Tails"
 	btn_receive.disabled = true
 	btn_defend.disabled = true
 	coin_toss_modal.popup_centered()
@@ -336,7 +384,11 @@ func _coin_toss_pick(visitor_called_heads: bool) -> void:
 
 func _coin_choice(choice: String) -> void:
 	var gs: Object = get_node("/root/GameState")
-	gs.call("enter_overtime_with_choice", String(choice))
+	# If we're in OT entry, route to OT; else regulation kickoff
+	if bool(gs.get("is_overtime")):
+		gs.call("enter_overtime_with_choice", String(choice))
+	else:
+		gs.call("enter_regulation_with_choice", String(choice))
 	coin_toss_modal.hide()
 	_update_ot_timeouts()
 

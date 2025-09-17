@@ -73,5 +73,5 @@ func test_touchdown_consumes_0() -> void:
 				break
 	var start_clock := int(gs.clock_remaining)
 	rules.apply_outcome(gs, o)
-	assert(gs.home_score >= 7)
+	assert(gs.home_score >= 6)
 	assert(int(gs.clock_remaining) == start_clock)
