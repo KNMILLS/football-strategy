@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://c374qqex73732"]
 
 [ext_resource type="Script" uid="uid://cvjt33i6laajs" path="res://Main.gd" id="1_5o0bi"]
-[ext_resource type="PackedScene" path="res://ui/team_select/TeamSelectionScreen.tscn" id="2_teamselect"]
+[ext_resource type="PackedScene" uid="uid://c1kfdfjnw41ko" path="res://ui/team_select/TeamSelectionScreen.tscn" id="2_teamselect"]
 
 [node name="Main" type="Control"]
 layout_mode = 3

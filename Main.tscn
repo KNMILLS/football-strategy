@@ -5,5 +5,3 @@
 [node name="Root" type="Node"]
 
 [node name="UI" parent="." instance=ExtResource("1_mui")]
-grow_horizontal = 2
-grow_vertical = 2
