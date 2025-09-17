@@ -19,9 +19,9 @@ static func _difficulty() -> Object:
 	return Engine.get_main_loop().root.get_node("/root/Difficulty")
 
 static func choose_defense(down: int, to_go: int, _ball_on: int, _offense_dir: int, last_offensive_calls: Array) -> String:
-	var all_fronts: Array = _rules().DATA["plays"]["DEFENSE"]
-	# Predict offense mix with Laplace smoothing and scheme priors
-	var off_base := ["RUN_IN", "RUN_OUT", "PASS_SHORT", "PASS_LONG"]
+	var all_fronts: Array = ["RUN_BLITZ", "BALANCED", "PASS_SHELL", "PRESS_MAN", "ZONE_BLITZ", "PREVENT"]
+	# Predict offense mix with Laplace smoothing and scheme priors (mapped to new plays)
+	var off_base := ["INSIDE_POWER", "OUTSIDE_ZONE", "QUICK_SLANT", "DEEP_POST"]
 	var counts := {}
 	for k in off_base:
 		counts[k] = 1 # Laplace
@@ -30,11 +30,11 @@ static func choose_defense(down: int, to_go: int, _ball_on: int, _offense_dir: i
 			counts[c] = int(counts[c]) + 1
 	# Blend situational tendency
 	if to_go <= 2:
-		counts["RUN_IN"] = int(counts["RUN_IN"]) + 2
-		counts["RUN_OUT"] = int(counts["RUN_OUT"]) + 1
+		counts["INSIDE_POWER"] = int(counts["INSIDE_POWER"]) + 2
+		counts["OUTSIDE_ZONE"] = int(counts["OUTSIDE_ZONE"]) + 1
 	elif (down == 2 or down == 3) and to_go >= 8:
-		counts["PASS_SHORT"] = int(counts["PASS_SHORT"]) + 2
-		counts["PASS_LONG"] = int(counts["PASS_LONG"]) + 1
+		counts["QUICK_SLANT"] = int(counts["QUICK_SLANT"]) + 2
+		counts["DEEP_POST"] = int(counts["DEEP_POST"]) + 1
 	# Scheme offensive bias from session rules
 	var sr := _sr()
 	if sr != null and sr.has_method("get_offense_bias"):
@@ -77,12 +77,12 @@ static func choose_defense(down: int, to_go: int, _ball_on: int, _offense_dir: i
 	if diff != null:
 		eps = float(diff.call("exploration_epsilon"))
 		bluff = float(diff.call("bluff_probability"))
-	# Bluff: if pass-heavy, occasionally ALL_OUT_RUSH; if run-heavy, occasionally RUN_BLITZ
-	var pass_p := float(p["PASS_SHORT"]) + float(p["PASS_LONG"])
-	var run_p := float(p["RUN_IN"]) + float(p["RUN_OUT"])
+	# Bluff: if pass-heavy, occasionally PRESS_MAN; if run-heavy, occasionally RUN_BLITZ
+	var pass_p := float(p["QUICK_SLANT"]) + float(p["DEEP_POST"]) 
+	var run_p := float(p["INSIDE_POWER"]) + float(p["OUTSIDE_ZONE"]) 
 	if _sm().chance(bluff * 1.0):
 		if pass_p >= 0.60:
-			best_front = "ALL_OUT_RUSH"
+			best_front = "PRESS_MAN"
 		elif run_p >= 0.60:
 			best_front = "RUN_BLITZ"
 	# Exploration
@@ -92,30 +92,7 @@ static func choose_defense(down: int, to_go: int, _ball_on: int, _offense_dir: i
 	return best_front
 
 static func _expected_yards_for(off_play: String, def_front: String) -> float:
-	var base_table: Array = _rules().DATA["matrix"][off_play][def_front]
-	var sr := _sr()
-	if sr != null and sr.has_method("adjusted_matrix_table"):
-		base_table = sr.call("adjusted_matrix_table", base_table, off_play)
-	var total_w := 0.0
-	var accum := 0.0
-	for row in base_table:
-		var token := String(row[0])
-		var w := float(int(row[1]))
-		total_w += w
-		var yd := 0.0
-		if token == "INCOMP":
-			yd = 0.0
-		elif token == "INT":
-			yd = -10.0
-		elif token == "FUMBLE":
-			yd = -5.0 # 50% turnover expected cost
-		elif token.begins_with("SACK_"):
-			yd = float(int(token.get_slice("_", 1)))
-		elif token.begins_with("PENALTY_DEF_") or token.begins_with("PENALTY_OFF_"):
-			yd = float(int(token.get_slice("_", 2)))
-		else:
-			yd = float(int(token))
-		accum += yd * w
-	if total_w <= 0.0:
-		return 0.0
-	return accum / total_w
+	var rules := _rules()
+	if rules != null and rules.has_method("expected_yards_for"):
+		return float(rules.call("expected_yards_for", off_play, def_front))
+	return 0.0

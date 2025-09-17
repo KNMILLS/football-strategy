@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bowuyqbia3f26"]
+
+[ext_resource type="Script" uid="uid://c71i5vtw3wf07" path="res://tests/test_timing_suite.gd" id="1_tsuite"]
+
+[node name="TimingSuite" type="Node"]
+script = ExtResource("1_tsuite")

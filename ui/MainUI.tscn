@@ -43,6 +43,14 @@ text = "Home 0 - 0 Away"
 layout_mode = 2
 text = "Drive 0 / 0"
 
+[node name="Clock" type="Label" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+text = "15:00"
+
+[node name="Quarter" type="Label" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+text = "Q1"
+
 [node name="Spacer" type="Control" parent="RootMargin/VMain/HeaderBar"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -129,31 +137,79 @@ layout_mode = 2
 
 [node name="OffensePanel" type="HBoxContainer" parent="RootMargin/VMain"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 12
 
-[node name="BtnRunIn" type="Button" parent="RootMargin/VMain/OffensePanel"]
+[node name="RunsVBox" type="VBoxContainer" parent="RootMargin/VMain/OffensePanel"]
 layout_mode = 2
-text = "1) Run Inside"
+theme_override_constants/separation = 4
 
-[node name="BtnRunOut" type="Button" parent="RootMargin/VMain/OffensePanel"]
+[node name="RunsLabel" type="Label" parent="RootMargin/VMain/OffensePanel/RunsVBox"]
 layout_mode = 2
-text = "2) Run Outside"
+text = "RUNS"
 
-[node name="BtnPassShort" type="Button" parent="RootMargin/VMain/OffensePanel"]
+[node name="BtnInsidePower" type="Button" parent="RootMargin/VMain/OffensePanel/RunsVBox"]
 layout_mode = 2
-text = "3) Short Pass"
+text = "1) Inside Power"
 
-[node name="BtnPassLong" type="Button" parent="RootMargin/VMain/OffensePanel"]
+[node name="BtnOutsideZone" type="Button" parent="RootMargin/VMain/OffensePanel/RunsVBox"]
 layout_mode = 2
-text = "4) Long Pass"
+text = "2) Outside Zone"
 
-[node name="BtnPunt" type="Button" parent="RootMargin/VMain/OffensePanel"]
+[node name="BtnDraw" type="Button" parent="RootMargin/VMain/OffensePanel/RunsVBox"]
 layout_mode = 2
-text = "5) Punt"
+text = "3) Draw"
 
-[node name="BtnFG" type="Button" parent="RootMargin/VMain/OffensePanel"]
+[node name="BtnQBSneak" type="Button" parent="RootMargin/VMain/OffensePanel/RunsVBox"]
 layout_mode = 2
-text = "6) Field Goal"
+text = "4) QB Sneak/Option"
+
+[node name="PassVBox" type="VBoxContainer" parent="RootMargin/VMain/OffensePanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="PassLabel" type="Label" parent="RootMargin/VMain/OffensePanel/PassVBox"]
+layout_mode = 2
+text = "PASS"
+
+[node name="BtnQuickSlant" type="Button" parent="RootMargin/VMain/OffensePanel/PassVBox"]
+layout_mode = 2
+text = "5) Quick Slant"
+
+[node name="BtnScreen" type="Button" parent="RootMargin/VMain/OffensePanel/PassVBox"]
+layout_mode = 2
+text = "6) Screen"
+
+[node name="BtnMediumCross" type="Button" parent="RootMargin/VMain/OffensePanel/PassVBox"]
+layout_mode = 2
+text = "7) Medium Cross"
+
+[node name="BtnDeepPost" type="Button" parent="RootMargin/VMain/OffensePanel/PassVBox"]
+layout_mode = 2
+text = "8) Deep Post"
+
+[node name="BtnPAShort" type="Button" parent="RootMargin/VMain/OffensePanel/PassVBox"]
+layout_mode = 2
+text = "9) Play-Action Short"
+
+[node name="BtnPADeep" type="Button" parent="RootMargin/VMain/OffensePanel/PassVBox"]
+layout_mode = 2
+text = "0) Play-Action Deep"
+
+[node name="SpecialVBox" type="VBoxContainer" parent="RootMargin/VMain/OffensePanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="SpecialLabel" type="Label" parent="RootMargin/VMain/OffensePanel/SpecialVBox"]
+layout_mode = 2
+text = "SPECIAL"
+
+[node name="BtnPunt" type="Button" parent="RootMargin/VMain/OffensePanel/SpecialVBox"]
+layout_mode = 2
+text = "Punt"
+
+[node name="BtnFG" type="Button" parent="RootMargin/VMain/OffensePanel/SpecialVBox"]
+layout_mode = 2
+text = "Field Goal"
 
 [node name="BannerPanel" type="Panel" parent="RootMargin/VMain"]
 layout_mode = 2
@@ -178,7 +234,7 @@ bbcode_enabled = true
 scroll_following = true
 
 [node name="DefenseModal" type="Window" parent="."]
-title = "Defense Select (Q-W-E-R)"
+title = "Defense Select (Q-W-E-R-T-Y)"
 initial_position = 1
 size = Vector2i(420, 140)
 visible = false
@@ -212,7 +268,15 @@ text = "E) Pass Shell"
 
 [node name="BtnAllOut" type="Button" parent="DefenseModal/DMVBox/DMButtons"]
 layout_mode = 2
-text = "R) All Out Rush"
+text = "R) Press Man"
+
+[node name="BtnZoneBlitz" type="Button" parent="DefenseModal/DMVBox/DMButtons"]
+layout_mode = 2
+text = "T) Zone Blitz"
+
+[node name="BtnPrevent" type="Button" parent="DefenseModal/DMVBox/DMButtons"]
+layout_mode = 2
+text = "Y) Prevent"
 
 [node name="HelpOverlay" type="Panel" parent="."]
 layout_mode = 3

@@ -4,6 +4,8 @@ var log_lines: Array[String] = []
 
 @onready var score_label: Label = $RootMargin/VMain/HeaderBar/Score
 @onready var drive_label: Label = $RootMargin/VMain/HeaderBar/Drive
+@onready var clock_label: Label = $RootMargin/VMain/HeaderBar/Clock
+@onready var quarter_label: Label = $RootMargin/VMain/HeaderBar/Quarter
 @onready var seed_input: LineEdit = $RootMargin/VMain/HeaderBar/SeedInput
 @onready var drives_spin: SpinBox = $RootMargin/VMain/HeaderBar/DrivesSpin
 @onready var mode_option: OptionButton = $RootMargin/VMain/HeaderBar/ModeOption
@@ -16,12 +18,18 @@ var log_lines: Array[String] = []
 @onready var spot_label: Label = $RootMargin/VMain/FieldPanel/FieldHBox/SpotLabel
 @onready var down_label: Label = $RootMargin/VMain/FieldPanel/FieldHBox/DownLabel
 
-@onready var btn_run_in: Button = $RootMargin/VMain/OffensePanel/BtnRunIn
-@onready var btn_run_out: Button = $RootMargin/VMain/OffensePanel/BtnRunOut
-@onready var btn_pass_short: Button = $RootMargin/VMain/OffensePanel/BtnPassShort
-@onready var btn_pass_long: Button = $RootMargin/VMain/OffensePanel/BtnPassLong
-@onready var btn_punt: Button = $RootMargin/VMain/OffensePanel/BtnPunt
-@onready var btn_fg: Button = $RootMargin/VMain/OffensePanel/BtnFG
+@onready var btn_inside_power: Button = $RootMargin/VMain/OffensePanel/RunsVBox/BtnInsidePower
+@onready var btn_outside_zone: Button = $RootMargin/VMain/OffensePanel/RunsVBox/BtnOutsideZone
+@onready var btn_draw: Button = $RootMargin/VMain/OffensePanel/RunsVBox/BtnDraw
+@onready var btn_qb_sneak: Button = $RootMargin/VMain/OffensePanel/RunsVBox/BtnQBSneak
+@onready var btn_quick_slant: Button = $RootMargin/VMain/OffensePanel/PassVBox/BtnQuickSlant
+@onready var btn_screen: Button = $RootMargin/VMain/OffensePanel/PassVBox/BtnScreen
+@onready var btn_medium_cross: Button = $RootMargin/VMain/OffensePanel/PassVBox/BtnMediumCross
+@onready var btn_deep_post: Button = $RootMargin/VMain/OffensePanel/PassVBox/BtnDeepPost
+@onready var btn_pa_short: Button = $RootMargin/VMain/OffensePanel/PassVBox/BtnPAShort
+@onready var btn_pa_deep: Button = $RootMargin/VMain/OffensePanel/PassVBox/BtnPADeep
+@onready var btn_punt: Button = $RootMargin/VMain/OffensePanel/SpecialVBox/BtnPunt
+@onready var btn_fg: Button = $RootMargin/VMain/OffensePanel/SpecialVBox/BtnFG
 
 @onready var banner_panel: Panel = $RootMargin/VMain/BannerPanel
 @onready var banner_label: Label = $RootMargin/VMain/BannerPanel/BannerLabel
@@ -33,6 +41,8 @@ var log_lines: Array[String] = []
 @onready var btn_balanced: Button = $DefenseModal/DMVBox/DMButtons/BtnBalanced
 @onready var btn_pass_shell: Button = $DefenseModal/DMVBox/DMButtons/BtnPassShell
 @onready var btn_all_out: Button = $DefenseModal/DMVBox/DMButtons/BtnAllOut
+@onready var btn_zone_blitz: Button = $DefenseModal/DMVBox/DMButtons/BtnZoneBlitz
+@onready var btn_prevent: Button = $DefenseModal/DMVBox/DMButtons/BtnPrevent
 
 @onready var help_overlay: Panel = $HelpOverlay
 @onready var hud_panel: Panel = $DeterminismHUD
@@ -60,17 +70,25 @@ func _connect_signals() -> void:
 	help_button.pressed.connect(_toggle_help)
 	quick_play_button.pressed.connect(_quick_play)
 
-	btn_run_in.pressed.connect(func(): _offense_pick("RUN_IN"))
-	btn_run_out.pressed.connect(func(): _offense_pick("RUN_OUT"))
-	btn_pass_short.pressed.connect(func(): _offense_pick("PASS_SHORT"))
-	btn_pass_long.pressed.connect(func(): _offense_pick("PASS_LONG"))
+	btn_inside_power.pressed.connect(func(): _offense_pick("INSIDE_POWER"))
+	btn_outside_zone.pressed.connect(func(): _offense_pick("OUTSIDE_ZONE"))
+	btn_draw.pressed.connect(func(): _offense_pick("DRAW"))
+	btn_qb_sneak.pressed.connect(func(): _offense_pick("QB_SNEAK"))
+	btn_quick_slant.pressed.connect(func(): _offense_pick("QUICK_SLANT"))
+	btn_screen.pressed.connect(func(): _offense_pick("SCREEN"))
+	btn_medium_cross.pressed.connect(func(): _offense_pick("MEDIUM_CROSS"))
+	btn_deep_post.pressed.connect(func(): _offense_pick("DEEP_POST"))
+	btn_pa_short.pressed.connect(func(): _offense_pick("PA_SHORT"))
+	btn_pa_deep.pressed.connect(func(): _offense_pick("PA_DEEP"))
 	btn_punt.pressed.connect(func(): _offense_pick("PUNT"))
 	btn_fg.pressed.connect(func(): _offense_pick("FG"))
 
 	btn_run_blitz.pressed.connect(func(): _defense_pick("RUN_BLITZ"))
 	btn_balanced.pressed.connect(func(): _defense_pick("BALANCED"))
 	btn_pass_shell.pressed.connect(func(): _defense_pick("PASS_SHELL"))
-	btn_all_out.pressed.connect(func(): _defense_pick("ALL_OUT_RUSH"))
+	btn_all_out.pressed.connect(func(): _defense_pick("PRESS_MAN"))
+	btn_zone_blitz.pressed.connect(func(): _defense_pick("ZONE_BLITZ"))
+	btn_prevent.pressed.connect(func(): _defense_pick("PREVENT"))
 
 	var gs: Object = get_node("/root/GameState")
 	gs.ui_update_header.connect(_update_header)
@@ -81,16 +99,24 @@ func _connect_signals() -> void:
 	setup_start_button.pressed.connect(_on_setup_start)
 
 func _setup_shortcuts() -> void:
-	_assign_shortcut(btn_run_in, KEY_1)
-	_assign_shortcut(btn_run_out, KEY_2)
-	_assign_shortcut(btn_pass_short, KEY_3)
-	_assign_shortcut(btn_pass_long, KEY_4)
-	_assign_shortcut(btn_punt, KEY_5)
-	_assign_shortcut(btn_fg, KEY_6)
+	_assign_shortcut(btn_inside_power, KEY_1)
+	_assign_shortcut(btn_outside_zone, KEY_2)
+	_assign_shortcut(btn_draw, KEY_3)
+	_assign_shortcut(btn_qb_sneak, KEY_4)
+	_assign_shortcut(btn_quick_slant, KEY_5)
+	_assign_shortcut(btn_screen, KEY_6)
+	_assign_shortcut(btn_medium_cross, KEY_7)
+	_assign_shortcut(btn_deep_post, KEY_8)
+	_assign_shortcut(btn_pa_short, KEY_9)
+	_assign_shortcut(btn_pa_deep, KEY_0)
+	_assign_shortcut(btn_punt, KEY_P)
+	_assign_shortcut(btn_fg, KEY_F)
 	_assign_shortcut(btn_run_blitz, KEY_Q)
 	_assign_shortcut(btn_balanced, KEY_W)
 	_assign_shortcut(btn_pass_shell, KEY_E)
 	_assign_shortcut(btn_all_out, KEY_R)
+	_assign_shortcut(btn_zone_blitz, KEY_T)
+	_assign_shortcut(btn_prevent, KEY_Y)
 
 func _show_splash_then_setup() -> void:
 	# Show splash for ~1.2s then show setup
@@ -189,12 +215,16 @@ func _update_header() -> void:
 	var gs: Object = get_node("/root/GameState")
 	score_label.text = gs.get_score_text()
 	drive_label.text = gs.get_drive_text()
+	clock_label.text = gs.get_clock_text()
+	quarter_label.text = gs.get_quarter_text()
 	_update_hud()
 
 func _update_field() -> void:
 	var gs: Object = get_node("/root/GameState")
 	spot_label.text = "Ball: %s" % gs.get_spot_text()
 	down_label.text = gs.get_down_text()
+	clock_label.text = gs.get_clock_text()
+	quarter_label.text = gs.get_quarter_text()
 	_update_hud()
 
 func _append_log(new_line: String) -> void:

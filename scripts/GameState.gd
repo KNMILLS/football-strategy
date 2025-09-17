@@ -8,6 +8,8 @@ signal ui_banner(text: String)
 
 enum State { IDLE, PRESNAP, DEFENSE_SELECT, RESOLVE, DRIVE_END }
 
+const TimingRes: Script = preload("res://scripts/Timing.gd")
+
 var mode: int = 0
 var num_drives: int = 4
 var drive_index: int = 0
@@ -23,6 +25,15 @@ var to_go: int = 10
 var series_start: int = 25
 var line_to_gain: int = 35
 
+# Clock/Quarter state
+var quarter: int = 1
+var clock_remaining: int = 900 # seconds remaining in current quarter
+var _quarter_seconds_default: int = 900
+var _quarter_seconds_cfg: int = 900
+var _two_minute_warn_q2: bool = false
+var _two_minute_warn_q4: bool = false
+var _timing: Object = null
+
 var last_offensive_calls: Array = []
 var current_offense_play: String = ""
 var current_defense_play: String = ""
@@ -37,6 +48,7 @@ var difficulty_level: int = 1 # Difficulty.Level.PRO by default
 var _session_rules_obj: Object = null
 
 func _ready() -> void:
+	_ensure_timing_loaded()
 	_emit_all()
 
 func _emit_all() -> void:
@@ -52,6 +64,10 @@ func new_session(seed_value: int, drives: int, new_mode: int) -> void:
 	home_score = 0
 	away_score = 0
 	offense_is_home = true
+	quarter = 1
+	clock_remaining = _quarter_seconds_cfg
+	_two_minute_warn_q2 = false
+	_two_minute_warn_q4 = false
 	# Default teams if not configured
 	if selected_home_team_id == "" or selected_away_team_id == "":
 		var tl: Object = get_node("/root/TeamLoader")
@@ -89,6 +105,18 @@ func get_score_text() -> String:
 func get_drive_text() -> String:
 	return "Drive %d / %d" % [drive_index, num_drives]
 
+func get_clock_text() -> String:
+	var s: int = int(max(0, int(clock_remaining)))
+	var mm: int = int(s / 60)
+	var ss: int = int(s % 60)
+	return "%d:%02d" % [mm, ss]
+
+func get_quarter_text() -> String:
+	var q := int(quarter)
+	if q <= 0:
+		q = 1
+	return "Q%d" % [q]
+
 func get_spot_text() -> String:
 	return (get_node("/root/Rules") as Object).yards_to_string(offense_dir, ball_on, offense_is_home)
 
@@ -113,6 +141,7 @@ func defense_select(play_key: String) -> void:
 	_resolve()
 
 func _resolve() -> void:
+	_check_two_minute_warning()
 	var desc_header := "%s vs %s" % [current_offense_play, current_defense_play]
 	var rules: Object = get_node("/root/Rules")
 	var outcome: Dictionary = rules.resolve_play(current_offense_play, current_defense_play, ball_on, offense_dir)
@@ -168,6 +197,38 @@ func _resolve() -> void:
 func _emit_log(line: String) -> void:
 	emit_signal("ui_update_log", line)
 
+func _ensure_timing_loaded() -> void:
+	if _timing == null:
+		_timing = TimingRes.new()
+		_timing.load_cfg()
+		var cfg_q := _quarter_seconds_default
+		if _timing.cfg.has("quarter_seconds"):
+			cfg_q = int(_timing.cfg["quarter_seconds"])
+		_quarter_seconds_cfg = cfg_q if cfg_q > 0 else _quarter_seconds_default
+		if clock_remaining <= 0:
+			clock_remaining = _quarter_seconds_cfg
+
+func _check_two_minute_warning() -> void:
+	if clock_remaining > 120:
+		return
+	if quarter == 2 and not _two_minute_warn_q2:
+		_two_minute_warn_q2 = true
+		emit_signal("ui_banner", "TWO-MINUTE WARNING")
+	elif quarter == 4 and not _two_minute_warn_q4:
+		_two_minute_warn_q4 = true
+		emit_signal("ui_banner", "TWO-MINUTE WARNING")
+
+func _after_outcome_timing(outcome: Dictionary) -> void:
+	_ensure_timing_loaded()
+	if outcome == null:
+		return
+	if not outcome.has("ended_inbounds"):
+		outcome["ended_inbounds"] = true
+	_timing.consume_clock(self, outcome)
+	if int(clock_remaining) <= 0:
+		quarter += 1
+		clock_remaining = _quarter_seconds_cfg
+
 func set_session_config(home_team_id: String, away_team_id: String, new_difficulty_level: int) -> void:
 	selected_home_team_id = String(home_team_id)
 	selected_away_team_id = String(away_team_id)
@@ -183,6 +244,8 @@ func _rebuild_session_rules() -> void:
 	var team1: Dictionary = tl.call("get_team_dict", selected_home_team_id)
 	var team2: Dictionary = tl.call("get_team_dict", selected_away_team_id)
 	new_sr.call("build", get_node("/root/Rules"), team1, team2, int(difficulty_level))
+	if new_sr.has_method("record_teams"):
+		new_sr.call("record_teams", team1, team2)
 	_session_rules_obj = new_sr
 
 func get_session_rules() -> Object:

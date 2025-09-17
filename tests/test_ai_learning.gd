@@ -17,4 +17,3 @@ func test_defense_increases_pass_shell_in_long() -> void:
 		var pick := String(da.call("choose_defense", 2, 9, gs.ball_on, gs.offense_dir, gs.last_offensive_calls))
 		counts[pick] = int(counts.get(pick, 0)) + 1
 	assert(int(counts["PASS_SHELL"]) > int(counts["BALANCED"]))
-

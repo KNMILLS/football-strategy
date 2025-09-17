@@ -1,0 +1,625 @@
+{
+  "schema_version": "1.1",
+  "offense_plays": [
+    {"id":"INSIDE_POWER","family":"RUN","ui_name":"Inside Power","hotkey":"1"},
+    {"id":"OUTSIDE_ZONE","family":"RUN","ui_name":"Outside Zone","hotkey":"2"},
+    {"id":"DRAW","family":"RUN","ui_name":"Draw","hotkey":"3"},
+    {"id":"QB_SNEAK","family":"RUN","ui_name":"QB Sneak/Option","hotkey":"4"},
+    {"id":"QUICK_SLANT","family":"PASS","ui_name":"Quick Slant","hotkey":"5"},
+    {"id":"SCREEN","family":"PASS","ui_name":"Screen","hotkey":"6"},
+    {"id":"MEDIUM_CROSS","family":"PASS","ui_name":"Medium Cross","hotkey":"7"},
+    {"id":"DEEP_POST","family":"PASS","ui_name":"Deep Post","hotkey":"8"},
+    {"id":"PA_SHORT","family":"PASS","ui_name":"Play-Action Short","hotkey":"9"},
+    {"id":"PA_DEEP","family":"PASS","ui_name":"Play-Action Deep","hotkey":"0"},
+    {"id":"PUNT","family":"SPECIAL","ui_name":"Punt"},
+    {"id":"FIELD_GOAL","family":"SPECIAL","ui_name":"Field Goal"}
+  ],
+  "defense_fronts": [
+    {"id":"RUN_BLITZ","ui_name":"Run Blitz","hotkey":"Q"},
+    {"id":"BALANCED","ui_name":"Balanced","hotkey":"W"},
+    {"id":"PASS_SHELL","ui_name":"Pass Shell (Zone)","hotkey":"E"},
+    {"id":"PRESS_MAN","ui_name":"Press Man","hotkey":"R"},
+    {"id":"ZONE_BLITZ","ui_name":"Zone Blitz","hotkey":"T"},
+    {"id":"PREVENT","ui_name":"Prevent","hotkey":"Y"}
+  ],
+  "matrix": {
+    "INSIDE_POWER": {
+      "RUN_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[-3,2],"weight":28,"tags":["RUN_STUFF"]},
+          {"event":"YARDS","yards_range":[3,4],"weight":8,"tags":["LEG_DRIVE"]},
+          {"event":"FUMBLE","yards_range":[-2,2],"weight":2,"offense_recovers":0.5},
+          {"event":"PENALTY_DEF","penalty":{"kind":"+5","replay_down":true},"weight":2},
+          {"event":"PENALTY_OFF","penalty":{"kind":"-10","replay_down":true},"weight":3}
+        ]
+      },
+      "BALANCED": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[-1,2],"weight":18},
+          {"event":"YARDS","yards_range":[3,6],"weight":24},
+          {"event":"YARDS","yards_range":[7,10],"weight":6},
+          {"event":"FUMBLE","yards_range":[-2,2],"weight":2,"offense_recovers":0.5},
+          {"event":"PENALTY_DEF","penalty":{"kind":"+5","replay_down":true},"weight":2}
+        ]
+      },
+      "PASS_SHELL": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[2,5],"weight":24},
+          {"event":"YARDS","yards_range":[6,10],"weight":10},
+          {"event":"FUMBLE","yards_range":[-2,2],"weight":2,"offense_recovers":0.5},
+          {"event":"PENALTY_DEF","penalty":{"kind":"+5","replay_down":true},"weight":3}
+        ]
+      },
+      "PRESS_MAN": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[0,3],"weight":22},
+          {"event":"YARDS","yards_range":[4,7],"weight":12},
+          {"event":"FUMBLE","yards_range":[-1,1],"weight":2,"offense_recovers":0.5},
+          {"event":"PENALTY_DEF","penalty":{"kind":"+5","replay_down":true},"weight":2}
+        ]
+      },
+      "ZONE_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[-2,3],"weight":26},
+          {"event":"YARDS","yards_range":[4,6],"weight":10},
+          {"event":"FUMBLE","yards_range":[-2,1],"weight":3,"offense_recovers":0.5},
+          {"event":"PENALTY_OFF","penalty":{"kind":"-10","replay_down":true},"weight":3}
+        ]
+      },
+      "PREVENT": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[3,7],"weight":26},
+          {"event":"YARDS","yards_range":[8,12],"weight":8},
+          {"event":"FUMBLE","yards_range":[-1,2],"weight":2,"offense_recovers":0.5}
+        ]
+      }
+    },
+    "OUTSIDE_ZONE": {
+      "RUN_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[-3,1],"weight":24},
+          {"event":"YARDS","yards_range":[2,6],"weight":16},
+          {"event":"FUMBLE","yards_range":[-2,2],"weight":3,"offense_recovers":0.5},
+          {"event":"PENALTY_OFF","penalty":{"kind":"-10","replay_down":true},"weight":3}
+        ]
+      },
+      "BALANCED": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[0,3],"weight":18},
+          {"event":"YARDS","yards_range":[4,8],"weight":18},
+          {"event":"YARDS","yards_range":[9,12],"weight":6},
+          {"event":"FUMBLE","yards_range":[-2,2],"weight":2,"offense_recovers":0.5}
+        ]
+      },
+      "PASS_SHELL": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[2,6],"weight":22},
+          {"event":"YARDS","yards_range":[7,11],"weight":10},
+          {"event":"FUMBLE","yards_range":[-2,2],"weight":2,"offense_recovers":0.5}
+        ]
+      },
+      "PRESS_MAN": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[0,4],"weight":22},
+          {"event":"YARDS","yards_range":[5,9],"weight":12},
+          {"event":"FUMBLE","yards_range":[-2,2],"weight":2,"offense_recovers":0.5}
+        ]
+      },
+      "ZONE_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[-3,2],"weight":24},
+          {"event":"YARDS","yards_range":[3,7],"weight":12},
+          {"event":"FUMBLE","yards_range":[-2,1],"weight":3,"offense_recovers":0.5}
+        ]
+      },
+      "PREVENT": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[4,9],"weight":24},
+          {"event":"YARDS","yards_range":[10,14],"weight":8},
+          {"event":"FUMBLE","yards_range":[-1,2],"weight":2,"offense_recovers":0.5}
+        ]
+      }
+    },
+    "DRAW": {
+      "RUN_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[-4,1],"weight":20},
+          {"event":"YARDS","yards_range":[2,5],"weight":12},
+          {"event":"FUMBLE","yards_range":[-2,2],"weight":3,"offense_recovers":0.5},
+          {"event":"PENALTY_OFF","penalty":{"kind":"-10","replay_down":true},"weight":3}
+        ]
+      },
+      "BALANCED": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[-1,3],"weight":18},
+          {"event":"YARDS","yards_range":[4,8],"weight":18},
+          {"event":"YARDS","yards_range":[9,12],"weight":6},
+          {"event":"FUMBLE","yards_range":[-2,2],"weight":2,"offense_recovers":0.5}
+        ]
+      },
+      "PASS_SHELL": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[2,7],"weight":24},
+          {"event":"YARDS","yards_range":[8,12],"weight":8},
+          {"event":"FUMBLE","yards_range":[-2,1],"weight":2,"offense_recovers":0.5}
+        ]
+      },
+      "PRESS_MAN": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[1,5],"weight":22},
+          {"event":"YARDS","yards_range":[6,10],"weight":10},
+          {"event":"FUMBLE","yards_range":[-1,2],"weight":2,"offense_recovers":0.5}
+        ]
+      },
+      "ZONE_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[0,6],"weight":24},
+          {"event":"YARDS","yards_range":[7,12],"weight":10},
+          {"event":"FUMBLE","yards_range":[-2,1],"weight":2,"offense_recovers":0.5}
+        ]
+      },
+      "PREVENT": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"YARDS","yards_range":[5,10],"weight":24},
+          {"event":"YARDS","yards_range":[11,15],"weight":8},
+          {"event":"FUMBLE","yards_range":[-1,2],"weight":2,"offense_recovers":0.5}
+        ]
+      }
+    },
+    "QB_SNEAK": {
+      "RUN_BLITZ": {
+        "context_rules": [{"allow_when_to_go_max": 2}],
+        "buckets": [
+          {"event":"YARDS","yards_range":[0,1],"weight":24},
+          {"event":"YARDS","yards_range":[2,3],"weight":10},
+          {"event":"FUMBLE","yards_range":[-1,1],"weight":2,"offense_recovers":0.6}
+        ]
+      },
+      "BALANCED": {
+        "context_rules": [{"allow_when_to_go_max": 2}],
+        "buckets": [
+          {"event":"YARDS","yards_range":[0,2],"weight":26},
+          {"event":"YARDS","yards_range":[3,4],"weight":6},
+          {"event":"FUMBLE","yards_range":[-1,1],"weight":2,"offense_recovers":0.6}
+        ]
+      },
+      "PASS_SHELL": {
+        "context_rules": [{"allow_when_to_go_max": 2}],
+        "buckets": [
+          {"event":"YARDS","yards_range":[1,3],"weight":26},
+          {"event":"YARDS","yards_range":[4,5],"weight":6}
+        ]
+      },
+      "PRESS_MAN": {
+        "context_rules": [{"allow_when_to_go_max": 2}],
+        "buckets": [
+          {"event":"YARDS","yards_range":[0,2],"weight":26},
+          {"event":"YARDS","yards_range":[3,4],"weight":6}
+        ]
+      },
+      "ZONE_BLITZ": {
+        "context_rules": [{"allow_when_to_go_max": 2}],
+        "buckets": [
+          {"event":"YARDS","yards_range":[-1,2],"weight":24},
+          {"event":"YARDS","yards_range":[3,4],"weight":8}
+        ]
+      },
+      "PREVENT": {
+        "context_rules": [{"allow_when_to_go_max": 2}],
+        "buckets": [
+          {"event":"YARDS","yards_range":[2,4],"weight":26},
+          {"event":"YARDS","yards_range":[5,6],"weight":6}
+        ]
+      }
+    },
+    "QUICK_SLANT": {
+      "RUN_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"SACK","yards_range":[-9,-5],"weight":12,"sack_fumble_chance":0.12},
+          {"event":"INCOMP","weight":18},
+          {"event":"YARDS","yards_range":[3,6],"weight":20},
+          {"event":"YARDS","yards_range":[7,10],"weight":8},
+          {"event":"INT","weight":4},
+          {"event":"PENALTY_DEF","penalty":{"kind":"+5","replay_down":true},"weight":4}
+        ]
+      },
+      "BALANCED": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":20},
+          {"event":"YARDS","yards_range":[4,7],"weight":22},
+          {"event":"YARDS","yards_range":[8,11],"weight":8},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "PASS_SHELL": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":26},
+          {"event":"YARDS","yards_range":[3,6],"weight":18},
+          {"event":"YARDS","yards_range":[7,9],"weight":6},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "PRESS_MAN": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":20},
+          {"event":"YARDS","yards_range":[4,8],"weight":20},
+          {"event":"INT","weight":6}
+        ]
+      },
+      "ZONE_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"SACK","yards_range":[-9,-6],"weight":10,"sack_fumble_chance":0.15},
+          {"event":"INCOMP","weight":16},
+          {"event":"YARDS","yards_range":[5,9],"weight":22},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "PREVENT": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":24},
+          {"event":"YARDS","yards_range":[3,6],"weight":18},
+          {"event":"YARDS","yards_range":[7,9],"weight":6},
+          {"event":"INT","weight":2}
+        ]
+      }
+    },
+    "SCREEN": {
+      "RUN_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"SACK","yards_range":[-8,-5],"weight":8,"sack_fumble_chance":0.10},
+          {"event":"INCOMP","weight":18},
+          {"event":"YARDS","yards_range":[4,8],"weight":20},
+          {"event":"YARDS","yards_range":[9,14],"weight":10},
+          {"event":"INT","weight":2}
+        ]
+      },
+      "BALANCED": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":20},
+          {"event":"YARDS","yards_range":[3,7],"weight":22},
+          {"event":"YARDS","yards_range":[8,12],"weight":8},
+          {"event":"INT","weight":2}
+        ]
+      },
+      "PASS_SHELL": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":24},
+          {"event":"YARDS","yards_range":[2,6],"weight":20},
+          {"event":"YARDS","yards_range":[7,10],"weight":6},
+          {"event":"INT","weight":2}
+        ]
+      },
+      "PRESS_MAN": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":22},
+          {"event":"YARDS","yards_range":[3,8],"weight":20},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "ZONE_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"SACK","yards_range":[-10,-6],"weight":6,"sack_fumble_chance":0.12},
+          {"event":"INCOMP","weight":14},
+          {"event":"YARDS","yards_range":[8,14],"weight":22},
+          {"event":"YARDS","yards_range":[15,20],"weight":6},
+          {"event":"INT","weight":2}
+        ]
+      },
+      "PREVENT": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":24},
+          {"event":"YARDS","yards_range":[2,6],"weight":20},
+          {"event":"INT","weight":2}
+        ]
+      }
+    },
+    "MEDIUM_CROSS": {
+      "RUN_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"SACK","yards_range":[-9,-6],"weight":10,"sack_fumble_chance":0.12},
+          {"event":"INCOMP","weight":22},
+          {"event":"YARDS","yards_range":[7,12],"weight":16},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "BALANCED": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":22},
+          {"event":"YARDS","yards_range":[8,13],"weight":18},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "PASS_SHELL": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":28},
+          {"event":"YARDS","yards_range":[6,11],"weight":16},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "PRESS_MAN": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":24},
+          {"event":"YARDS","yards_range":[8,14],"weight":16},
+          {"event":"INT","weight":6}
+        ]
+      },
+      "ZONE_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"SACK","yards_range":[-10,-6],"weight":10,"sack_fumble_chance":0.12},
+          {"event":"INCOMP","weight":20},
+          {"event":"YARDS","yards_range":[9,14],"weight":16},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "PREVENT": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":28},
+          {"event":"YARDS","yards_range":[6,10],"weight":16},
+          {"event":"INT","weight":4}
+        ]
+      }
+    },
+    "DEEP_POST": {
+      "RUN_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"SACK","yards_range":[-10,-7],"weight":10,"sack_fumble_chance":0.15},
+          {"event":"INCOMP","weight":28},
+          {"event":"YARDS","yards_range":[18,30],"weight":10},
+          {"event":"INT","weight":6}
+        ]
+      },
+      "BALANCED": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":32},
+          {"event":"YARDS","yards_range":[15,25],"weight":10},
+          {"event":"INT","weight":6}
+        ]
+      },
+      "PASS_SHELL": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":38},
+          {"event":"YARDS","yards_range":[12,20],"weight":8},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "PRESS_MAN": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":30},
+          {"event":"YARDS","yards_range":[20,32],"weight":12},
+          {"event":"INT","weight":8}
+        ]
+      },
+      "ZONE_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"SACK","yards_range":[-11,-7],"weight":12,"sack_fumble_chance":0.15},
+          {"event":"INCOMP","weight":28},
+          {"event":"YARDS","yards_range":[18,28],"weight":10},
+          {"event":"INT","weight":6}
+        ]
+      },
+      "PREVENT": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":42},
+          {"event":"YARDS","yards_range":[10,18],"weight":6},
+          {"event":"INT","weight":4}
+        ]
+      }
+    },
+    "PA_SHORT": {
+      "RUN_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"SACK","yards_range":[-9,-6],"weight":10,"sack_fumble_chance":0.12},
+          {"event":"INCOMP","weight":20},
+          {"event":"YARDS","yards_range":[6,10],"weight":18},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "BALANCED": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":20},
+          {"event":"YARDS","yards_range":[7,11],"weight":18},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "PASS_SHELL": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":24},
+          {"event":"YARDS","yards_range":[6,10],"weight":16},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "PRESS_MAN": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":22},
+          {"event":"YARDS","yards_range":[7,12],"weight":16},
+          {"event":"INT","weight":6}
+        ]
+      },
+      "ZONE_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"SACK","yards_range":[-10,-6],"weight":10,"sack_fumble_chance":0.12},
+          {"event":"INCOMP","weight":18},
+          {"event":"YARDS","yards_range":[8,12],"weight":16},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "PREVENT": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":26},
+          {"event":"YARDS","yards_range":[6,10],"weight":14},
+          {"event":"INT","weight":4}
+        ]
+      }
+    },
+    "PA_DEEP": {
+      "RUN_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"SACK","yards_range":[-11,-7],"weight":12,"sack_fumble_chance":0.15},
+          {"event":"INCOMP","weight":28},
+          {"event":"YARDS","yards_range":[18,28],"weight":10},
+          {"event":"INT","weight":6}
+        ]
+      },
+      "BALANCED": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":30},
+          {"event":"YARDS","yards_range":[16,26],"weight":12},
+          {"event":"INT","weight":6}
+        ]
+      },
+      "PASS_SHELL": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":36},
+          {"event":"YARDS","yards_range":[12,20],"weight":8},
+          {"event":"INT","weight":4}
+        ]
+      },
+      "PRESS_MAN": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":28},
+          {"event":"YARDS","yards_range":[20,34],"weight":12},
+          {"event":"INT","weight":8}
+        ]
+      },
+      "ZONE_BLITZ": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"SACK","yards_range":[-12,-8],"weight":12,"sack_fumble_chance":0.15},
+          {"event":"INCOMP","weight":28},
+          {"event":"YARDS","yards_range":[18,28],"weight":10},
+          {"event":"INT","weight":6}
+        ]
+      },
+      "PREVENT": {
+        "context_rules": [],
+        "buckets": [
+          {"event":"INCOMP","weight":44},
+          {"event":"YARDS","yards_range":[10,18],"weight":6},
+          {"event":"INT","weight":4}
+        ]
+      }
+    },
+    "PUNT": {
+      "RUN_BLITZ": {"context_rules": [], "buckets": []},
+      "BALANCED": {"context_rules": [], "buckets": []},
+      "PASS_SHELL": {"context_rules": [], "buckets": []},
+      "PRESS_MAN": {"context_rules": [], "buckets": []},
+      "ZONE_BLITZ": {"context_rules": [], "buckets": []},
+      "PREVENT": {"context_rules": [], "buckets": []}
+    },
+    "FIELD_GOAL": {
+      "RUN_BLITZ": {"context_rules": [], "buckets": []},
+      "BALANCED": {"context_rules": [], "buckets": []},
+      "PASS_SHELL": {"context_rules": [], "buckets": []},
+      "PRESS_MAN": {"context_rules": [], "buckets": []},
+      "ZONE_BLITZ": {"context_rules": [], "buckets": []},
+      "PREVENT": {"context_rules": [], "buckets": []}
+    }
+  },
+  "special_teams": {
+    "field_goal": {
+      "0_39":  {"good":0.95,"block":0.01,"miss":0.04},
+      "40_49": {"good":0.84,"block":0.01,"miss":0.15},
+      "50_57": {"good":0.64,"block":0.02,"miss":0.34}
+    },
+    "punt": {
+      "net_yards": [
+        {"range":[30,34],"weight":12},
+        {"range":[35,39],"weight":22},
+        {"range":[40,44],"weight":18},
+        {"range":[45,50],"weight":10}
+      ],
+      "block_chance": 0.01,
+      "touchback_to": 20
+    }
+  },
+  "big_play": {
+    "offense_base": {
+      "INSIDE_POWER": 0.004, "OUTSIDE_ZONE": 0.005, "DRAW": 0.006, "QB_SNEAK": 0.002,
+      "QUICK_SLANT": 0.005, "SCREEN": 0.008, "MEDIUM_CROSS": 0.005,
+      "DEEP_POST": 0.010, "PA_SHORT": 0.006, "PA_DEEP": 0.012,
+      "PUNT": 0.000, "FIELD_GOAL": 0.000
+    },
+    "defense_base": {
+      "RUN_BLITZ": 0.004, "BALANCED": 0.003, "PASS_SHELL": 0.003,
+      "PRESS_MAN": 0.006, "ZONE_BLITZ": 0.006, "PREVENT": 0.002
+    },
+    "matchup_multipliers": {
+      "SCREEN:ZONE_BLITZ": 1.8,
+      "DEEP_POST:PRESS_MAN": 1.6,
+      "INSIDE_POWER:PASS_SHELL": 1.4,
+      "OUTSIDE_ZONE:RUN_BLITZ": 0.6,
+      "DEEP_POST:PREVENT": 0.5,
+      "QUICK_SLANT:RUN_BLITZ": 1.4,
+      "DRAW:ZONE_BLITZ": 1.5,
+      "PA_DEEP:BALANCED": 1.2
+    },
+    "defense_types": [
+      {"kind":"PICK_SIX","weight":4},
+      {"kind":"STRIP_SACK_TD","weight":4},
+      {"kind":"SCOOP_AND_SCORE","weight":3},
+      {"kind":"BLOCK_PUNT_TD","weight":1},
+      {"kind":"BLOCK_FG_TD","weight":1}
+    ],
+    "offense_types": [
+      {"kind":"RUN_BREAKAWAY","weight":5},
+      {"kind":"YAC_EXPLOSION","weight":5},
+      {"kind":"DEEP_BOMB_TD","weight":3}
+    ],
+    "caps": {"offense_bp_max": 0.025, "defense_bp_max": 0.020}
+  }
+}
+
+

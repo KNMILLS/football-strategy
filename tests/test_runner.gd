@@ -32,6 +32,7 @@ func run_all(filter: String = "") -> String:
 	results.failed = 0
 	var suites := _discover_suites()
 	for suite in suites:
+		add_child(suite)
 		for method in suite.get_method_list():
 			var name: String = method.name
 			if name.begins_with("test_") and (filter == "" or name.findn(filter) != -1):
@@ -40,5 +41,6 @@ func run_all(filter: String = "") -> String:
 				suite.call(name)
 				results.passed += 1
 				print("PASS ", name)
+		suite.queue_free()
 	return "Tests Passed %d Failed %d" % [results.passed, results.failed]
 

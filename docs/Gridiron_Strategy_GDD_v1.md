@@ -1,233 +1,283 @@
-# Gridiron Strategy — v1.0 Game Design Document (Markdown)
+# Gridiron Strategy — GDD v1.1
 
-> Scope: **single self‑contained game**, **Standard rules only**, **scheme‑driven teams (12–16)**, **retro “Madden ’95”** splash/setup & playcalling presentation. Deterministic RNG with seed. No seasons, no meta-progression.
+> Single-game, retro-style, drive-based American football strategy game inspired by classic tabletop titles. Deterministic RNG with optional seed. Standard mode only (no seasons/franchise). This document supersedes prior versions.
 
 ---
 
 ## 1) Vision & Pillars
 
-**Vision.** A fast, board‑game‑feel football duel with hidden playcalling, readable outcomes, and distinct **team identities via schemes**, presented with a **Madden ’95‑style** setup and playcalling look. Each match stands alone; learning the teams and anticipating tendencies is the core mastery.
-
-**Pillars**
-- **Self‑contained sessions.** One game at a time; no carryover systems.
-- **Hidden simultaneous selection.** Offense picks 1 of 6 plays; Defense picks 1 of 4 fronts.
-- **Scheme identity.** Small, data‑driven nudges that make teams feel different but fair.
-- **Deterministic RNG.** Reproducible with seed; all random draws flow through one manager.
-- **Retro clarity.** 90s EA‑era tile grids, bold caps headers, clean banner feedback.
-- **Test‑first.** A QA harness that protects rules, determinism, and the retro UI layout.
+* **Fast, readable strategy**: hidden, simultaneous selection (Offense vs Defense) with compact outcomes.
+* **Retro presentation**: Splash → Setup → Playcalling reminiscent of *Madden ’95* layout.
+* **Deterministic & testable**: all randomness flows through a single seed manager; reproducible sims.
+* **Team identity**: iconic offensive/defensive archetypes subtly bias call mix and outcomes (no roster stats).
+* **Now in v1.1**: 12 offensive plays × 6 defensive fronts; matchup-aware **Big Play** system for rare explosive outcomes on both sides.
 
 ---
 
-## 2) What’s in / out for v1.0
+## 2) Scope (v1.1)
 
-**In**
-- Standard rules only (no clock); TD=7, FG=3; punts, penalties, turnovers.
-- 12–16 **scheme teams** (offense scheme × defense shell), selectable in Setup.
-- Difficulty: **Rookie / Pro / Legend** (affects AI exploration + counter sharpness).
-- Field view: LOS (red), line‑to‑gain (yellow), ball glide animation.
-- Retro UI: **Splash → Game Setup → Playcalling → Result banner & log → Final**.
+### Game Mode
 
-**Out (defer)**
-- Seasons/franchises, meta progression, online.
-- “Play Sequencer” system (may return later).
-- Multiple modes beyond **Standard** (Arcade/Express/Sim).
+* **Standard**: one self-contained game. No clock (v1.1), no extra points/2-pt conversions, no returns outside explicit rules. Drive-based scoring: TD = 7, FG = 3.
 
----
+### Field/Downs
 
-## 3) Game Flow (Screens)
+* Drives start at own 25. 4 downs to gain 10 yards. Ball position 0..100 (absolute); offense has `dir = +1` for home, `-1` for away.
 
-1) **Splash** — “Gridiron Football” title; 1–1.5s fade.
-2) **Game Setup (Madden ’95 vibe)** — side‑by‑side tiles:
-   - Team 1 / Team 2 (choose any of the shipped teams)
-   - Difficulty (Rookie/Pro/Legend)
-   - Stadium (cosmetic), Coin Toss, Uniform palette
-   - Start
-3) **Kickoff → Drives** — hidden playcall each snap, resolve, animate ball spot, banner + log.
-4) **Final** — box score, “Play Again”, “Swap Teams”.
+### Playbooks
 
-*Aesthetic references for the look (tiles, borders, coin toss, play‑select grid) are in §13.*
+**Offense – 12 Plays**
 
----
+1. **INSIDE\_POWER** (run)
+2. **OUTSIDE\_ZONE** (run)
+3. **DRAW** (run)
+4. **QB\_SNEAK** (run, short-yardage)
+5. **QUICK\_SLANT** (short pass)
+6. **SCREEN** (short pass vs pressure)
+7. **MEDIUM\_CROSS** (intermediate)
+8. **DEEP\_POST** (vertical)
+9. **PA\_SHORT** (play-action, short)
+10. **PA\_DEEP** (play-action, deep)
+11. **PUNT** (special)
+12. **FIELD\_GOAL** (special)
 
-## 4) Core Rules (Standard)
+**Defense – 6 Fronts**
 
-- Ball on 0..100 scale; offense direction ±1.
-- **Offense plays (6):** RUN_IN, RUN_OUT, PASS_SHORT, PASS_LONG, PUNT, FG.
-- **Defense fronts (4):** RUN_BLITZ, BALANCED, PASS_SHELL, ALL_OUT_RUSH.
-- Reveal → resolve via **Base Outcome Matrix** (`Rules.DATA`).
-- **First downs:** if net yards to the line-to-gain ≥ 0, reset down to 1 & to_go to 10.
-- **Field goals:** distance = LOS + **17** yards (10‑yd end zone + ~7‑yd hold); >57y = OOR.
-- **Punts:** net distributions; block chance; **scrimmage‑kick touchback → ball at the 20**.
-- **Scoring:** TD=7 (no XP), FG=3. No returns beyond table definitions. No clock.
-- **Penalties:** yardage applied; replay down unless stated; can award first down if yardage suffices.
+* **RUN\_BLITZ**, **BALANCED**, **PASS\_SHELL** (zone), **PRESS\_MAN**, **ZONE\_BLITZ**, **PREVENT**.
 
 ---
 
-## 5) Teams & Schemes (Data‑Driven)
+## 3) UI & Controls (Retro)
 
-Ship **12–16 teams** that mirror modern NFL archetypes—no licenses, just scheme identity.
+### Flow
 
-### 5.1 Offensive schemes (choose ≥6)
-- **West Coast** — high‑percentage, horizontal passing & YAC tilt.
-- **Air Raid** — spread, pass‑heavy; quick game + vertical shots; more INT volatility.
-- **Wide Zone / Play‑Action** — outside run mid‑gains; PA deep modest bump.
-- **Power/Gap** — inside run success ↑, negative‑run variance ↑.
-- **RPO/Spread** — safer vs blitz; marginally harder vs deep shell.
-- **Balanced Pro** — near‑neutral priors.
+* **Splash** → **Setup** → **Playcalling** (single screen) → outcome banner → log.
 
-### 5.2 Defensive shells (choose 4–5)
-- **Cover‑2 / Tampa‑2** — short/intermediate clamp; MLB deep‑drop in Tampa‑2.
-- **3‑4 Zone Blitz** — pressure variety; sacks/flags ↑; voids behind pressure.
-- **Match Quarters (Cover‑4 family)** — deny explosives with pattern‑match rules.
-- **Press‑Man** — squeezes quick game; punished if beaten deep.
-- **Multiple** — balanced tendencies.
+### Setup (Madden ’95 vibe)
 
-### 5.3 Team JSON (example)
+* Team 1 / Team 2 selectors (from preset team list), Difficulty (Rookie/Pro/Legend), Drives count, Seed input, Start/Reset Seed.
+* Show each team’s **display name**, **city**, **offense/defense tags**, and **color accent**.
+
+### Playcalling Screen
+
+* Offense tile groups:
+
+  * **Runs (4)**: hotkeys `1–4`
+  * **Pass (6)**: hotkeys `5–0` (0 = PA\_DEEP)
+  * **Special (2)**: buttons for **Punt** and **Field Goal**
+* Defense (Hot Seat) modal:
+
+  * **Q** RUN\_BLITZ, **W** BALANCED, **E** PASS\_SHELL, **R** PRESS\_MAN, **T** ZONE\_BLITZ, **Y** PREVENT
+* Status panel: Score, Drive #, Ball Spot (OWN/50/OPP layout), Down & To Go.
+* Outcome banner (fade in/out). Action log with emojis:
+
+  * Gains 📈, Sack 💥, INT 🛑, Fumble ⚠️, Flag 🚩, FG/Punt 🏈
+  * **Big Play**: Offense 🔥, Defense 🛡️
+
+---
+
+## 4) Core Resolution Model
+
+### Data-Driven Matrix (12×6)
+
+* For each (OFF\_PLAY, DEF\_FRONT), a small set of **buckets** with weights:
+
+  * `event`: `YARDS` (with `yards_range`), `INCOMP`, `SACK`, `INT`, `FUMBLE` (with `offense_recovers`), `PENALTY_OFF/DEF` (with `kind`, `replay_down`, `auto_first_down`), or specials (`FG_GOOD/MISS`, punt nets/block).
+  * Optional `context_rules` to **allow/deny tags** (e.g., `QB_SNEAK` short-yardage only).
+* Resolver steps:
+
+  1. Filter buckets by `context_rules`.
+  2. Apply **SessionRules** multipliers to **bucket weights** (pre-draw).
+  3. **Weighted draw** → materialize event (yards/flag/turnover/etc.).
+  4. Apply **result\_tuning** (post-draw micro-deltas), clamp to invariants.
+  5. Evaluate **Big Play** (see §5), possibly overriding with a rare explosive result.
+
+### Specials
+
+* **Field Goal**: LOS + 17 distance; buckets: 0–39, 40–49, 50–57; out of range = automatic “cannot attempt”.
+* **Punt**: weighted net yard table + block chance; touchback to 20.
+
+---
+
+## 5) Big Play System (Offense & Defense)
+
+**Goal:** Rare, deterministic, **matchup-sensitive** explosive outcomes that amplify the cat-and-mouse.
+
+### Triggers & Caps
+
+* Base per-play chances (very small) for offense; base per-front chances for defense.
+* **Matchup multipliers** (e.g., `SCREEN:ZONE_BLITZ` ↑, `DEEP_POST:PREVENT` ↓).
+* **Scheme/difficulty** may nudge (±10%) within caps.
+* Hard caps (suggested): `offense ≤ 2.5%`, `defense ≤ 2.0%` after all mods.
+
+### Eligibility & Precedence
+
+* **Offense Big Play**: base event must be a positive gain or completed pass.
+* **Defense Big Play**: base event must be `INT`, `FUMBLE` (DEF recovers), `SACK+fumble`, or kick **BLOCK**.
+* **Conflict**: If both eligible, prioritize the one consistent with the base event (turnover/block → **defense** first; otherwise **offense** first). If first fails, test the other.
+
+### Result Types
+
+* **Offense**:
+
+  * **RUN\_BREAKAWAY**: convert to +20..60 yards or TD if in range (missed tackles).
+  * **YAC\_EXPLOSION**: short pass becomes long gain (+15..45) / TD.
+  * **DEEP\_BOMB\_TD**: vertical shot becomes instant TD (40..80 yards).
+* **Defense**:
+
+  * **PICK\_SIX**, **STRIP\_SACK\_TD**, **SCOOP\_AND\_SCORE**.
+  * **BLOCK\_PUNT\_TD**, **BLOCK\_FG\_TD** (rare; only on block events).
+
+**All random draws** (trigger, type, extra yards) come from `SeedManager`.
+
+---
+
+## 6) Teams & Archetypes
+
+### Archetype Palette
+
+* **Offense**: Balanced Pro; West Coast; Air Raid/Vertical; Power Run; RPO Hybrid/Read Option; Wide Zone/Play-Action; (optional) Run & Shoot / Multiple.
+* **Defense**: Base 4-3; Base 3-4; Cover-2/Tampa-2; Match/Quarters (Cover-3/4 family); Press Man; Zone Blitz/Hybrid Pressure; Forty-Six; (special) Wide-9; Flex.
+
+### Team JSON (per team)
+
+* `team_id`, `display_name`, `city`
+* `offense_scheme`, `defense_scheme`
+* `call_bias` (small deltas for offense/defense call selection)
+* `result_tuning` (small deltas like `comp_rate`, `int_rate`, `sack_rate`, `mid_gain`, `boom_gain`, `penalty_def_plus5`)
+* **Design**: `colors {primary, secondary, accent}`, `logo_description`, `uniform_description`
+* (Later in Phase 5): ensure all 32 franchises use **unique offense+defense combos**; if duplicate, more iconic franchise keeps it, the other takes its **second-most famous** identity.
+
+### SessionRules Composition
+
+`SessionRules = BaseRules × Team1 × Team2 × Difficulty`
+
+* Pre-draw: multiply **bucket weights** by scheme/difficulty scalars.
+* Post-draw: apply **result\_tuning** clamps.
+* Big Play: `p_off`, `p_def` multipliers per scheme within caps.
+
+---
+
+## 7) AI (v1.1 basics)
+
+* **DefenseAI**: track recent opponent play histogram (window \~12 snaps) with down/distance features; choose front to minimize expected yards with small **exploration** (depends on difficulty). Use **PREVENT** only for long-yardage or end-drive heuristics.
+* **OffenseAI**: priors from situation & scheme:
+
+  * `QB_SNEAK` on ≤2; `PA_*` more likely after successful runs; `SCREEN` vs blitzy trends; `DEEP_POST` gated by risk tolerance/difficulty.
+
+---
+
+## 8) Determinism & Invariants
+
+* **Seed set** at session start; **all** randomness via `SeedManager`.
+* Replaying same inputs (plays, fronts, seed) yields identical:
+
+  * Outcomes (yards/events), **Big Play triggers & types**, and RNG **call counts**.
+* Invariants: yard bounds 0..100; down/first down logic correct; penalties with `replay_down` do not advance downs; turnovers end drive immediately.
+
+---
+
+## 9) Testing & QA (via godot-mcp)
+
+### Core Suites (new/updated)
+
+1. **`test_matrix_integrity_12x6.gd`**
+
+   * All 72 offense×defense pairs exist; each has ≥1 enabled bucket after context; bucket weights sum > 0.
+
+2. **`test_bigplay_trigger_rates.gd`**
+
+   * Over large sims (e.g., 50k snaps, golden seeds):
+
+     * Offense Big Play rate ≈ 0.6–1.5%; Defense Big Play ≈ 0.3–1.2%.
+     * **Screen vs Zone Blitz** offense BP ≥ 1.6× baseline; **Prevent** reduces offense BP (≤0.7× baseline).
+
+3. **`test_bigplay_types_sanity.gd`**
+
+   * PICK\_SIX only on INT; STRIP\_SACK\_TD only on sack+fumble; block-TDs only on blocked kicks; deep bomb only for deep/PA deep.
+
+4. **`test_scheme_effects_12x6.gd`**
+
+   * Air Raid: `DEEP_POST` boom↑/INT↑ small; West Coast: `QUICK_SLANT` comp/YAC↑; Power Run: `INSIDE_POWER` success↑, `PA_DEEP` boom↑.
+
+5. **`test_ai_defense_selection_v2.gd`**
+
+   * Front usage shifts appropriately vs observed tendencies; **PREVENT** only in long-yardage.
+
+6. **`test_determinism_callcounts.gd`**
+
+   * Same seed reproduces outcomes and RNG call counts.
+
+7. **`test_retro_layout_groups.gd`**
+
+   * UI has 3 groups (4/6/2), hotkeys bound, two new defense fronts present (T/Y).
+
+### Artifacts
+
+* Save JSON summaries and screenshots (Setup, Playcalling) to `user://qa_artifacts/`.
+
+---
+
+## 10) Files & Structure (key)
+
+* `res://Main.tscn`, `res://Main.gd`
+* `res://scripts/GameState.gd` (autoload)
+* `res://scripts/Rules12x6.gd` (loads `res://data/rules_12x6.json`, resolver + Big Play)
+* `res://scripts/SessionRules.gd` (composition & clamps)
+* `res://scripts/DefenseAI.gd`, `res://scripts/OffenseAI.gd` (v1.1 logic)
+* `res://data/rules_12x6.json` (matrix, specials, big\_play tables)
+* `res://teams/*.json` (teams; Phase 5 expands to 32)
+* `res://ui/MainUI.tscn` / `ui/Playcall.tscn` (grouped tiles)
+* `res://tests/*.gd` (as listed)
+* `res://docs/Design.md` (this file v1.1)
+
+---
+
+## 11) Acceptance Checklist (v1.1 / Phase 4)
+
+* 12 offense plays and 6 defense fronts implemented; grouped UI with correct hotkeys.
+* Resolver uses context rules, SessionRules pre-draw weight multipliers, and post-draw result tuning.
+* **Big Play** layer works (offense & defense), matchup-sensitive, within caps, deterministic.
+* Defense/Offense AI consider the expanded set; **PREVENT** used only when appropriate.
+* All tests pass; artifacts saved; **Design.md** updated to v1.1.
+
+---
+
+## 12) Future Notes (Phase 5+)
+
+* **32 franchise-inspired teams** with **unique** offense+defense combos (no duplicates; use second-most iconic identity where needed), color/brand metadata.
+* **BalanceRunner/BalanceTuner** for parity (WR 45–55% vs field), budget caps, distinctness matrix.
+* Optional “situational sub-plays” (later): e.g., Draw vs. specific looks, Trick/Gadget, 2-pt conversions once a clock/score model exists.
+
+---
+
+### Appendix A — JSON Hints (matrix bucket)
+
 ```json
 {
-  "team_id": "westcoast_cover2",
-  "display_name": "West Coast / Cover-2",
-  "offense_scheme": "WEST_COAST",
-  "defense_scheme": "COVER2",
-  "call_bias": {
-    "offense": { "RUN_IN": -0.05, "RUN_OUT": -0.02, "PASS_SHORT": 0.10, "PASS_LONG": -0.03 },
-    "defense": { "RUN_BLITZ": -0.05, "BALANCED": 0.05, "PASS_SHELL": 0.05, "ALL_OUT_RUSH": -0.05 }
-  },
-  "result_tuning": {
-    "PASS_SHORT": { "comp_rate": 0.04, "yac_mid": 0.03 },
-    "PASS_LONG":  { "int_rate": -0.01 },
-    "DEFENSE":    { "sack_rate": -0.01, "penalty_def_plus5": 0.01 },
-    "RED_ZONE":   { "short_run_td": -0.02, "short_pass_td": 0.02 }
+  "INSIDE_POWER": {
+    "RUN_BLITZ": {
+      "context_rules": [],
+      "buckets": [
+        {"event":"YARDS","yards_range":[-3,2],"weight":28,"tags":["RUN_STUFF"]},
+        {"event":"YARDS","yards_range":[3,4],"weight":8,"tags":["LEG_DRIVE"]},
+        {"event":"FUMBLE","yards_range":[-2,2],"weight":2,"offense_recovers":0.5},
+        {"event":"PENALTY_DEF","penalty":{"kind":"+5","replay_down":true},"weight":2},
+        {"event":"PENALTY_OFF","penalty":{"kind":"-10","replay_down":true},"weight":3}
+      ]
+    }
   }
 }
 ```
-**Guidelines**
-- Keep multipliers **small** (mostly ±1–5%). The base table remains the backbone.
-- At match start, derive immutable **SessionRules** = Base × Team1 × Team2 × Difficulty.
 
----
+### Appendix B — Big Play (config sketch)
 
-## 6) AI (Scheme‑Based; No Sequencer)
-
-**Difficulties**
-- **Rookie:** exploration ε≈0.30; bluff 0.20; conservative counters.
-- **Pro:** ε≈0.15; bluff 0.10.
-- **Legend:** ε≈0.05; bluff 0.05; +25% weight to top counter; smarter 4th‑down posture.
-
-**Defense AI**
-- Rolling window **N=12** snaps; bucket by (down, to‑go). Laplace smoothing.
-- Choose front that **minimizes expected yards** given observed tendencies + shell bias + difficulty.
-- Blend with exploration/bluff; all RNG via `SeedManager`.
-
-**Offense AI (solo)**
-- Start from scheme priors; apply situational overrides (short yardage → runs; long yardage → passes).
-
----
-
-## 7) Presentation & UX (Madden ’95 Homage)
-
-**Look & Feel**
-- Dark panel background, **chunky tiles** with thin white keylines, bold caps labels.
-- **Playcalling grids**: Offense 6 tiles; Defense 4 tiles. HUD shows Down/Distance, Ball On, Score.
-- **Setup**: tile panels for Teams, Difficulty, Stadium, Coin Toss, Uniforms, Start.
-- **Banner cadence**: ~1.0s reveal then append to log. Keyboard: 1–6 (offense), QWER (defense).
-
-**FieldView**
-- Green field with 5‑yd ticks (10‑yd heavier marks). LOS (red), L2G (yellow). Ball marker glides 0.3–0.4s.
-
----
-
-## 8) Determinism & RNG
-
-- Single source of randomness: `SeedManager` (wrappers for randf/randi/weighted_choice).
-- All AI and tables draw **only** through `SeedManager`.
-- Fixed tween durations/easings to keep replays identical.
-- Tests assert **RNG call counts** alongside outcomes.
-
----
-
-## 9) Data & Code Structure
-
-```
-res://
-  Main.tscn, Main.gd
-  scripts/
-    GameState.gd      (autoload; flow, possession, state machine)
-    Rules.gd          (Base outcome matrix; helpers)
-    SessionRules.gd   (derived read-only rules per match from teams+difficulty)
-    SeedManager.gd    (RNG; deterministic wrappers)
-    DefenseAI.gd      (scheme-aware; difficulty scaling)
-    OffenseAI.gd      (scheme-aware; difficulty scaling)
-    TeamLoader.gd     (loads res://teams/*.json, validates schema)
-  teams/
-    *.json            (12–16 team definitions as above)
-  ui/
-    Splash.tscn
-    Setup.tscn
-    Playcall.tscn
-  tests/
-    test_mode_lock.gd
-    test_team_identity.gd
-    test_scheme_callmix.gd
-    test_ai_learning.gd
-    test_special_teams.gd
-    test_retro_ui_layout.gd
-    test_determinism.gd
-    test_invariants.gd
-    test_fuzz_long.gd
-  docs/
-    Design.md
-    QA_README.md
-```
-
----
-
-## 10) Testing & QA (Godot MCP)
-
-All tests write JSON summaries to `user://qa_artifacts/` and set explicit seeds.
-
-1) **test_mode_lock.gd** — only **Standard** mode exposed; no Sequencer artifacts.
-2) **test_team_identity.gd** — each team vs baseline, 5k snaps at fixed seed:
-   - West Coast: PASS_SHORT completion +2–5%.
-   - Air Raid: deep shot boom ↑; INT +1–2%.
-3) **test_scheme_callmix.gd** — call probabilities honor team JSON within tolerance.
-4) **test_ai_learning.gd** — Defense AI increases PASS_SHELL rate in 2nd/3rd & long after pass‑heavy window; Legend ≥ +10 p.p. on “top counter” vs Rookie across 1k trials.
-5) **test_special_teams.gd** — FG LOS+17; >57 OOR; punts bounded; **touchback → 20**.
-6) **test_retro_ui_layout.gd** — snapshot Setup & Playcall; assert tile counts, min margins, header bar height to mimic 90s framing (structure, not pixel‑perfect).
-7) **test_determinism.gd** — scripted 5‑snap sequence reproduces outcomes **and** RNG call counts; save HUD screenshot.
-8) **test_invariants.gd / test_fuzz_long.gd** — state integrity after every snap; 10k fuzz run clean.
-
----
-
-## 11) Acceptance Criteria (Ship Gate)
-
-- Splash → **retro Setup** → **retro Playcalling** flow complete & styled.
-- **12–16 teams** shipped; each perceptibly distinct, balanced by small multipliers.
-- Scheme‑based **AI** with Rookie/Pro/Legend; N=12 learning has visible effect; Legend counters sharper by ≥10 p.p.
-- **Standard‑only**; no extra modes.
-- Special teams math correct: **FG = LOS + 17**; **scrimmage‑kick touchback = 20**.
-- Tests in §10 all **green**; determinism proven via outcomes + RNG call counts.
-- `docs/Design.md`, `docs/QA_README.md` updated with this spec and harness usage.
-
----
-
-## 12) Roadmap (Post‑v1.0, not in this build)
-
-- **v1.1** — Optional Play Sequencer (light), Express ruleset, announcer polish.
-- **v1.2** — Team pack expansions; scenario drills; audio pass.
-- **Later** — Seasons, online, richer animation systems.
-
----
-
-## 13) External References (for look & rules context)
-
-- **Madden ’95 UI & framing (tiles, menus, coin toss, play‑select)** — MobyGames screenshot galleries (Genesis/SNES).
-- **West Coast offense primer** — short passing, horizontal stretch, YAC emphasis.
-- **Air Raid offense overview** — spread formations, high pass rate, quick game + verticals.
-- **Tampa‑2 / Cover‑2** — MLB deep drop & short/intermediate zone principles.
-- **Zone Blitz / Fire Zone (3‑4)** — pressure with zone behind; LeBeau history.
-- **Match Quarters (Cover‑4 family)** — pattern‑match concepts (safeties on #2, MOD rules).
-- **Field goal distance** — LOS + 17 yards (10 end zone + ~7 hold); fair‑catch exception differs.
-- **Scrimmage‑kick touchback** — NFL rulebook: dead‑ball spot at the **20**.
-
-*(Citations are included in your chat response; keep this list as human‑readable reminders.)*
+```json
+"big_play": {
+  "offense_base": { "SCREEN": 0.008, "DEEP_POST": 0.010, "PA_DEEP": 0.012, "INSIDE_POWER": 0.004, "OUTSIDE_ZONE": 0.005, "QUICK_SLANT": 0.005, "MEDIUM_CROSS": 0.005, "DRAW": 0.006, "QB_SNEAK": 0.002, "PA_SHORT": 0.006, "PUNT": 0.0, "FIELD_GOAL": 0.0 },
+  "defense_base": { "ZONE_BLITZ": 0.006, "PRESS_MAN": 0.006, "RUN_BLITZ": 0.004, "BALANCED": 0.003, "PASS_SHELL": 0.003, "PREVENT": 0.002 },
+  "matchup_multipliers": { "SCREEN:ZONE_BLITZ": 1.8, "DEEP_POST:PRESS_MAN": 1.6, "INSIDE_POWER:PASS_SHELL": 1.4, "QUICK_SLANT:RUN_BLITZ": 1.4, "DRAW:ZONE_BLITZ": 1.5, "DEEP_POST:PREVENT": 0.5 },
+  "offense_types": [ {"kind":"RUN_BREAKAWAY","weight":5}, {"kind":"YAC_EXPLOSION","weight":5}, {"kind":"DEEP_BOMB_TD","weight":3} ],
+  "defense_types":  [ {"kind":"PICK_SIX","weight":4}, {"kind":"STRIP_SACK_TD","weight":4}, {"kind":"SCOOP_AND_SCORE","weight":3}, {"kind":"BLOCK_PUNT_TD","weight":1}, {"kind":"BLOCK_FG_TD","weight":1} ],
+  "caps": { "offense_bp_max": 0.025, "defense_bp_max": 0.020 }
+}

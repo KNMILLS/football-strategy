@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "quarter_seconds": 900,
+  "timeouts_per_half": 3,
+  "base_tc": {
+    "RUN_INBOUNDS": 33,
+    "PASS_COMPLETE_SHORT_MED": 30,
+    "PASS_COMPLETE_DEEP": 33,
+    "QB_SNEAK": 22,
+    "SACK": 15,
+    "INCOMPLETE": 15,
+    "OUT_OF_BOUNDS": 15,
+    "PENALTY_ACCEPTED": 15,
+    "TURNOVER": 15,
+    "PUNT_RESOLVED": 15,
+    "PUNT_TOUCHBACK": 0,
+    "FIELD_GOAL_ATTEMPT": 15,
+    "TOUCHDOWN": 0,
+    "SPIKE": 5,
+    "KNEEL": 5
+  },
+  "two_minute_ticks": {
+    "seconds_per_tick": 7,
+    "map": {
+      "RUN_INBOUNDS": 5,
+      "PASS_COMPLETE_SHORT_MED": 4,
+      "PASS_COMPLETE_DEEP": 5,
+      "QB_SNEAK": 3,
+      "SACK": 3,
+      "INCOMPLETE": 1,
+      "OUT_OF_BOUNDS": 1,
+      "PENALTY_ACCEPTED": 1,
+      "TURNOVER": 1,
+      "PUNT_RESOLVED": 2,
+      "FIELD_GOAL_ATTEMPT": 2,
+      "TOUCHDOWN": 0,
+      "SPIKE": 1,
+      "KNEEL": 1
+    }
+  }
+}
+
+
