@@ -1,6 +1,8 @@
 {
   "schema_version": "1.0",
   "quarter_seconds": 900,
+  "quarter_presets": { "QUICK": 300, "STANDARD": 600, "FULL": 900 },
+  "default_preset": "STANDARD",
   "timeouts_per_half": 3,
   "base_tc": {
     "RUN_INBOUNDS": 33,

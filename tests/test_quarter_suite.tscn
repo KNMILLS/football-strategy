@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://64lqxri6um4g"]
+
+[ext_resource type="Script" uid="uid://33rxaqftqi08" path="res://tests/test_quarter_suite_autoload.gd" id="1_4kb1a"]
+
+[node name="QuarterSuite" type="Node"]
+
+[node name="Runner" type="Node" parent="."]
+script = ExtResource("1_4kb1a")

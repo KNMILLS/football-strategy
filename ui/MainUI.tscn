@@ -51,6 +51,10 @@ text = "15:00"
 layout_mode = 2
 text = "Q1"
 
+[node name="OTTimeouts" type="Label" parent="RootMargin/VMain/HeaderBar"]
+layout_mode = 2
+text = ""
+
 [node name="SeedValue" type="Label" parent="RootMargin/VMain/HeaderBar"]
 layout_mode = 2
 text = "Seed: 0"
@@ -328,6 +332,55 @@ offset_bottom = -4.0
 text = "Seed: 0 RNG#: 0"
 
 
+[node name="CoinTossModal" type="Window" parent="."]
+title = "Overtime Coin Toss"
+initial_position = 1
+size = Vector2i(440, 200)
+visible = false
+
+[node name="CTVBox" type="VBoxContainer" parent="CoinTossModal"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+theme_override_constants/separation = 8
+
+[node name="CTLabel" type="Label" parent="CoinTossModal/CTVBox"]
+layout_mode = 2
+text = "Visitor calls: choose Heads or Tails"
+
+[node name="CTButtons" type="HBoxContainer" parent="CoinTossModal/CTVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnHeads" type="Button" parent="CoinTossModal/CTVBox/CTButtons"]
+layout_mode = 2
+text = "Heads"
+
+[node name="BtnTails" type="Button" parent="CoinTossModal/CTVBox/CTButtons"]
+layout_mode = 2
+text = "Tails"
+
+[node name="CTResult" type="Label" parent="CoinTossModal/CTVBox"]
+layout_mode = 2
+text = ""
+
+[node name="CTChoiceButtons" type="HBoxContainer" parent="CoinTossModal/CTVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnReceive" type="Button" parent="CoinTossModal/CTVBox/CTChoiceButtons"]
+layout_mode = 2
+text = "Receive"
+
+[node name="BtnDefend" type="Button" parent="CoinTossModal/CTVBox/CTChoiceButtons"]
+layout_mode = 2
+text = "Defend"
+
 [node name="SplashOverlay" type="Panel" parent="."]
 layout_mode = 3
 anchors_preset = 15
@@ -426,6 +479,28 @@ popup/item_0/id = 0
 popup/item_1/text = "PRO"
 popup/item_1/id = 1
 popup/item_2/text = "LEGEND"
+popup/item_2/id = 2
+
+[node name="QuarterPanel" type="PanelContainer" parent="SetupOverlay/SetupVBox/TileGrid"]
+layout_mode = 2
+
+[node name="QuarterVBox" type="VBoxContainer" parent="SetupOverlay/SetupVBox/TileGrid/QuarterPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="QuarterLabel" type="Label" parent="SetupOverlay/SetupVBox/TileGrid/QuarterPanel/QuarterVBox"]
+layout_mode = 2
+text = "GAME LENGTH"
+
+[node name="QuarterOption" type="OptionButton" parent="SetupOverlay/SetupVBox/TileGrid/QuarterPanel/QuarterVBox"]
+layout_mode = 2
+item_count = 3
+selected = 1
+popup/item_0/text = "Quick (5:00)"
+popup/item_0/id = 0
+popup/item_1/text = "Standard (10:00)"
+popup/item_1/id = 1
+popup/item_2/text = "Full (15:00)"
 popup/item_2/id = 2
 
 [node name="Spacer" type="Control" parent="SetupOverlay/SetupVBox"]

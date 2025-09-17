@@ -542,6 +542,8 @@ static func apply_outcome(state: Object, outcome: Dictionary) -> void:
 			var t = state._timing
 			if t != null:
 				t.consume_clock(state, outcome)
+				if state.has_method("_after_outcome_timing"):
+					state.call("_after_outcome_timing", outcome)
 		return
 
 	# Defensive TD on returns (INT/FUMBLE/SACK strip)
@@ -560,12 +562,38 @@ static func apply_outcome(state: Object, outcome: Dictionary) -> void:
 			var t2 = state._timing
 			if t2 != null:
 				t2.consume_clock(state, outcome)
+				if state.has_method("_after_outcome_timing"):
+					state.call("_after_outcome_timing", outcome)
 		return
 
 	# Non-special plays and penalties
 	var yards_delta := int(outcome.yards_delta)
-	ball_on += yards_delta * dir
-	ball_on = clamp(ball_on, 0, 100)
+	var pre_unclamped := ball_on + yards_delta * dir
+	# Safety detection: ball carried/penalized into own end zone
+	var is_safety := (dir == 1 and pre_unclamped < 0) or (dir == -1 and pre_unclamped > 100)
+	if is_safety:
+		if state.offense_is_home:
+			state.away_score += 2
+		else:
+			state.home_score += 2
+		state.drive_ended = true
+		state.turnover_on_downs = false
+		outcome["safety"] = true
+		outcome["timing_tag"] = "TURNOVER"
+		outcome["descriptive_text"] = "Safety"
+		# Place ball at goal line for log consistency
+		state.ball_on = (0 if dir == 1 else 100)
+		# Timing consumption after state mutation
+		if state.has_method("_ensure_timing_loaded"):
+			state.call("_ensure_timing_loaded")
+			var t0 = state._timing
+			if t0 != null:
+				t0.consume_clock(state, outcome)
+				if state.has_method("_after_outcome_timing"):
+					state.call("_after_outcome_timing", outcome)
+		return
+
+	ball_on = clamp(pre_unclamped, 0, 100)
 
 	# Touchdown check
 	if (dir == 1 and ball_on >= 100) or (dir == -1 and ball_on <= 0):
@@ -600,6 +628,8 @@ static func apply_outcome(state: Object, outcome: Dictionary) -> void:
 			var t4 = state._timing
 			if t4 != null:
 				t4.consume_clock(state, outcome)
+				if state.has_method("_after_outcome_timing"):
+					state.call("_after_outcome_timing", outcome)
 		return
 
 	# Normal down advancement using line_to_gain
@@ -625,3 +655,5 @@ static func apply_outcome(state: Object, outcome: Dictionary) -> void:
 		var t5 = state._timing
 		if t5 != null:
 			t5.consume_clock(state, outcome)
+			if state.has_method("_after_outcome_timing"):
+				state.call("_after_outcome_timing", outcome)

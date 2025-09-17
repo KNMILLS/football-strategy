@@ -7,7 +7,9 @@ func _ready() -> void:
         load("res://tests/test_timing_basics.gd").new(),
         load("res://tests/test_two_minute_ticks.gd").new(),
         load("res://tests/test_clock_determinism.gd").new(),
-        load("res://tests/test_penalty_turnover_timing.gd").new()
+        load("res://tests/test_penalty_turnover_timing.gd").new(),
+        load("res://tests/test_quarter_presets.gd").new(),
+        load("res://tests/test_quarter_rollover_presets.gd").new()
     ]
     for s in suites:
         add_child(s)

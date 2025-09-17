@@ -20,6 +20,17 @@ func load_cfg(path: String = "res://data/timing.json") -> void:
 	if sg != null and sg.has_method("require"):
 		sg.call("require", cfg, "1.0", "timing.json")
 
+func get_preset_seconds(preset: String) -> int:
+	# Returns seconds for QUICK/STANDARD/FULL. Falls back to quarter_seconds/defaults.
+	if cfg.is_empty():
+		return 900
+	var up := String(preset).to_upper()
+	var presets := (cfg.get("quarter_presets", {}) as Dictionary)
+	var val := int(presets.get(up, 0))
+	if val > 0:
+		return val
+	return int(cfg.get("quarter_seconds", 900))
+
 func is_two_minute(clock_remaining: int) -> bool:
 	return int(clock_remaining) <= 120
 

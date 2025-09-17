@@ -6,6 +6,7 @@ var log_lines: Array[String] = []
 @onready var drive_label: Label = $RootMargin/VMain/HeaderBar/Drive
 @onready var clock_label: Label = $RootMargin/VMain/HeaderBar/Clock
 @onready var quarter_label: Label = $RootMargin/VMain/HeaderBar/Quarter
+@onready var ot_timeouts_label: Label = $RootMargin/VMain/HeaderBar/OTTimeouts
 @onready var seed_input: LineEdit = $RootMargin/VMain/HeaderBar/SeedInput
 @onready var drives_spin: SpinBox = $RootMargin/VMain/HeaderBar/DrivesSpin
 @onready var mode_option: OptionButton = $RootMargin/VMain/HeaderBar/ModeOption
@@ -39,6 +40,12 @@ var log_lines: Array[String] = []
 @onready var log_rtl: RichTextLabel = $RootMargin/VMain/ActionLog
 
 @onready var defense_modal: Window = $DefenseModal
+@onready var coin_toss_modal: Window = $CoinTossModal
+@onready var btn_heads: Button = $CoinTossModal/CTVBox/CTButtons/BtnHeads
+@onready var btn_tails: Button = $CoinTossModal/CTVBox/CTButtons/BtnTails
+@onready var ct_result_label: Label = $CoinTossModal/CTVBox/CTResult
+@onready var btn_receive: Button = $CoinTossModal/CTVBox/CTChoiceButtons/BtnReceive
+@onready var btn_defend: Button = $CoinTossModal/CTVBox/CTChoiceButtons/BtnDefend
 @onready var btn_run_blitz: Button = $DefenseModal/DMVBox/DMButtons/BtnRunBlitz
 @onready var btn_balanced: Button = $DefenseModal/DMVBox/DMButtons/BtnBalanced
 @onready var btn_pass_shell: Button = $DefenseModal/DMVBox/DMButtons/BtnPassShell
@@ -55,6 +62,7 @@ var log_lines: Array[String] = []
 @onready var setup_team1: OptionButton = $SetupOverlay/SetupVBox/TileGrid/Team1Panel/Team1VBox/Team1Option
 @onready var setup_team2: OptionButton = $SetupOverlay/SetupVBox/TileGrid/Team2Panel/Team2VBox/Team2Option
 @onready var setup_difficulty: OptionButton = $SetupOverlay/SetupVBox/TileGrid/DifficultyPanel/DifficultyVBox/DifficultyOption
+@onready var setup_quarter_option: OptionButton = $SetupOverlay/SetupVBox/TileGrid/QuarterPanel/QuarterVBox/QuarterOption
 @onready var setup_start_button: Button = $SetupOverlay/SetupVBox/StartSetupButton
 
 func _ready() -> void:
@@ -99,7 +107,23 @@ func _connect_signals() -> void:
 	gs.ui_update_log.connect(_append_log)
 	gs.ui_state_changed.connect(_on_state_changed)
 	gs.ui_banner.connect(_show_banner)
+	if gs.has_signal("ui_coin_toss_needed"):
+		gs.ui_coin_toss_needed.connect(_on_coin_toss_needed)
+	btn_heads.pressed.connect(func(): _coin_toss_pick(true))
+	btn_tails.pressed.connect(func(): _coin_toss_pick(false))
+	btn_receive.pressed.connect(func(): _coin_choice("RECEIVE"))
+	btn_defend.pressed.connect(func(): _coin_choice("DEFEND"))
 	setup_start_button.pressed.connect(_on_setup_start)
+	# Update persistence immediately when selection changes
+	setup_quarter_option.item_selected.connect(func(_idx: int):
+		var id := int(setup_quarter_option.get_selected_id())
+		var preset := "STANDARD"
+		if id == 0:
+			preset = "QUICK"
+		elif id == 2:
+			preset = "FULL"
+		get_node("/root/GameConfig").call("set_quarter_preset", preset)
+	)
 
 func _setup_shortcuts() -> void:
 	_assign_shortcut(btn_inside_power, KEY_1)
@@ -150,6 +174,15 @@ func _populate_setup() -> void:
 	setup_team1.select(0)
 	setup_team2.select(min(1, max(0, pairs.size() - 1)))
 	setup_difficulty.select(1)
+	# Initialize quarter length from GameConfig
+	var gc: Object = get_node("/root/GameConfig")
+	var preset := String(gc.call("get_quarter_preset")).to_upper()
+	if preset == "QUICK":
+		setup_quarter_option.select(0)
+	elif preset == "FULL":
+		setup_quarter_option.select(2)
+	else:
+		setup_quarter_option.select(1)
 
 func _on_setup_start() -> void:
 	# Apply selected teams and difficulty, then hide setup and start session
@@ -158,6 +191,15 @@ func _on_setup_start() -> void:
 	var away_tid := String(setup_team2.get_item_metadata(setup_team2.get_selected_id()))
 	var diff_id := int(setup_difficulty.get_selected_id())
 	gs.call("set_session_config", home_tid, away_tid, diff_id)
+	# Persist quarter preset selection
+	var gc2: Object = get_node("/root/GameConfig")
+	var qid := int(setup_quarter_option.get_selected_id())
+	var preset2 := "STANDARD"
+	if qid == 0:
+		preset2 = "QUICK"
+	elif qid == 2:
+		preset2 = "FULL"
+	gc2.call("set_quarter_preset", preset2)
 	setup_overlay.visible = false
 	# Start session immediately with current header controls
 	var seed_text := seed_input.text.strip_edges()
@@ -224,6 +266,7 @@ func _update_header() -> void:
 	clock_label.text = gs.get_clock_text()
 	quarter_label.text = gs.get_quarter_text()
 	seed_value_label.text = "Seed: %s" % str(get_node("/root/SeedManager").current_seed)
+	_update_ot_timeouts()
 	_update_hud()
 
 func _update_field() -> void:
@@ -233,6 +276,7 @@ func _update_field() -> void:
 	clock_label.text = gs.get_clock_text()
 	quarter_label.text = gs.get_quarter_text()
 	seed_value_label.text = "Seed: %s" % str(get_node("/root/SeedManager").current_seed)
+	_update_ot_timeouts()
 	_update_hud()
 
 func _append_log(new_line: String) -> void:
@@ -275,6 +319,35 @@ func _unhandled_input(event: InputEvent) -> void:
 func _update_hud() -> void:
 	var sm: Object = get_node("/root/SeedManager")
 	hud_label.text = "Seed: %s RNG#: %s" % [str(sm.current_seed), str(sm.rng_call_count)]
+
+func _on_coin_toss_needed() -> void:
+	ct_result_label.text = "Visitor calls: choose Heads or Tails"
+	btn_receive.disabled = true
+	btn_defend.disabled = true
+	coin_toss_modal.popup_centered()
+
+func _coin_toss_pick(visitor_called_heads: bool) -> void:
+	var gs: Object = get_node("/root/GameState")
+	var winner: int = int(gs.call("perform_coin_toss", bool(visitor_called_heads)))
+	var who := ("Away" if winner == 1 else "Home")
+	ct_result_label.text = "%s wins toss – choose Receive or Defend" % who
+	btn_receive.disabled = false
+	btn_defend.disabled = false
+
+func _coin_choice(choice: String) -> void:
+	var gs: Object = get_node("/root/GameState")
+	gs.call("enter_overtime_with_choice", String(choice))
+	coin_toss_modal.hide()
+	_update_ot_timeouts()
+
+func _update_ot_timeouts() -> void:
+	var gs: Object = get_node("/root/GameState")
+	if bool(gs.get("is_overtime")):
+		var h := int(gs.call("ot_timeouts_remaining", 0))
+		var a := int(gs.call("ot_timeouts_remaining", 1))
+		ot_timeouts_label.text = "OT TO: H %d | A %d" % [h, a]
+	else:
+		ot_timeouts_label.text = ""
 
 
 func set_debug_hud_visible(visible_flag: bool) -> void:
