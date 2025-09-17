@@ -65,12 +65,14 @@ var log_lines: Array[String] = []
 
 @onready var splash_overlay: Panel = $SplashOverlay
 @onready var setup_overlay: Panel = $SetupOverlay
+@onready var root_margin: MarginContainer = $RootMargin
 @onready var team_select: Control = $SetupOverlay/SetupVBox/TeamSelect
 @onready var setup_team1: OptionButton = $SetupOverlay/SetupVBox/TileGrid/Team1Panel/Team1VBox/Team1Option
 @onready var setup_team2: OptionButton = $SetupOverlay/SetupVBox/TileGrid/Team2Panel/Team2VBox/Team2Option
 @onready var setup_difficulty: OptionButton = $SetupOverlay/SetupVBox/TileGrid/DifficultyPanel/DifficultyVBox/DifficultyOption
 @onready var setup_quarter_option: OptionButton = $SetupOverlay/SetupVBox/TileGrid/QuarterPanel/QuarterVBox/QuarterOption
 @onready var setup_start_button: Button = $SetupOverlay/SetupVBox/StartSetupButton
+@onready var setup_tile_grid: GridContainer = $SetupOverlay/SetupVBox/TileGrid
 
 func _ready() -> void:
 	_connect_signals()
@@ -168,8 +170,10 @@ func _setup_shortcuts() -> void:
 
 func _show_splash_then_setup() -> void:
 	# Show splash for ~1.2s then show setup
+	# Hide game UI while in setup
 	splash_overlay.visible = true
 	setup_overlay.visible = false
+	root_margin.visible = false
 	var tw := create_tween()
 	splash_overlay.modulate.a = 1.0
 	tw.tween_interval(1.2)
@@ -178,7 +182,13 @@ func _show_splash_then_setup() -> void:
 func _enter_setup() -> void:
 	splash_overlay.visible = false
 	setup_overlay.visible = true
+	root_margin.visible = false
 	_populate_setup()
+	# Show TeamSelect first; hide legacy TileGrid controls until teams are chosen
+	if is_instance_valid(setup_tile_grid):
+		setup_tile_grid.visible = false
+	if is_instance_valid(team_select):
+		team_select.visible = true
 
 func _populate_setup() -> void:
 	setup_team1.clear()
@@ -222,6 +232,7 @@ func _on_setup_start() -> void:
 		preset2 = "FULL"
 	gc2.call("set_quarter_preset", preset2)
 	setup_overlay.visible = false
+	root_margin.visible = true
 	# Start session immediately with current header controls
 	var seed_text := seed_input.text.strip_edges()
 	var sm: Object = get_node("/root/SeedManager")
@@ -245,11 +256,17 @@ func _on_teamselect_confirmed(home_team_id: String, away_team_id: String) -> voi
 	elif qid == 2:
 		preset2 = "FULL"
 	gc2.call("set_quarter_preset", preset2)
+	# Reveal Difficulty/Quarter controls and allow START
+	if is_instance_valid(setup_tile_grid):
+		setup_tile_grid.visible = true
+	if is_instance_valid(team_select):
+		team_select.visible = false
 	# Apply selections and start session
 	var gs: Object = get_node("/root/GameState")
 	var diff_id := int(setup_difficulty.get_selected_id())
 	gs.call("set_session_config", String(home_team_id), String(away_team_id), diff_id)
 	setup_overlay.visible = false
+	root_margin.visible = true
 	var seed_text := seed_input.text.strip_edges()
 	var sm: Object = get_node("/root/SeedManager")
 	var seed_val: int = sm.current_seed

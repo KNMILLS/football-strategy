@@ -7,12 +7,14 @@ layout_mode = 2
 custom_minimum_size = Vector2(240, 0)
 script = ExtResource("1_prev")
 theme_override_constants/separation = 4
+size_flags_horizontal = 1
 
 [node name="Logo" type="TextureRect" parent="."]
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 visible = false
+custom_minimum_size = Vector2(160, 160)
 
 [node name="Fallback" type="ColorRect" parent="."]
 layout_mode = 2
@@ -34,11 +36,13 @@ layout_mode = 2
 text = "TEAM NAME"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 18
+clip_text = true
 
 [node name="Tags" type="Label" parent="."]
 layout_mode = 2
 text = "Tags"
 horizontal_alignment = 1
+clip_text = true
 
 [node name="Colors" type="HBoxContainer" parent="."]
 layout_mode = 2

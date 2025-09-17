@@ -5,9 +5,8 @@
 
 [node name="TeamSelect" type="Control"]
 layout_mode = 2
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
 script = ExtResource("1_selgd")
 
 [node name="VBox" type="VBoxContainer" parent="."]
@@ -26,29 +25,56 @@ layout_mode = 2
 text = "SELECT YOUR TEAM"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 24
+size_flags_horizontal = 3
+size_flags_vertical = 1
 
 [node name="TopHBox" type="HBoxContainer" parent="VBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="LeftPreview" parent="VBox/TopHBox" instance=ExtResource("2_prev")]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
+size_flags_horizontal = 1
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
 
-[node name="Grid" type="GridContainer" parent="VBox/TopHBox"]
+[node name="GridScroll" type="ScrollContainer" parent="VBox/TopHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_right = -8.0
+size_flags_vertical = 3
+size_flags_stretch_ratio = 4.0
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+custom_minimum_size = Vector2(0, 320)
+
+[node name="Grid" type="GridContainer" parent="VBox/TopHBox/GridScroll"]
 layout_mode = 2
 columns = 8
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
+size_flags_horizontal = 3
 
 [node name="Hero" type="VBoxContainer" parent="VBox/TopHBox"]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
 theme_override_constants/separation = 6
+size_flags_horizontal = 1
+size_flags_vertical = 3
 
 [node name="RightPreview" parent="VBox/TopHBox" instance=ExtResource("2_prev")]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
+size_flags_horizontal = 1
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
 
 [node name="HeroLabel" type="Label" parent="VBox/TopHBox/Hero"]
 layout_mode = 2
@@ -90,6 +116,8 @@ text = "Weaknesses:"
 layout_mode = 2
 theme_override_constants/separation = 8
 visible = false
+size_flags_horizontal = 3
+size_flags_vertical = 1
 
 [node name="MatchupLabel" type="Label" parent="VBox/Footer"]
 layout_mode = 2

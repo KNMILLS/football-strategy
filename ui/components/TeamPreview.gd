@@ -15,11 +15,11 @@ func _ready() -> void:
 
 func set_team(team_dict: Dictionary) -> void:
 	current_team = team_dict.duplicate(true)
-	var display_name := String(team_dict.get("display_name", team_dict.get("team_id", "TEAM")))
+	var display_name: String = String(team_dict.get("display_name", team_dict.get("team_id", "TEAM")))
 	name_label.text = display_name
-	var o := String(team_dict.get("offense_scheme", team_dict.get("offense_archetype", "")))
-	var d := String(team_dict.get("defense_scheme", team_dict.get("defense_archetype", "")))
-	var city := String(team_dict.get("city", ""))
+	var o: String = String(team_dict.get("offense_scheme", team_dict.get("offense_archetype", "")))
+	var d: String = String(team_dict.get("defense_scheme", team_dict.get("defense_archetype", "")))
+	var city: String = String(team_dict.get("city", ""))
 	tags_label.text = (city + (" — " if city != "" else "") + o + (" / " if o != "" and d != "" else "") + d).strip_edges()
 	_update_logo_or_fallback(team_dict)
 	_update_color_chips(team_dict)
@@ -29,7 +29,7 @@ func set_locked(is_locked: bool, side: String) -> void:
 	lock_label.text = ("LOCKED " + side.to_upper()).strip_edges()
 
 func _update_logo_or_fallback(team_dict: Dictionary) -> void:
-	var logo_path := String(team_dict.get("logo_path", ""))
+	var logo_path: String = String(team_dict.get("logo_path", ""))
 	if logo_path != "" and ResourceLoader.exists(logo_path):
 		var tex := load(logo_path)
 		if tex is Texture2D:
@@ -42,9 +42,9 @@ func _update_logo_or_fallback(team_dict: Dictionary) -> void:
 	logo_rect.visible = false
 	fallback_rect.visible = true
 	var colors: Dictionary = team_dict.get("colors", {})
-	var primary := _parse_color(String(colors.get("primary", "#2a2d34")))
-	var accent := _parse_color(String(colors.get("accent", "#ffd34d")))
-	var abbrev := String(team_dict.get("abbrev", "TM"))
+	var primary: Color = _parse_color(String(colors.get("primary", "#2a2d34")))
+	var accent: Color = _parse_color(String(colors.get("accent", "#ffd34d")))
+	var abbrev: String = String(team_dict.get("abbrev", "TM"))
 	fallback_rect.color = primary
 	abbrev_label.text = abbrev
 	abbrev_label.modulate = accent
@@ -54,16 +54,16 @@ func _update_color_chips(team_dict: Dictionary) -> void:
 		colors_hbox.remove_child(c)
 		c.queue_free()
 	var colors: Dictionary = team_dict.get("colors", {})
-	var keys := ["primary", "secondary", "accent"]
+	var keys: Array = ["primary", "secondary", "accent"]
 	for k in keys:
-		var v := String(colors.get(k, "#808080"))
+		var v: String = String(colors.get(k, "#808080"))
 		var cr := ColorRect.new()
 		cr.custom_minimum_size = Vector2(14, 14)
 		cr.color = _parse_color(v)
 		colors_hbox.add_child(cr)
 
 func _parse_color(s: String) -> Color:
-	var c := Color(0.5, 0.5, 0.5)
+	var c: Color = Color(0.5, 0.5, 0.5)
 	if s.begins_with("#"):
 		return Color.from_string(s, c)
 	return c
