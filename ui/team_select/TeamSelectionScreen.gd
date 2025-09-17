@@ -7,7 +7,7 @@ signal selection_changed(p1_team_id: String, opp_team_id: String)
 @onready var p1_panel: PanelContainer = $RootV/MainRow/P1Panel
 @onready var opp_panel: PanelContainer = $RootV/MainRow/OpponentPanel
 @onready var footer: VBoxContainer = $RootV/Footer
-@onready var options_row: VBoxContainer = $RootV/Footer/OptionsRow
+@onready var options_row: HBoxContainer = $RootV/Footer/OptionsRow
 @onready var play_mode_opt: HBoxContainer = $RootV/Footer/OptionsRow/PlayModeOption
 @onready var home_opt: HBoxContainer = $RootV/Footer/OptionsRow/HomeTeamOption
 @onready var visitor_opt: HBoxContainer = $RootV/Footer/OptionsRow/VisitorTeamOption

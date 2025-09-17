@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://c1kfdfjnw41ko"]
+[gd_scene load_steps=5 format=3 uid="uid://c1kfdfjnw41ko"]
 
 [ext_resource type="Script" uid="uid://bn8aofdg43k5u" path="res://ui/team_select/TeamSelectionScreen.gd" id="1_6a0rs"]
 [ext_resource type="PackedScene" path="res://ui/team_select/SelectionPanel.tscn" id="2_2o0d0"]
 [ext_resource type="PackedScene" path="res://ui/team_select/OptionSelector.tscn" id="3_3c1pz"]
+[ext_resource type="Script" uid="uid://cg6fj5rn0o8cn" path="res://ui/team_select/OptionSelector.gd" id="4_d27x6"]
 
 [node name="TeamSelectionScreen" type="Control"]
 layout_mode = 3
@@ -58,6 +59,10 @@ layout_mode = 2
 [node name="GameLengthOption" parent="RootV/Footer/OptionsRow" instance=ExtResource("3_3c1pz")]
 
 [node name="WeatherOption" parent="RootV/Footer/OptionsRow" instance=ExtResource("3_3c1pz")]
+
+[node name="PlayModeOption" type="HBoxContainer" parent="RootV/Footer/OptionsRow" instance=ExtResource("3_3c1pz")]
+layout_mode = 2
+script = ExtResource("4_d27x6")
 
 [node name="ControlRow" type="HBoxContainer" parent="RootV/Footer"]
 layout_mode = 2
