@@ -1,6 +1,17 @@
-### Gridiron Strategy — v1.1e (Phase-4)
+# Gridiron Strategy — v1.2 (Authoritative Game Design Document)
 
-This document consolidates and supersedes prior GDDs. It is the authoritative game design document moving forward.
+This is the canonical design spec. All phases, prompts, and tests derive from this document. If code, prompts, or auxiliary docs disagree with this GDD, this GDD wins.
+
+Note: The current build is mid-Phase 4. Where this v1.2 spec describes future behavior, we call out known deviations so the document remains aligned with what ships today.
+
+---
+
+## 0) Known Deviations (current build)
+
+- Drives UI is present (header shows Drives and a spinner). Pre-game coin flip is not implemented yet; OT coin flip exists.
+- Regulation timeouts are not implemented yet; OT timeouts (2/team) are implemented and visible in the HUD.
+- Teams load from `res://teams/*.json` (no single `teams_32.json` yet). Legendary coaches are not implemented.
+- Timing JSON `schema_version` is "1.0" today; will bump when free kicks are added.
 
 #### Vision & Pillars
 - Fast, readable strategy: hidden, simultaneous selection with compact outcomes.
@@ -18,8 +29,8 @@ This document consolidates and supersedes prior GDDs. It is the authoritative ga
 
 #### Presentation & Controls (Retro)
 - Flow: Splash (1–1.5s) → Setup overlay → Playcalling UI (runs 4, pass 6, specials 2; defense modal 6 fronts).
-- HUD: Down/Distance, Ball On, Score/Drives, Clock (MM:SS), Quarter, Seed and RNG count.
-- Controls: Offense 1–6; Defense Q/W/E/R/T/Y (Hot Seat modal).
+- HUD: Down/Distance, Ball On, Score/Drives (present now; to be removed), Clock (MM:SS), Quarter, Seed and RNG count.
+- Controls: Offense 1–6; Defense Q/W/E/R/T/Y (Hot Seat modal). Help overlay toggled via `H`.
 
 #### Teams & Schemes
 - Data-driven JSON in `res://teams/*.json` (initial 12 teams).
@@ -74,7 +85,7 @@ This document consolidates and supersedes prior GDDs. It is the authoritative ga
 - Determinism contract: same seed + same play inputs ⇒ identical outcomes and RNG call counts.
 
 #### Testing & QA (via godot-mcp)
-- Core suites include: matrix integrity (12×6); big-play trigger rates/types sanity; scheme effects; AI defense selection; determinism (outcomes+call counts); retro UI layout groups/hotkeys.
+- Core suites include: matrix integrity (12×6); context rule gating; FG range checks; punt nets/touchback; big-play trigger rates/types sanity; scheme effects; AI defense selection; determinism (outcomes+call counts); retro UI layout groups/hotkeys.
 - Save JSON summaries and screenshots (Setup, Playcalling) to `user://qa_artifacts/`.
 
 #### Files & Structure (key)
