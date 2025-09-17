@@ -6,7 +6,7 @@ func test_long_fuzz_no_invariant_violations() -> void:
 	var gs: Object = get_node("/root/GameState")
 	var QA := load("res://qa/QAConfig.gd")
 	sm.set_seed(QA.SEED_FUZZ)
-	gs.new_session(QA.SEED_FUZZ, 20, 0)
+	gs.new_session(QA.SEED_FUZZ, 1, 0)
 	var offense_plays := ["RUN_IN", "RUN_OUT", "PASS_SHORT", "PASS_LONG", "PUNT", "FG"]
 	for i in 10000:
 		var off_idx := int(sm.randi_range(0, offense_plays.size() - 1))
@@ -24,6 +24,5 @@ func test_long_fuzz_no_invariant_violations() -> void:
 			var def := String(da.call("choose_defense", gs.down, gs.to_go, gs.ball_on, gs.offense_dir, []))
 			gs.defense_select(def)
 		rules.assert_state(gs)
-		if gs.drive_ended and gs.drive_index >= gs.num_drives:
-			break
+		# No drive gating in regulation
 

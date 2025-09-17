@@ -37,11 +37,11 @@ size_flags_horizontal = 3
 
 [node name="Score" type="Label" parent="RootMargin/VMain/HeaderBar"]
 layout_mode = 2
-text = "Home 0 - 0 Away"
+text = "TeamA 0 - 0 TeamB"
 
-[node name="Drive" type="Label" parent="RootMargin/VMain/HeaderBar"]
+[node name="PresetLabel" type="Label" parent="RootMargin/VMain/HeaderBar"]
 layout_mode = 2
-text = "Drive 0 / 0"
+text = "STANDARD 10:00"
 
 [node name="Clock" type="Label" parent="RootMargin/VMain/HeaderBar"]
 layout_mode = 2
@@ -76,13 +76,7 @@ layout_mode = 2
 placeholder_text = "auto"
 custom_minimum_size = Vector2(90, 0)
 
-[node name="DrivesLabel" type="Label" parent="RootMargin/VMain/HeaderBar"]
-layout_mode = 2
-text = "Drives"
-
-[node name="DrivesSpin" type="SpinBox" parent="RootMargin/VMain/HeaderBar"]
-layout_mode = 2
-min_value = 1.0
+; Removed DrivesLabel and DrivesSpin
 max_value = 20.0
 step = 1.0
 value = 4.0

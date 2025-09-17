@@ -6,7 +6,7 @@ func test_invariants_random_snaps() -> void:
 	var gs: Object = get_node("/root/GameState")
 	sm.set_seed(load("res://qa/QAConfig.gd").SEED_MAIN)
 	# Single long session, HUMAN_AI for speed and predictability
-	gs.new_session(sm.get_seed(), 9999, 0)
+	gs.new_session(sm.get_seed(), 1, 0)
 	var offense_plays := ["RUN_IN", "RUN_OUT", "PASS_SHORT", "PASS_LONG", "PUNT", "FG"]
 	for i in 1000:
 		var off_idx := int(sm.randi_range(0, offense_plays.size() - 1))
@@ -19,7 +19,5 @@ func test_invariants_random_snaps() -> void:
 		var outcome: Dictionary = rules.resolve_play(off, def, gs.ball_on, gs.offense_dir)
 		rules.apply_outcome(gs, outcome)
 		rules.assert_state(gs)
-		if gs.drive_ended and gs.drive_index >= gs.num_drives:
-			break
 
 

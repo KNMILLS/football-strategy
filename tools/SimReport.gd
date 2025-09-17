@@ -17,7 +17,7 @@ static func run(seed_value: int, snaps: int) -> Dictionary:
 	var rules := _rules()
 	sm.set_seed(seed_value)
 	gs.set_session_config("balancedpro_balanced", "balancedpro_balanced", 1)
-	gs.new_session(seed_value, 9999, 0)
+	gs.new_session(seed_value, 1, 0)
 	var stats := {
 		"sack": 0, "int": 0, "fumble": 0, "fumble_lost": 0,
 		"off_bp": 0, "def_bp": 0, "run": 0, "pass": 0, "snaps": 0
@@ -47,8 +47,7 @@ static func run(seed_value: int, snaps: int) -> Dictionary:
 				stats.off_bp += 1
 		rules.apply_outcome(gs, o)
 		stats.snaps += 1
-		if gs.drive_ended and gs.drive_index >= gs.num_drives:
-			break
+        # No drive gating in regulation; run fixed number of snaps
 	# Rates
 	var result := {
 		"sack_rate": float(stats.sack) / max(1.0, float(stats.snaps)),

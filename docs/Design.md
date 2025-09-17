@@ -8,10 +8,12 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 
 ## 0) Known Deviations (current build)
 
-- Drives UI is present (header shows Drives and a spinner).
+- Drives UI has been removed. Regulation is clock/quarter-driven only.
 - Regulation timeouts are not implemented yet; OT timeouts (2/team) are implemented and visible in the HUD.
 - Teams load from `res://teams/*.json` (no single `teams_32.json` yet). Legendary coaches are not implemented.
 - Timing JSON `schema_version` is "1.0" today; will bump when free kicks are added.
+- Team selection uses simple dropdowns; MK-style grid with hover preview/matchup confirm not yet implemented.
+- Score header displays selected team names (via `TeamLoader`) instead of generic Home/Away.
 
 #### Vision & Pillars
 - Fast, readable strategy: hidden, simultaneous selection with compact outcomes.
@@ -29,7 +31,7 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 
 #### Presentation & Controls (Retro)
 - Flow: Splash (1–1.5s) → Setup overlay → Playcalling UI (runs 4, pass 6, specials 2; defense modal 6 fronts).
-- HUD: Down/Distance, Ball On, Score/Drives (present now; to be removed), Clock (MM:SS), Quarter, Seed and RNG count.
+- HUD: Down/Distance, Ball On, Score (team names), Clock (MM:SS), Quarter, Seed and RNG count, and a read-only preset label (e.g., FULL 15:00).
 - Controls: Offense 1–6; Defense Q/W/E/R/T/Y (Hot Seat modal). Help overlay toggled via `H`.
 
 #### Teams & Schemes
@@ -107,6 +109,7 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 - Big Play layer works (offense & defense), matchup-sensitive, capped, deterministic.
 - Defense/Offense AI consider the expanded set; `PREVENT` used only when appropriate.
 - Try & Free Kick systems implemented; timing tags added; onside gating enforced.
+- Team names appear in header/score; no Drives controls remain; regulation is clock/quarter-driven.
 - All tests pass; artifacts saved; this `Design.md` reflects v1.2.
 
 #### Future Notes (Phase 5+)
@@ -150,7 +153,7 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 
 * Single, self-contained “Standard” game (no seasons/franchise ties).
 * Pre-game coin flip decides initial possession (implemented; see §8.1). Regulation starts with coin flip into kickoff.
-* We play by clock, quarters, and rules (OT if tied). Current build also shows a Drives header control (to be removed).
+* We play by clock, quarters, and rules (OT if tied). No drive-count gating in regulation.
 * Local hot-seat (Offense vs Defense) and Solo (Offense vs AI, Defense chosen by AI).
 
 ---
@@ -160,7 +163,7 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 1. Splash (1–1.5s) → fades to Setup.
 2. Setup
 
-   * Select Home and Away teams (color swatches, archetype tags).
+   * Select Home and Away teams (MK arcade-style grid with hover preview; color swatches and archetype tags).
    * Select Difficulty (Rookie/Pro/Legend).
    * Select Quarter Length Preset: Quick (5:00) / Standard (10:00) / Full (15:00).
    * Seed controls: input box + Copy seed (present). Randomize button planned.
@@ -175,6 +178,25 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
 
 ---
 
+### 3.1) Team Selection (MK Arcade-style)
+
+- Visual & Layout
+  - Full-screen Setup overlay uses a character-select style grid (3–5 columns) of team tiles. Hovering a tile highlights it and drives a large center/side “hero panel” that shows the team’s logo colors and name.
+  - Bottom info bar shows contextual details for the currently hovered team: Coach, Offense scheme, Defense scheme, Strengths, Weaknesses. Text is bold, all-caps, retro palette; animate subtle flicker/scanline only in Phase 7 polish.
+- Interaction
+  - Hovering a tile: updates hero panel and bottom info (no RNG calls).
+  - Confirming Player 1: first confirm locks the currently hovered tile for Player 1 (overlay badge “P1 SELECTED”), then enables Player 2 selection (overlay badge “P2 SELECT”).
+  - Confirming Player 2: second confirm locks Player 2. Both selections then reveal a matchup preview bar at the bottom: “TEAM A vs TEAM B — Confirm or Reselect”.
+  - Confirm: proceeds to coin flip. Reselect: clears the last lock (P2 first, then P1) and returns to hover state.
+  - Keyboard: arrow keys navigate grid; Enter confirms; Esc/Backspace backs out of the last lock.
+- Rules
+  - Mirror match allowed by default (both players may pick the same team). If later disabled, the first-locked team tile is temporarily disabled for Player 2.
+  - Selection is purely UI state; must not affect any RNG call counts.
+- Data mapping
+  - Hero/Info pulls from team data (see §5.1). If `coach_display_name` is absent (pre-coaches), show “Coach: TBD”. If `strengths`/`weaknesses` are absent, show brief scheme-derived heuristics (e.g., RUN archetype: “Ground control”; DEF PRESS_MAN: “Man pressure, vulnerable to YAC”).
+- Acceptance (see §17 Phase 4.4)
+  - Hover updates info; P1 lock then P2 lock; matchup preview with Confirm/Reselect; determinism unchanged (no RNG during selection).
+
 ## 5) Teams, Schemes & Legendary Coaches
 
 ### 5.1 Teams (Phase 5)
@@ -187,6 +209,9 @@ Note: The current build is mid-Phase 4. Where this v1.2 spec describes future be
   * `call_bias` (tiny pre-draw deltas)
   * `result_tuning` (tiny post-draw nudges)
   * `colors` { `primary`, `secondary`, `accent` }, `logo_hint`
+  * `coach_display_name` (optional; pre-coaches placeholder)
+  * `strengths` (optional string or string[]), `weaknesses` (optional string or string[])
+  * `blurb` (optional short flavor line for hero panel)
 * Uniqueness: planned loader check to enforce unique (O,D) pairs.
 
 ### 5.2 Legendary Coaches (Phase 5.1, private)
@@ -255,6 +280,8 @@ res://data/
   coaches/real/*.json        (future)
 res://ui/
   MainUI.tscn (+ header, setup, modals)
+  TeamTile.tscn (future; reusable tile for MK-style grid)
+  TeamSelect.tscn (future; encapsulated selection grid/hero/info)
 res://tests/*.gd
 res://tools/
   BalanceRunner.gd
@@ -271,6 +298,7 @@ docs/Design.md (this file)
 - Phase 4.1: quarter presets and remove Drives UI; rollover; tests pass.
 - Phase 4.2: OT fair-possession; OT coin toss; 2 OT TOs; tie at expiry.
 - Phase 4.3: Try/XP/2-pt and Free Kicks (kickoff/onside) with timing; tests pass.
+- Phase 4.4: Team Selection (MK arcade-style) — hover preview, P1/P2 lock-in, matchup preview with confirm/reselect; no RNG calls during selection; header/score shows team names in play.
 - Phase 5: 32 teams unique pairs; BalanceRunner targets; tests pass.
 - Phase 5.1: real teams/coaches (private) with measurable AI shifts.
 - Phase 6: AI v2 (12-play awareness) + difficulty polish.
@@ -314,6 +342,7 @@ docs/Design.md (this file)
 * P4.1 — Quarter length presets (5/10/15) and remove Drives UI.
 * P4.2 — OT (2025 fair-possession), OT length = preset, OT coin flip, 2 timeouts, tie allowed.
 * P4.3 — After-TD (XP/2-pt), Kickoffs, Onside.
+* P4.4 — Team Selection (MK arcade-style): grid hover preview, P1/P2 lock-in, matchup preview; show team names in header/score.
 * P5 — 32 teams (unique archetype pairs) + BalanceRunner.
 * P5.1 — Real teams & legendary coaches (private build).
 * P6 — AI v2 (12-play awareness) + difficulty polish.

@@ -12,7 +12,7 @@ enum State { IDLE, PRESNAP, DEFENSE_SELECT, RESOLVE, DRIVE_END, TRY_SELECT, TRY_
 const TimingRes: Script = preload("res://scripts/Timing.gd")
 
 var mode: int = 0
-var num_drives: int = 4
+var num_drives: int = 1 # Deprecated; preserved for backward calls
 var drive_index: int = 0
 
 var home_score: int = 0
@@ -84,10 +84,11 @@ func _emit_all() -> void:
 	emit_signal("ui_update_header")
 	emit_signal("ui_update_field")
 
-func new_session(seed_value: int, drives: int, new_mode: int) -> void:
+func new_session(seed_value: int, _drives: int, new_mode: int) -> void:
 	var sm: Object = get_node("/root/SeedManager")
 	sm.set_seed(seed_value)
-	num_drives = max(1, drives)
+	# Deprecated drives parameter retained for signature compatibility
+	num_drives = 1
 	mode = new_mode
 	drive_index = 0
 	home_score = 0
@@ -191,10 +192,10 @@ func get_down_text() -> String:
 	return "%s & %d" % [ords[idx], to_go]
 
 func get_score_text() -> String:
-	return "Home %d - %d Away" % [home_score, away_score]
-
-func get_drive_text() -> String:
-	return "Drive %d / %d" % [drive_index, num_drives]
+	var tl: Object = get_node("/root/TeamLoader")
+	var home_name := String(tl.call("get_display_name", selected_home_team_id))
+	var away_name := String(tl.call("get_display_name", selected_away_team_id))
+	return "%s %d - %d %s" % [home_name, home_score, away_score, away_name]
 
 func get_clock_text() -> String:
 	var s: int = int(max(0, int(clock_remaining)))
@@ -276,12 +277,9 @@ func _resolve() -> void:
 			if game_over:
 				return
 		else:
-			# Switch possession and maybe next drive (pre-OT mode)
-			if drive_index >= num_drives:
-				emit_signal("ui_state_changed", "DRIVE_END")
-			else:
-				offense_is_home = !offense_is_home
-				_start_drive()
+			# Regulation: simply alternate possession and start a new series
+			offense_is_home = !offense_is_home
+			_start_drive()
 	else:
 		# Continue same drive
 		current_offense_play = ""

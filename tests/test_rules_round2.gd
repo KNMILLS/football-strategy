@@ -45,9 +45,9 @@ func test_quick_play_defaults() -> void:
 	var sm: Object = get_node("/root/SeedManager")
 	var gs: Object = get_node("/root/GameState")
 	sm.set_seed(42)
-	gs.new_session(42, 4, 0)
+	gs.new_session(42, 1, 0)
 	assert(gs.get_down_text().begins_with("1st"))
-	assert(gs.get_drive_text().findn("/ 4") != -1)
+	# Drives header/text removed in Phase 4.3
 
 func test_offense_ai_basic() -> void:
 	var gs: Object = get_node("/root/GameState")

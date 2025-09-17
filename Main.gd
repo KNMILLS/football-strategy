@@ -3,12 +3,11 @@ extends Control
 var log_lines: Array[String] = []
 
 @onready var score_label: Label = $RootMargin/VMain/HeaderBar/Score
-@onready var drive_label: Label = $RootMargin/VMain/HeaderBar/Drive
 @onready var clock_label: Label = $RootMargin/VMain/HeaderBar/Clock
 @onready var quarter_label: Label = $RootMargin/VMain/HeaderBar/Quarter
 @onready var ot_timeouts_label: Label = $RootMargin/VMain/HeaderBar/OTTimeouts
 @onready var seed_input: LineEdit = $RootMargin/VMain/HeaderBar/SeedInput
-@onready var drives_spin: SpinBox = $RootMargin/VMain/HeaderBar/DrivesSpin
+@onready var preset_label: Label = $RootMargin/VMain/HeaderBar/PresetLabel
 @onready var mode_option: OptionButton = $RootMargin/VMain/HeaderBar/ModeOption
 @onready var start_button: Button = $RootMargin/VMain/HeaderBar/StartButton
 @onready var reset_seed_button: Button = $RootMargin/VMain/HeaderBar/ResetSeedButton
@@ -217,9 +216,8 @@ func _on_setup_start() -> void:
 	var seed_val: int = sm.current_seed
 	if seed_text != "":
 		seed_val = int(seed_text.to_int())
-	var drives: int = int(drives_spin.value)
-	var mode: int = 1 if mode_option.get_selected_id() == 1 else 0
-	gs.new_session(seed_val, drives, int(mode))
+		var mode: int = 1 if mode_option.get_selected_id() == 1 else 0
+		gs.new_session(seed_val, 1, int(mode))
 	# Trigger regulation coin toss flow at session start
 	gs.call_deferred("prepare_regulation_coin_toss")
 	_update_hud()
@@ -237,10 +235,9 @@ func _on_start_pressed() -> void:
 	var seed_val: int = sm.current_seed
 	if seed_text != "":
 		seed_val = int(seed_text.to_int())
-	var drives: int = int(drives_spin.value)
 	var mode: int = 1 if mode_option.get_selected_id() == 1 else 0
 	var gs: Object = get_node("/root/GameState")
-	gs.new_session(seed_val, drives, int(mode))
+	gs.new_session(seed_val, 1, int(mode))
 	# Regulation: start with coin toss
 	gs.call_deferred("prepare_regulation_coin_toss")
 	_update_hud()
@@ -251,9 +248,8 @@ func _quick_play() -> void:
 	sm.reseed_with_time()
 	seed_input.text = str(sm.current_seed)
 	mode_option.select(0)
-	drives_spin.value = 4
 	var gs: Object = get_node("/root/GameState")
-	gs.new_session(int(sm.current_seed), 4, 0)
+	gs.new_session(int(sm.current_seed), 1, 0)
 	gs.call_deferred("prepare_regulation_coin_toss")
 	_update_hud()
 	_update_header()
@@ -277,10 +273,10 @@ func _defense_pick(play_key: String) -> void:
 func _update_header() -> void:
 	var gs: Object = get_node("/root/GameState")
 	score_label.text = gs.get_score_text()
-	drive_label.text = gs.get_drive_text()
 	clock_label.text = gs.get_clock_text()
 	quarter_label.text = gs.get_quarter_text()
 	seed_value_label.text = "Seed: %s" % str(get_node("/root/SeedManager").current_seed)
+	_update_preset_label()
 	_update_ot_timeouts()
 	_update_hud()
 
@@ -291,6 +287,7 @@ func _update_field() -> void:
 	clock_label.text = gs.get_clock_text()
 	quarter_label.text = gs.get_quarter_text()
 	seed_value_label.text = "Seed: %s" % str(get_node("/root/SeedManager").current_seed)
+	_update_preset_label()
 	_update_ot_timeouts()
 	_update_hud()
 
@@ -329,7 +326,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.physical_keycode == KEY_ENTER:
 			# Only allow Quick Play when header controls have focus and no modal is open
 			if not defense_modal.visible and (
-				start_button.has_focus() or quick_play_button.has_focus() or seed_input.has_focus() or drives_spin.has_focus() or mode_option.has_focus() or reset_seed_button.has_focus() or help_button.has_focus() or auto_offense_check.has_focus()
+				start_button.has_focus() or quick_play_button.has_focus() or seed_input.has_focus() or mode_option.has_focus() or reset_seed_button.has_focus() or help_button.has_focus() or auto_offense_check.has_focus()
 			):
 				_quick_play()
 		elif event.physical_keycode == KEY_F1:
@@ -400,6 +397,19 @@ func _update_ot_timeouts() -> void:
 		ot_timeouts_label.text = "OT TO: H %d | A %d" % [h, a]
 	else:
 		ot_timeouts_label.text = ""
+
+func _update_preset_label() -> void:
+	var gc := get_node_or_null("/root/GameConfig")
+	var preset := "STANDARD"
+	if gc != null and gc.has_method("get_quarter_preset"):
+		preset = String(gc.call("get_quarter_preset")).to_upper()
+	var t: Object = load("res://scripts/Timing.gd").new()
+	t.load_cfg()
+	var secs := int(t.call("get_preset_seconds", preset))
+	var mm := int(secs / 60)
+	var ss := int(secs % 60)
+	var preset_len := "%d:%02d" % [mm, ss]
+	preset_label.text = "%s %s" % [preset, preset_len]
 
 
 func set_debug_hud_visible(visible_flag: bool) -> void:

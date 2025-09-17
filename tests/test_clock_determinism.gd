@@ -8,7 +8,7 @@ func determinism_smoke_same_seed_outcomes_match() -> void:
 	# First run
 	sm.set_seed(999)
 	gs.set_session_config("balancedpro_balanced", "balancedpro_balanced", 1)
-	gs.new_session(999, 2, 1)
+	gs.new_session(999, 1, 1)
 	var seq1_outcomes: Array = []
 	for i in 8:
 		var _before_rng: int = int(sm.get_rng_call_count())
@@ -19,7 +19,7 @@ func determinism_smoke_same_seed_outcomes_match() -> void:
 	# Second run
 	sm.set_seed(999)
 	gs.set_session_config("balancedpro_balanced", "balancedpro_balanced", 1)
-	gs.new_session(999, 2, 1)
+	gs.new_session(999, 1, 1)
 	var seq2_outcomes: Array = []
 	for i in 8:
 		var _before_rng2: int = int(sm.get_rng_call_count())

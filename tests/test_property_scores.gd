@@ -5,7 +5,7 @@ func test_scores_are_composed_of_field_goals_and_touchdowns() -> void:
 	var rules: Object = get_node("/root/Rules")
 	var sm: Object = get_node("/root/SeedManager")
 	sm.set_seed(9090)
-	gs.new_session(9090, 200, 0)
+	gs.new_session(9090, 1, 0)
 	var ai_off := load("res://scripts/OffenseAI.gd")
 	for i in 500:
 		var play := String(ai_off.call("choose_offense", gs.down, gs.to_go, gs.ball_on, gs.offense_dir))
@@ -15,8 +15,7 @@ func test_scores_are_composed_of_field_goals_and_touchdowns() -> void:
 			var def := String(ai_def.call("choose_defense", gs.down, gs.to_go, gs.ball_on, gs.offense_dir, gs.last_offensive_calls))
 			gs.defense_select(def)
 		rules.assert_state(gs)
-		if gs.drive_ended and gs.drive_index >= gs.num_drives:
-			break
+		# No drive gating in regulation; continue simulation
 	# Check scores are composed of FGs (3) and TD family (6+try)
 	var total := int(gs.home_score + gs.away_score)
 	var ok := false

@@ -8,14 +8,13 @@ func _simulate_mix(level: int, snaps: int) -> Dictionary:
 	var counts := {"RUN_IN":0, "RUN_OUT":0, "PASS_SHORT":0, "PASS_LONG":0}
 	gs.set_session_config("balancedpro_balanced", "balancedpro_balanced", level)
 	sm.set_seed(7777 + level)
-	gs.new_session(sm.get_seed(), 9999, 0)
+	gs.new_session(sm.get_seed(), 1, 0)
 	for i in snaps:
 		var op := String(ai_off.call("choose_offense", gs.down, gs.to_go, gs.ball_on, gs.offense_dir))
 		if counts.has(op):
 			counts[op] = int(counts[op]) + 1
 		gs.offense_select(op)
-		if gs.drive_ended and gs.drive_index >= gs.num_drives:
-			break
+		# No drive gating in regulation
 	return counts
 
 func test_mix_audit_no_domination() -> void:
