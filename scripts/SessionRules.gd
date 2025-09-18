@@ -44,12 +44,12 @@ func build(base_rules: Object, team1: Dictionary, team2: Dictionary, _difficulty
 	fg_adjusted_tables.clear()
 	fg_adjusted_dists.clear()
 
-	# Aggregate team biases (sum of both, tiny values)
+	# Aggregate team biases (sum of both, tiny values). If teams are empty, this is a no-op.
 	for side in ["offense", "defense"]:
-		var cb1: Dictionary = team1.get("call_bias", {}) as Dictionary
-		var cb2: Dictionary = team2.get("call_bias", {}) as Dictionary
-		var src1: Dictionary = cb1.get(side, {}) as Dictionary
-		var src2: Dictionary = cb2.get(side, {}) as Dictionary
+		var cb1: Dictionary = (team1.get("call_bias", {}) as Dictionary)
+		var cb2: Dictionary = (team2.get("call_bias", {}) as Dictionary)
+		var src1: Dictionary = (cb1.get(side, {}) as Dictionary)
+		var src2: Dictionary = (cb2.get(side, {}) as Dictionary)
 		for k in src1.keys():
 			if side == "offense":
 				_apply_offense_bias_legacy(String(k), float(src1.get(k, 0.0)))

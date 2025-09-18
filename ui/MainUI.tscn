@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://c374qqex73732"]
 
 [ext_resource type="Script" uid="uid://cvjt33i6laajs" path="res://Main.gd" id="1_5o0bi"]
-[ext_resource type="PackedScene" uid="uid://c1kfdfjnw41ko" path="res://ui/team_select/TeamSelectionScreen.tscn" id="2_teamselect"]
+
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -53,63 +53,13 @@ text = "Q1"
 [node name="OTTimeouts" type="Label" parent="RootMargin/VMain/HeaderBar"]
 layout_mode = 2
 
-[node name="SeedValue" type="Label" parent="RootMargin/VMain/HeaderBar"]
-layout_mode = 2
-text = "Seed: 0"
-
-[node name="CopySeed" type="Button" parent="RootMargin/VMain/HeaderBar"]
-layout_mode = 2
-text = "Copy Seed"
-
 [node name="Spacer" type="Control" parent="RootMargin/VMain/HeaderBar"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SeedLabel" type="Label" parent="RootMargin/VMain/HeaderBar"]
-layout_mode = 2
-text = "Seed"
-
-[node name="SeedInput" type="LineEdit" parent="RootMargin/VMain/HeaderBar"]
-custom_minimum_size = Vector2(80, 0)
-layout_mode = 2
-placeholder_text = "auto"
-
-[node name="ModeLabel" type="Label" parent="RootMargin/VMain/HeaderBar"]
-layout_mode = 2
-text = "Mode"
-
-[node name="ModeOption" type="OptionButton" parent="RootMargin/VMain/HeaderBar"]
-layout_mode = 2
-selected = 0
-item_count = 2
-popup/item_0/text = "Human vs AI"
-popup/item_0/id = 0
-popup/item_1/text = "Hot Seat"
-popup/item_1/id = 1
-
-[node name="StartButton" type="Button" parent="RootMargin/VMain/HeaderBar"]
-layout_mode = 2
-text = "Start"
-
-[node name="ResetSeedButton" type="Button" parent="RootMargin/VMain/HeaderBar"]
-layout_mode = 2
-text = "Reset Seed"
-
-[node name="HelpButton" type="Button" parent="RootMargin/VMain/HeaderBar"]
-layout_mode = 2
-text = "Help (H)"
-
-[node name="QuickPlayButton" type="Button" parent="RootMargin/VMain/HeaderBar"]
-layout_mode = 2
-text = "Quick Play (Enter)"
-
 [node name="TimeoutButton" type="Button" parent="RootMargin/VMain/HeaderBar"]
 layout_mode = 2
 text = "Timeout (T)"
-
-[node name="AutoOffense" type="CheckButton" parent="RootMargin/VMain/HeaderBar"]
-layout_mode = 2
-text = "Auto Offense Tests"
 
 [node name="FieldPanel" type="Panel" parent="RootMargin/VMain"]
 custom_minimum_size = Vector2(0, 36)
@@ -277,37 +227,6 @@ text = "T) Zone Blitz"
 layout_mode = 2
 text = "Y) Prevent"
 
-[node name="HelpOverlay" type="Panel" parent="."]
-visible = false
-modulate = Color(1, 1, 1, 0.95)
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="HelpText" type="RichTextLabel" parent="HelpOverlay"]
-layout_mode = 2
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = 24.0
-offset_right = -24.0
-offset_bottom = -24.0
-bbcode_enabled = true
-text = "[b]Help[/b]
-- 1..6 choose offense.
-- Q/W/E/R choose defense in Hot Seat.
-- First downs use line-to-gain markers; penalties replay and can award first by yardage.
-- TD = 6 + Try (XP or 2); FG = 3.
-- Kickoffs after Try: TB → B30 (0s), landing-zone returns ~B20–B30, OOB → B40.
-- Onside available only when trailing.
-- Punts can result in touchback to the 20.
-- Fumbles 50% recovery.
-- H toggles this overlay.
-- Quick Play: Enter. HUD: F1."
-
 [node name="DeterminismHUD" type="Panel" parent="."]
 visible = false
 custom_minimum_size = Vector2(180, 28)
@@ -437,144 +356,4 @@ text = "Kickoff (K)"
 layout_mode = 2
 text = "Onside (O)"
 
-[node name="SplashOverlay" type="Panel" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 
-[node name="SplashLabel" type="Label" parent="SplashOverlay"]
-layout_mode = 2
-anchor_right = 1.0
-anchor_bottom = 1.0
-theme_override_font_sizes/font_size = 36
-text = "GRIDIRON FOOTBALL"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="SetupOverlay" type="Panel" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BG" type="ColorRect" parent="SetupOverlay"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 1)
-
-[node name="SetupVBox" type="VBoxContainer" parent="SetupOverlay"]
-layout_mode = 2
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = 24.0
-offset_right = -24.0
-offset_bottom = -24.0
-theme_override_constants/separation = 12
-
-[node name="SetupTitle" type="Label" parent="SetupOverlay/SetupVBox"]
-layout_mode = 2
-text = "GAME SETUP"
-horizontal_alignment = 1
-
-[node name="TeamSelect" parent="SetupOverlay/SetupVBox" instance=ExtResource("2_teamselect")]
-layout_mode = 2
-
-[node name="TileGrid" type="GridContainer" parent="SetupOverlay/SetupVBox"]
-layout_mode = 2
-theme_override_constants/h_separation = 16
-theme_override_constants/v_separation = 10
-columns = 2
-
-[node name="Team1Panel" type="PanelContainer" parent="SetupOverlay/SetupVBox/TileGrid"]
-visible = false
-layout_mode = 2
-
-[node name="Team1VBox" type="VBoxContainer" parent="SetupOverlay/SetupVBox/TileGrid/Team1Panel"]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="Team1Label" type="Label" parent="SetupOverlay/SetupVBox/TileGrid/Team1Panel/Team1VBox"]
-layout_mode = 2
-text = "TEAM 1"
-
-[node name="Team1Option" type="OptionButton" parent="SetupOverlay/SetupVBox/TileGrid/Team1Panel/Team1VBox"]
-layout_mode = 2
-
-[node name="Team2Panel" type="PanelContainer" parent="SetupOverlay/SetupVBox/TileGrid"]
-visible = false
-layout_mode = 2
-
-[node name="Team2VBox" type="VBoxContainer" parent="SetupOverlay/SetupVBox/TileGrid/Team2Panel"]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="Team2Label" type="Label" parent="SetupOverlay/SetupVBox/TileGrid/Team2Panel/Team2VBox"]
-layout_mode = 2
-text = "TEAM 2"
-
-[node name="Team2Option" type="OptionButton" parent="SetupOverlay/SetupVBox/TileGrid/Team2Panel/Team2VBox"]
-layout_mode = 2
-
-[node name="DifficultyPanel" type="PanelContainer" parent="SetupOverlay/SetupVBox/TileGrid"]
-layout_mode = 2
-
-[node name="DifficultyVBox" type="VBoxContainer" parent="SetupOverlay/SetupVBox/TileGrid/DifficultyPanel"]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="DifficultyLabel" type="Label" parent="SetupOverlay/SetupVBox/TileGrid/DifficultyPanel/DifficultyVBox"]
-layout_mode = 2
-text = "DIFFICULTY"
-
-[node name="DifficultyOption" type="OptionButton" parent="SetupOverlay/SetupVBox/TileGrid/DifficultyPanel/DifficultyVBox"]
-layout_mode = 2
-selected = 1
-item_count = 3
-popup/item_0/text = "ROOKIE"
-popup/item_0/id = 0
-popup/item_1/text = "PRO"
-popup/item_1/id = 1
-popup/item_2/text = "LEGEND"
-popup/item_2/id = 2
-
-[node name="QuarterPanel" type="PanelContainer" parent="SetupOverlay/SetupVBox/TileGrid"]
-layout_mode = 2
-
-[node name="QuarterVBox" type="VBoxContainer" parent="SetupOverlay/SetupVBox/TileGrid/QuarterPanel"]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="QuarterLabel" type="Label" parent="SetupOverlay/SetupVBox/TileGrid/QuarterPanel/QuarterVBox"]
-layout_mode = 2
-text = "GAME LENGTH"
-
-[node name="QuarterOption" type="OptionButton" parent="SetupOverlay/SetupVBox/TileGrid/QuarterPanel/QuarterVBox"]
-layout_mode = 2
-selected = 1
-item_count = 3
-popup/item_0/text = "Quick (5:00)"
-popup/item_0/id = 0
-popup/item_1/text = "Standard (10:00)"
-popup/item_1/id = 1
-popup/item_2/text = "Full (15:00)"
-popup/item_2/id = 2
-
-[node name="Spacer" type="Control" parent="SetupOverlay/SetupVBox"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="StartSetupButton" type="Button" parent="SetupOverlay/SetupVBox"]
-custom_minimum_size = Vector2(0, 34)
-layout_mode = 2
-text = "START"

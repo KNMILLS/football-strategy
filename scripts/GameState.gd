@@ -44,9 +44,7 @@ var current_defense_play: String = ""
 var drive_ended: bool = false
 var turnover_on_downs: bool = false
 
-# Session selections and rules
-var selected_home_team_id: String = ""
-var selected_away_team_id: String = ""
+# Session rules (no team identities)
 var difficulty_level: int = 1 # Difficulty.Level.PRO by default
 var _session_rules_obj: Object = null
 
@@ -127,13 +125,6 @@ func new_session(seed_value: int, _drives: int, new_mode: int) -> void:
 	pending_ot_outcome = {}
 	pending_free_kick = false
 	kicking_team_index = -1
-	# Default teams if not configured
-	if selected_home_team_id == "" or selected_away_team_id == "":
-		var tl: Object = get_node("/root/TeamLoader")
-		var ids: Array = tl.call("get_team_ids")
-		if ids.size() >= 2:
-			selected_home_team_id = String(ids[0])
-			selected_away_team_id = String(ids[1])
 	# Ensure Difficulty autoload reflects level
 	var diff: Object = get_node("/root/Difficulty")
 	diff.call("set_level", int(difficulty_level))
@@ -199,10 +190,7 @@ func get_down_text() -> String:
 	return "%s & %d" % [ords[idx], to_go]
 
 func get_score_text() -> String:
-	var tl: Object = get_node("/root/TeamLoader")
-	var home_name := String(tl.call("get_display_name", selected_home_team_id))
-	var away_name := String(tl.call("get_display_name", selected_away_team_id))
-	return "%s %d - %d %s" % [home_name, home_score, away_score, away_name]
+	return "Home %d - %d Away" % [home_score, away_score]
 
 func get_clock_text() -> String:
 	var s: int = int(max(0, int(clock_remaining)))
@@ -763,9 +751,7 @@ func ot_debug_end_possession(kind: String) -> void:
 	turnover_on_downs = true
 	_handle_overtime_drive_end(outcome, pre_home, pre_away)
 
-func set_session_config(home_team_id: String, away_team_id: String, new_difficulty_level: int) -> void:
-	selected_home_team_id = String(home_team_id)
-	selected_away_team_id = String(away_team_id)
+func set_session_difficulty(new_difficulty_level: int) -> void:
 	difficulty_level = int(new_difficulty_level)
 	var diff: Object = get_node("/root/Difficulty")
 	diff.call("set_level", difficulty_level)
@@ -774,12 +760,10 @@ func set_session_config(home_team_id: String, away_team_id: String, new_difficul
 func _rebuild_session_rules() -> void:
 	var sr_script: Script = load("res://scripts/SessionRules.gd")
 	var new_sr: Object = sr_script.new()
-	var tl: Object = get_node("/root/TeamLoader")
-	var team1: Dictionary = tl.call("get_team_dict", selected_home_team_id)
-	var team2: Dictionary = tl.call("get_team_dict", selected_away_team_id)
+	# Build with neutral teams (no identity biases)
+	var team1: Dictionary = {}
+	var team2: Dictionary = {}
 	new_sr.call("build", get_node("/root/Rules"), team1, team2, int(difficulty_level))
-	if new_sr.has_method("record_teams"):
-		new_sr.call("record_teams", team1, team2)
 	_session_rules_obj = new_sr
 
 func get_session_rules() -> Object:

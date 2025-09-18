@@ -6,17 +6,9 @@ var log_lines: Array[String] = []
 @onready var clock_label: Label = $RootMargin/VMain/HeaderBar/Clock
 @onready var quarter_label: Label = $RootMargin/VMain/HeaderBar/Quarter
 @onready var ot_timeouts_label: Label = $RootMargin/VMain/HeaderBar/OTTimeouts
-@onready var seed_input: LineEdit = $RootMargin/VMain/HeaderBar/SeedInput
 @onready var preset_label: Label = $RootMargin/VMain/HeaderBar/PresetLabel
-@onready var mode_option: OptionButton = $RootMargin/VMain/HeaderBar/ModeOption
-@onready var start_button: Button = $RootMargin/VMain/HeaderBar/StartButton
-@onready var reset_seed_button: Button = $RootMargin/VMain/HeaderBar/ResetSeedButton
-@onready var help_button: Button = $RootMargin/VMain/HeaderBar/HelpButton
-@onready var quick_play_button: Button = $RootMargin/VMain/HeaderBar/QuickPlayButton
 @onready var timeout_button: Button = $RootMargin/VMain/HeaderBar/TimeoutButton
-@onready var auto_offense_check: CheckButton = $RootMargin/VMain/HeaderBar/AutoOffense
-@onready var seed_value_label: Label = $RootMargin/VMain/HeaderBar/SeedValue
-@onready var copy_seed_button: Button = $RootMargin/VMain/HeaderBar/CopySeed
+ 
 
 @onready var spot_label: Label = $RootMargin/VMain/FieldPanel/FieldHBox/SpotLabel
 @onready var down_label: Label = $RootMargin/VMain/FieldPanel/FieldHBox/DownLabel
@@ -59,37 +51,28 @@ var log_lines: Array[String] = []
 @onready var btn_zone_blitz: Button = $DefenseModal/DMVBox/DMButtons/BtnZoneBlitz
 @onready var btn_prevent: Button = $DefenseModal/DMVBox/DMButtons/BtnPrevent
 
-@onready var help_overlay: Panel = $HelpOverlay
 @onready var hud_panel: Panel = $DeterminismHUD
 @onready var hud_label: Label = $DeterminismHUD/HUDLabel
 
-@onready var splash_overlay: Panel = $SplashOverlay
-@onready var setup_overlay: Panel = $SetupOverlay
 @onready var root_margin: MarginContainer = $RootMargin
-@onready var team_select: Control = $SetupOverlay/SetupVBox/TeamSelect
-@onready var setup_team1: OptionButton = $SetupOverlay/SetupVBox/TileGrid/Team1Panel/Team1VBox/Team1Option
-@onready var setup_team2: OptionButton = $SetupOverlay/SetupVBox/TileGrid/Team2Panel/Team2VBox/Team2Option
-@onready var setup_difficulty: OptionButton = $SetupOverlay/SetupVBox/TileGrid/DifficultyPanel/DifficultyVBox/DifficultyOption
-@onready var setup_quarter_option: OptionButton = $SetupOverlay/SetupVBox/TileGrid/QuarterPanel/QuarterVBox/QuarterOption
-@onready var setup_start_button: Button = $SetupOverlay/SetupVBox/StartSetupButton
-@onready var setup_tile_grid: GridContainer = $SetupOverlay/SetupVBox/TileGrid
 
 func _ready() -> void:
 	_connect_signals()
 	_setup_shortcuts()
-	_update_header()
-	_update_field()
+	# Configure 15:00 quarters
+	var gc := get_node_or_null("/root/GameConfig")
+	if gc != null and gc.has_method("set_quarter_preset"):
+		gc.call("set_quarter_preset", "FULL")
+	# Start session immediately (Human vs AI) and show coin toss
 	var sm: Object = get_node("/root/SeedManager")
-	seed_input.text = str(sm.current_seed)
-	_show_splash_then_setup()
+	var gs: Object = get_node("/root/GameState")
+	gs.new_session(int(sm.get("current_seed")), 1, 0)
+	gs.call_deferred("prepare_regulation_coin_toss")
+	_update_hud()
+	_update_header()
 
 func _connect_signals() -> void:
-	start_button.pressed.connect(_on_start_pressed)
-	reset_seed_button.pressed.connect(_on_reset_seed)
-	help_button.pressed.connect(_toggle_help)
-	quick_play_button.pressed.connect(_quick_play)
 	timeout_button.pressed.connect(_press_timeout)
-	copy_seed_button.pressed.connect(_copy_seed_to_clipboard)
 
 	btn_inside_power.pressed.connect(func(): _offense_pick("INSIDE_POWER"))
 	btn_outside_zone.pressed.connect(func(): _offense_pick("OUTSIDE_ZONE"))
@@ -127,20 +110,6 @@ func _connect_signals() -> void:
 	btn_tails.pressed.connect(func(): _coin_toss_pick(false))
 	btn_receive.pressed.connect(func(): _coin_choice("RECEIVE"))
 	btn_defend.pressed.connect(func(): _coin_choice("DEFEND"))
-	setup_start_button.pressed.connect(_on_setup_start)
-	# TeamSelect signals
-	if is_instance_valid(team_select):
-		team_select.connect("confirmed", Callable(self, "_on_teamselect_confirmed"))
-	# Update persistence immediately when selection changes
-	setup_quarter_option.item_selected.connect(func(_idx: int):
-		var id := int(setup_quarter_option.get_selected_id())
-		var preset := "STANDARD"
-		if id == 0:
-			preset = "QUICK"
-		elif id == 2:
-			preset = "FULL"
-		get_node("/root/GameConfig").call("set_quarter_preset", preset)
-	)
 
 func _setup_shortcuts() -> void:
 	_assign_shortcut(btn_inside_power, KEY_1)
@@ -161,121 +130,14 @@ func _setup_shortcuts() -> void:
 	_assign_shortcut(btn_all_out, KEY_R)
 	_assign_shortcut(btn_zone_blitz, KEY_T)
 	_assign_shortcut(btn_prevent, KEY_Y)
-	# Header timeout hotkey (T also used in defense modal; only active when no modal)
-	var sc := Shortcut.new()
-	var ev := InputEventKey.new()
-	ev.physical_keycode = KEY_T
-	sc.events = [ev]
-	timeout_button.shortcut = sc
+# Header timeout hotkey (T also used in defense modal; only active when no modal)
+var sc := Shortcut.new()
+var ev := InputEventKey.new()
+ev.physical_keycode = KEY_T
+sc.events = [ev]
+timeout_button.shortcut = sc
 
-func _show_splash_then_setup() -> void:
-	# Show splash for ~1.2s then show setup
-	# Hide game UI while in setup
-	splash_overlay.visible = true
-	setup_overlay.visible = false
-	root_margin.visible = false
-	var tw := create_tween()
-	splash_overlay.modulate.a = 1.0
-	tw.tween_interval(1.2)
-	tw.tween_callback(Callable(self, "_enter_setup"))
-
-func _enter_setup() -> void:
-	splash_overlay.visible = false
-	setup_overlay.visible = true
-	root_margin.visible = false
-	_populate_setup()
-	# Show TeamSelect first; hide legacy TileGrid controls until teams are chosen
-	if is_instance_valid(setup_tile_grid):
-		setup_tile_grid.visible = false
-	if is_instance_valid(team_select):
-		team_select.visible = true
-
-func _populate_setup() -> void:
-	setup_team1.clear()
-	setup_team2.clear()
-	setup_difficulty.select(1)
-	# Initialize quarter length from GameConfig
-	var gc: Object = get_node("/root/GameConfig")
-	var preset := String(gc.call("get_quarter_preset")).to_upper()
-	if preset == "QUICK":
-		setup_quarter_option.select(0)
-	elif preset == "FULL":
-		setup_quarter_option.select(2)
-	else:
-		setup_quarter_option.select(1)
-
-func _on_setup_start() -> void:
-	# Apply selected teams and difficulty, then hide setup and start session
-	var gs: Object = get_node("/root/GameState")
-	var home_tid := ""
-	var away_tid := ""
-	if is_instance_valid(team_select) and team_select.has_method("get_selected_team_ids"):
-		var arr: Array = team_select.call("get_selected_team_ids")
-		if arr.size() >= 2:
-			home_tid = String(arr[0])
-			away_tid = String(arr[1])
-	if home_tid == "" or away_tid == "":
-		var tl: Object = get_node("/root/TeamLoader")
-		var ids: Array = tl.call("get_team_ids")
-		if ids.size() >= 2:
-			home_tid = String(ids[0])
-			away_tid = String(ids[1])
-	var diff_id := int(setup_difficulty.get_selected_id())
-	gs.call("set_session_config", home_tid, away_tid, diff_id)
-	# Persist quarter preset selection
-	var gc2: Object = get_node("/root/GameConfig")
-	var qid := int(setup_quarter_option.get_selected_id())
-	var preset2 := "STANDARD"
-	if qid == 0:
-		preset2 = "QUICK"
-	elif qid == 2:
-		preset2 = "FULL"
-	gc2.call("set_quarter_preset", preset2)
-	setup_overlay.visible = false
-	root_margin.visible = true
-	# Start session immediately with current header controls
-	var seed_text := seed_input.text.strip_edges()
-	var sm: Object = get_node("/root/SeedManager")
-	var seed_val: int = sm.current_seed
-	if seed_text != "":
-		seed_val = int(seed_text.to_int())
-		var mode: int = 1 if mode_option.get_selected_id() == 1 else 0
-		gs.new_session(seed_val, 1, int(mode))
-	# Trigger regulation coin toss flow at session start
-	gs.call_deferred("prepare_regulation_coin_toss")
-	_update_hud()
-
-func _on_teamselect_confirmed(home_team_id: String, away_team_id: String) -> void:
-	# Called when MK-style selection has both teams locked and user presses Confirm
-	# Persist quarter preset selection
-	var gc2: Object = get_node("/root/GameConfig")
-	var qid := int(setup_quarter_option.get_selected_id())
-	var preset2 := "STANDARD"
-	if qid == 0:
-		preset2 = "QUICK"
-	elif qid == 2:
-		preset2 = "FULL"
-	gc2.call("set_quarter_preset", preset2)
-	# Reveal Difficulty/Quarter controls and allow START
-	if is_instance_valid(setup_tile_grid):
-		setup_tile_grid.visible = true
-	if is_instance_valid(team_select):
-		team_select.visible = false
-	# Apply selections and start session
-	var gs: Object = get_node("/root/GameState")
-	var diff_id := int(setup_difficulty.get_selected_id())
-	gs.call("set_session_config", String(home_team_id), String(away_team_id), diff_id)
-	setup_overlay.visible = false
-	root_margin.visible = true
-	var seed_text := seed_input.text.strip_edges()
-	var sm: Object = get_node("/root/SeedManager")
-	var seed_val: int = sm.current_seed
-	if seed_text != "":
-		seed_val = int(seed_text.to_int())
-	var mode: int = 1 if mode_option.get_selected_id() == 1 else 0
-	gs.new_session(seed_val, 1, int(mode))
-	gs.call_deferred("prepare_regulation_coin_toss")
-	_update_hud()
+ 
 
 func _assign_shortcut(button: Button, keycode: Key) -> void:
 	var sc := Shortcut.new()
@@ -284,37 +146,7 @@ func _assign_shortcut(button: Button, keycode: Key) -> void:
 	sc.events = [ev]
 	button.shortcut = sc
 
-func _on_start_pressed() -> void:
-	var seed_text := seed_input.text.strip_edges()
-	var sm: Object = get_node("/root/SeedManager")
-	var seed_val: int = sm.current_seed
-	if seed_text != "":
-		seed_val = int(seed_text.to_int())
-	var mode: int = 1 if mode_option.get_selected_id() == 1 else 0
-	var gs: Object = get_node("/root/GameState")
-	gs.new_session(seed_val, 1, int(mode))
-	# Regulation: start with coin toss
-	gs.call_deferred("prepare_regulation_coin_toss")
-	_update_hud()
-	_update_header()
-
-func _quick_play() -> void:
-	var sm: Object = get_node("/root/SeedManager")
-	sm.reseed_with_time()
-	seed_input.text = str(sm.current_seed)
-	mode_option.select(0)
-	var gs: Object = get_node("/root/GameState")
-	gs.new_session(int(sm.current_seed), 1, 0)
-	gs.call_deferred("prepare_regulation_coin_toss")
-	_update_hud()
-	_update_header()
-
-func _on_reset_seed() -> void:
-	var sm: Object = get_node("/root/SeedManager")
-	sm.reseed_with_time()
-	seed_input.text = str(sm.current_seed)
-	_update_hud()
-	_update_header()
+ 
 
 func _offense_pick(play_key: String) -> void:
 	var gs: Object = get_node("/root/GameState")
@@ -330,7 +162,6 @@ func _update_header() -> void:
 	score_label.text = gs.get_score_text()
 	clock_label.text = gs.get_clock_text()
 	quarter_label.text = gs.get_quarter_text()
-	seed_value_label.text = "Seed: %s" % str(get_node("/root/SeedManager").current_seed)
 	_update_preset_label()
 	_update_timeouts_label()
 	_update_hud()
@@ -341,7 +172,6 @@ func _update_field() -> void:
 	down_label.text = gs.get_down_text()
 	clock_label.text = gs.get_clock_text()
 	quarter_label.text = gs.get_quarter_text()
-	seed_value_label.text = "Seed: %s" % str(get_node("/root/SeedManager").current_seed)
 	_update_preset_label()
 	_update_timeouts_label()
 	_update_hud()
@@ -371,20 +201,11 @@ func _show_banner(text: String) -> void:
 	tw.tween_interval(1.0)
 	tw.tween_property(banner_panel, "modulate:a", 0.0, 0.35)
 
-func _toggle_help() -> void:
-	help_overlay.visible = !help_overlay.visible
+ 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.physical_keycode == KEY_H:
-			_toggle_help()
-		elif event.physical_keycode == KEY_ENTER:
-			# Only allow Quick Play when header controls have focus and no modal is open
-			if not defense_modal.visible and (
-				start_button.has_focus() or quick_play_button.has_focus() or seed_input.has_focus() or mode_option.has_focus() or reset_seed_button.has_focus() or help_button.has_focus() or auto_offense_check.has_focus()
-			):
-				_quick_play()
-		elif event.physical_keycode == KEY_F1:
+		if event.physical_keycode == KEY_F1:
 			hud_panel.visible = !hud_panel.visible
 			_update_hud()
 		elif event.physical_keycode == KEY_X:
@@ -475,10 +296,7 @@ func set_debug_hud_visible(visible_flag: bool) -> void:
 	hud_panel.visible = visible_flag
 	_update_hud()
 
-func _copy_seed_to_clipboard() -> void:
-	var sm: Object = get_node("/root/SeedManager")
-	DisplayServer.clipboard_set(str(sm.current_seed))
-	_show_banner("Seed copied: %s" % str(sm.current_seed))
+ 
 
 func _press_timeout() -> void:
 	# Only allow when no selection modals are open
