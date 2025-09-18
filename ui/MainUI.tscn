@@ -1,7 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://c374qqex73732"]
+[gd_scene load_steps=2 format=3 uid="uid://c374qqex73732"]
 
 [ext_resource type="Script" uid="uid://cvjt33i6laajs" path="res://Main.gd" id="1_5o0bi"]
-
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -180,6 +179,7 @@ horizontal_alignment = 1
 [node name="ActionLog" type="RichTextLabel" parent="RootMargin/VMain"]
 custom_minimum_size = Vector2(0, 220)
 layout_mode = 2
+size_flags_vertical = 3
 bbcode_enabled = true
 scroll_following = true
 
@@ -355,5 +355,3 @@ text = "Kickoff (K)"
 [node name="BtnOnside" type="Button" parent="FreeKickModal/FKVBox/FKButtons"]
 layout_mode = 2
 text = "Onside (O)"
-
-

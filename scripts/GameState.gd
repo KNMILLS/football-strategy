@@ -194,7 +194,7 @@ func get_score_text() -> String:
 
 func get_clock_text() -> String:
 	var s: int = int(max(0, int(clock_remaining)))
-	var mm: int = int(s / 60)
+	var mm: int = int(s / 60.0)
 	var ss: int = int(s % 60)
 	return "%d:%02d" % [mm, ss]
 

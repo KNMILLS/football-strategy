@@ -27,3 +27,11 @@ GameConfig="*res://scripts/GameConfig.gd"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/gdai-mcp-plugin-godot/plugin.cfg")
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/resizable=true
+window/content_scale/mode="canvas_items"
+window/content_scale/aspect="expand"

@@ -130,12 +130,12 @@ func _setup_shortcuts() -> void:
 	_assign_shortcut(btn_all_out, KEY_R)
 	_assign_shortcut(btn_zone_blitz, KEY_T)
 	_assign_shortcut(btn_prevent, KEY_Y)
-# Header timeout hotkey (T also used in defense modal; only active when no modal)
-var sc := Shortcut.new()
-var ev := InputEventKey.new()
-ev.physical_keycode = KEY_T
-sc.events = [ev]
-timeout_button.shortcut = sc
+	# Header timeout hotkey (T also used in defense modal; only active when no modal)
+	var sc := Shortcut.new()
+	var ev := InputEventKey.new()
+	ev.physical_keycode = KEY_T
+	sc.events = [ev]
+	timeout_button.shortcut = sc
 
  
 
@@ -178,11 +178,8 @@ func _update_field() -> void:
 
 func _append_log(new_line: String) -> void:
 	log_lines.append(new_line)
-	while log_lines.size() > 20:
-		log_lines.pop_front()
-	log_rtl.text = ""
-	for ln in log_lines:
-		log_rtl.append_text(ln + "\n")
+	log_rtl.append_text(new_line + "\n")
+	log_rtl.scroll_to_line(log_rtl.get_line_count() - 1)
 
 func _on_state_changed(state_name: String) -> void:
 	if state_name == "DEFENSE_SELECT":
@@ -245,12 +242,16 @@ func _update_hud() -> void:
 
 func _on_coin_toss_needed() -> void:
 	ct_result_label.text = "Regulation Coin Toss — Visitor calls: Heads or Tails"
+	btn_heads.disabled = false
+	btn_tails.disabled = false
 	btn_receive.disabled = true
 	btn_defend.disabled = true
 	coin_toss_modal.popup_centered()
 
 func _coin_toss_pick(visitor_called_heads: bool) -> void:
 	var gs: Object = get_node("/root/GameState")
+	btn_heads.disabled = true
+	btn_tails.disabled = true
 	var winner: int = int(gs.call("perform_coin_toss", bool(visitor_called_heads)))
 	var who := ("Away" if winner == 1 else "Home")
 	ct_result_label.text = "%s wins toss – choose Receive or Defend" % who
@@ -259,6 +260,9 @@ func _coin_toss_pick(visitor_called_heads: bool) -> void:
 
 func _coin_choice(choice: String) -> void:
 	var gs: Object = get_node("/root/GameState")
+	# Prevent double-clicking
+	btn_receive.disabled = true
+	btn_defend.disabled = true
 	# If we're in OT entry, route to OT; else regulation kickoff
 	if bool(gs.get("is_overtime")):
 		gs.call("enter_overtime_with_choice", String(choice))
@@ -286,7 +290,7 @@ func _update_preset_label() -> void:
 	var t: Object = load("res://scripts/Timing.gd").new()
 	t.load_cfg()
 	var secs := int(t.call("get_preset_seconds", preset))
-	var mm := int(secs / 60)
+	var mm := int(secs / 60.0)
 	var ss := int(secs % 60)
 	var preset_len := "%d:%02d" % [mm, ss]
 	preset_label.text = "%s %s" % [preset, preset_len]
