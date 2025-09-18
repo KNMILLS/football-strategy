@@ -23,6 +23,8 @@ func _map_defense_front(key: String) -> String:
 	match key:
 		"ALL_OUT_RUSH":
 			return "PRESS_MAN"
+		"PUNT_RETURN":
+			return "BALANCED"
 		_:
 			return key
 

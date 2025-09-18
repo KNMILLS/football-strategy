@@ -216,6 +216,11 @@ func offense_select(play_key: String) -> void:
 	last_offensive_calls.append(play_key)
 	if last_offensive_calls.size() > 12:
 		last_offensive_calls.pop_front()
+	# Auto-select defense on obvious specials to streamline flow
+	if String(play_key) == "PUNT":
+		current_defense_play = "PUNT_RETURN"
+		_resolve()
+		return
 	if mode == 0:
 		var da: Script = load("res://scripts/DefenseAI.gd")
 		current_defense_play = String(da.call("choose_defense", down, to_go, ball_on, offense_dir, last_offensive_calls))
