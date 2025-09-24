@@ -22,6 +22,9 @@
 <body>
   <div id="game">
     <header id="scoreboard">
+      <div id="dev-toggle" class="dev-toggle">
+        <label><input type="checkbox" id="dev-mode-checkbox"> DEV MODE</label>
+      </div>
       <div id="score" class="score">You 0 — AI 0</div>
       <div id="hud" class="hud">
         <span id="quarter">Q1</span>
@@ -34,25 +37,82 @@
     <main id="main">
       <aside id="sidebar-left" class="sidebar">
         <div id="controls" class="controls">
-          <div class="control-row">
-            <label for="deck-select">Offense Deck:</label>
-            <select id="deck-select">
-              <option value="Pro Style">Pro Style</option>
-              <option value="Ball Control">Ball Control</option>
-              <option value="Aerial Style">Aerial Style</option>
-            </select>
+          <div id="controls-normal">
+            <div class="control-row">
+              <label for="deck-select">Offense Deck:</label>
+              <select id="deck-select">
+                <option value="Pro Style">Pro Style</option>
+                <option value="Ball Control">Ball Control</option>
+                <option value="Aerial Style">Aerial Style</option>
+              </select>
+            </div>
+            <!-- Opponent selection: choose an AI coach persona. Determines AI deck. -->
+            <div class="control-row">
+              <label for="opponent-select">Select Opponent:</label>
+              <select id="opponent-select">
+                <option value="Andy Reid">Andy Reid</option>
+                <option value="Bill Belichick">Bill Belichick</option>
+                <option value="John Madden">John Madden</option>
+              </select>
+            </div>
+            <button id="new-game" class="btn">New Game</button>
           </div>
-          <!-- Opponent selection: choose an AI coach persona. This determines which
-               offensive deck the AI will use. -->
-          <div class="control-row">
-            <label for="opponent-select">Select Opponent:</label>
-            <select id="opponent-select">
-              <option value="Andy Reid">Andy Reid</option>
-              <option value="Bill Belichick">Bill Belichick</option>
-              <option value="John Madden">John Madden</option>
-            </select>
+          <div id="controls-test" class="hidden">
+            <div class="control-row">
+              <label for="test-player-deck">HOME Deck:</label>
+              <select id="test-player-deck">
+                <option value="Pro Style">Pro Style</option>
+                <option value="Ball Control">Ball Control</option>
+                <option value="Aerial Style">Aerial Style</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="test-ai-deck">AWAY Deck:</label>
+              <select id="test-ai-deck">
+                <option value="Pro Style">Pro Style</option>
+                <option value="Ball Control">Ball Control</option>
+                <option value="Aerial Style">Aerial Style</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="test-possession">Possession:</label>
+              <select id="test-possession">
+                <option value="player">HOME</option>
+                <option value="ai">AWAY</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="test-ballon">Ball on:</label>
+              <input id="test-ballon" type="number" min="1" max="99" value="25"/>
+            </div>
+            <div class="control-row">
+              <label for="test-down">Down:</label>
+              <select id="test-down">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="test-togo">To go:</label>
+              <input id="test-togo" type="number" min="1" max="30" value="10"/>
+            </div>
+            <div class="control-row">
+              <label for="test-quarter">Quarter:</label>
+              <select id="test-quarter">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="test-clock">Clock (mm:ss):</label>
+              <input id="test-clock" type="text" value="15:00"/>
+            </div>
+            <button id="start-test-game" class="btn">Start Test Game</button>
           </div>
-        <button id="new-game" class="btn">New Game</button>
         </div>
         <div id="log" class="log" tabindex="0" aria-label="Play log" role="log"></div>
       </aside>

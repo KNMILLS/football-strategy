@@ -722,6 +722,18 @@ const opponentSelect = document.getElementById('opponent-select');
 // which id is present. Without this, the New Game button may appear
 // unresponsive if the id in the markup does not match the script.
 const newGameButton = document.getElementById('new-game') || document.getElementById('newgame');
+const devModeCheckbox = document.getElementById('dev-mode-checkbox');
+const controlsNormal = document.getElementById('controls-normal');
+const controlsTest = document.getElementById('controls-test');
+const startTestBtn = document.getElementById('start-test-game');
+const testPlayerDeck = document.getElementById('test-player-deck');
+const testAiDeck = document.getElementById('test-ai-deck');
+const testPossession = document.getElementById('test-possession');
+const testBallOn = document.getElementById('test-ballon');
+const testDown = document.getElementById('test-down');
+const testToGo = document.getElementById('test-togo');
+const testQuarter = document.getElementById('test-quarter');
+const testClock = document.getElementById('test-clock');
 // The play zone element has been removed from the UI. We still keep a
 // reference for legacy message display, but it may be null if the DOM
 // does not include it.
@@ -1041,6 +1053,27 @@ function initField() {
 if (newGameButton) {
   newGameButton.addEventListener('click', () => {
     startNewGame();
+  });
+}
+
+// DEV MODE toggle wiring
+if (devModeCheckbox && controlsNormal && controlsTest) {
+  devModeCheckbox.addEventListener('change', () => {
+    const enabled = !!devModeCheckbox.checked;
+    if (enabled) {
+      controlsNormal.classList.add('hidden');
+      controlsTest.classList.remove('hidden');
+    } else {
+      controlsTest.classList.add('hidden');
+      controlsNormal.classList.remove('hidden');
+    }
+  });
+}
+
+// Start test game button
+if (startTestBtn) {
+  startTestBtn.addEventListener('click', () => {
+    startNewGameWithTestSetup();
   });
 }
 
@@ -2013,6 +2046,58 @@ function finalizeAfterPunt() {
   game.clock -= TIME_KEEPING.punt;
   checkTwoMinuteWarning();
   handleClockAndQuarter();
+  updateHUD();
+  dealHands();
+}
+
+// Start a new game using test setup controls (DEV MODE)
+function startNewGameWithTestSetup() {
+  // Fallback: if test controls are missing, use normal flow
+  if (!testPlayerDeck || !testAiDeck || !testPossession || !testBallOn || !testDown || !testToGo || !testQuarter || !testClock) {
+    startNewGame();
+    return;
+  }
+  const pDeck = testPlayerDeck.value;
+  const aDeck = testAiDeck.value;
+  const poss = testPossession.value === 'ai' ? 'ai' : 'player';
+  let ball = parseInt(testBallOn.value, 10);
+  let down = parseInt(testDown.value, 10);
+  let togo = parseInt(testToGo.value, 10);
+  let quarter = parseInt(testQuarter.value, 10);
+  // Parse mm:ss clock
+  const parts = String(testClock.value || '15:00').split(':');
+  let mins = parseInt(parts[0], 10) || 0;
+  let secs = parseInt(parts[1], 10) || 0;
+  let clock = mins * 60 + secs;
+
+  // Clamp values
+  ball = Math.max(1, Math.min(99, ball));
+  down = Math.max(1, Math.min(4, down));
+  togo = Math.max(1, Math.min(99, togo));
+  quarter = Math.max(1, Math.min(4, quarter));
+  clock = Math.max(0, Math.min(15 * 60, clock));
+
+  // Initialize game state
+  game.offenseDeck = pDeck;
+  game.aiOffenseDeck = aDeck;
+  game.rng = () => Math.random();
+  game.quarter = quarter;
+  game.clock = clock;
+  game.down = down;
+  game.toGo = togo;
+  game.ballOn = ball;
+  game.score.player = 0;
+  game.score.ai = 0;
+  game.possession = poss;
+  game.awaitingPAT = false;
+  game.awaitingFG = false;
+  game.gameOver = false;
+  game.overlayActive = false;
+  game.twoMinuteWarningAnnounced = false;
+  game.inTwoMinute = false;
+  logClear();
+  log(`Test setup: ${poss === 'player' ? 'HOME' : 'AWAY'} ball on ${ball}, ${down} & ${togo}, Q${quarter} ${mins}:${secs.toString().padStart(2,'0')}`);
+  // No kickoff in test setup; just render and hands
   updateHUD();
   dealHands();
 }

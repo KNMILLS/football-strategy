@@ -33,6 +33,18 @@ header#scoreboard {
   box-shadow: 0 4px 18px rgba(0, 229, 255, 0.15);
 }
 
+.dev-toggle {
+  position: absolute;
+  right: 12px;
+  top: 8px;
+  font-size: 0.9rem;
+  color: #ffeb3b;
+}
+.dev-toggle input[type="checkbox"] {
+  transform: scale(1.1);
+  margin-right: 6px;
+}
+
 header#scoreboard .score {
   font-family: 'Bangers', 'Oxanium', sans-serif;
   font-size: 2rem;
