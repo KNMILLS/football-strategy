@@ -3745,19 +3745,10 @@ if (devCheckbox) {
       const saved = { showCardOverlay };
       try {
         showCardOverlay = function() {};
-        game.simulationMode = true;
-        startNewGame();
-        let guard = 0;
-        const maxSnaps = 1400;
-        while (!game.gameOver && guard < maxSnaps) {
-          guard++;
-          if (game.awaitingPAT) { attemptExtraPoint(); continue; }
-          simulateTick();
-        }
-        log(`\n[Auto] Final: HOME ${game.score.player} — AWAY ${game.score.ai}`);
+        const result = simulateOneGame({ playerPAT: 'auto' });
+        log(`\n[Auto] Final: HOME ${result.home} — AWAY ${result.away}`);
       } finally {
         showCardOverlay = saved.showCardOverlay;
-        game.simulationMode = false;
       }
     });
   }
