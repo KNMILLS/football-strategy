@@ -717,6 +717,11 @@ function scheduleCleanup(ms = 2000) {
 let PLAY_ART_DEFS = {};
 
 async function loadPlayArtData() {
+  // If running from file:// skip fetch to avoid noisy CORS errors and use fallback.
+  if (typeof location !== 'undefined' && location.protocol === 'file:') {
+    try { PLAY_ART_DEFS['O_PRO_POWER_UP_MIDDLE'] = buildPowerUpMiddleFallback(); } catch {}
+    return;
+  }
   try {
     const res = await fetch('data/plays/O_PRO_POWER_UP_MIDDLE.json');
     if (res.ok) {
@@ -729,26 +734,30 @@ async function loadPlayArtData() {
   }
   // Inline fallback if fetch failed (e.g., file://)
   try {
-    PLAY_ART_DEFS['O_PRO_POWER_UP_MIDDLE'] = {
-      id: 'O_PRO_POWER_UP_MIDDLE',
-      play_art: {
-        animation_blueprint: {
-          entities: [
-            { id: 'QB', role: 'quarterback', start: { x: 0.50, y: -0.03 } },
-            { id: 'FB', role: 'fullback', start: { x: 0.50, y: -0.07 } },
-            { id: 'HB', role: 'halfback', start: { x: 0.50, y: -0.12 } }
-          ],
-          timeline: [
-            { t: 0.28, actions: [ { type: 'handoff', from: 'QB', to: 'HB', handoff_point: { x: 0.50, y: -0.01 } } ] },
-            { t: 0.30, actions: [
-              { type: 'lead_insert', actor: 'FB', path: [ { x: 0.52, y: 0.01 }, { x: 0.52, y: 0.06 } ] },
-              { type: 'follow', actor: 'HB', path: [ { x: 0.52, y: 0.00 }, { x: 0.52, y: 0.10 } ] }
-            ]}
-          ]
-        }
-      }
-    };
+    PLAY_ART_DEFS['O_PRO_POWER_UP_MIDDLE'] = buildPowerUpMiddleFallback();
   } catch {}
+}
+
+function buildPowerUpMiddleFallback() {
+  return {
+    id: 'O_PRO_POWER_UP_MIDDLE',
+    play_art: {
+      animation_blueprint: {
+        entities: [
+          { id: 'QB', role: 'quarterback', start: { x: 0.50, y: -0.03 } },
+          { id: 'FB', role: 'fullback', start: { x: 0.50, y: -0.07 } },
+          { id: 'HB', role: 'halfback', start: { x: 0.50, y: -0.12 } }
+        ],
+        timeline: [
+          { t: 0.28, actions: [ { type: 'handoff', from: 'QB', to: 'HB', handoff_point: { x: 0.50, y: -0.01 } } ] },
+          { t: 0.30, actions: [
+            { type: 'lead_insert', actor: 'FB', path: [ { x: 0.52, y: 0.01 }, { x: 0.52, y: 0.06 } ] },
+            { type: 'follow', actor: 'HB', path: [ { x: 0.52, y: 0.00 }, { x: 0.52, y: 0.10 } ] }
+          ]}
+        ]
+      }
+    }
+  };
 }
 
 function getPlayArtForCard(card) {
@@ -758,6 +767,20 @@ function getPlayArtForCard(card) {
     return PLAY_ART_DEFS['O_PRO_POWER_UP_MIDDLE'] || null;
   }
   return null;
+}
+
+// Minimal no-op data loader to satisfy startup call. Charts are embedded;
+// external JSONs are optional and safely ignored if unavailable.
+async function loadDataTables() {
+  try {
+    // Intentionally left minimal. If needed later, we can fetch:
+    // - data/place_kicking.json -> PLACE_KICK_TABLE_DATA
+    // - data/kickoff_normal.json -> KICKOFF_NORMAL_DATA
+    // - data/kickoff_onside.json -> KICKOFF_ONSIDE_DATA
+    // - data/long_gain.json -> LONG_GAIN_DATA
+    // - data/time_keeping.json -> TIME_KEEPING_DATA
+    // Current logic already falls back to embedded tables when *_DATA is undefined.
+  } catch {}
 }
 
 // Check and announce the two-minute warning. According to the updated rules,
@@ -873,6 +896,16 @@ const fgOptions = document.getElementById('fg-options');
 const btnKickPAT = document.getElementById('kick-pat');
 const btnGoTwo = document.getElementById('go-two');
 const btnKickFG = document.getElementById('kick-fg');
+
+// DEV test setup controls
+const testPlayerDeck = document.getElementById('test-player-deck');
+const testAiDeck = document.getElementById('test-ai-deck');
+const testPossession = document.getElementById('test-possession');
+const testBallOn = document.getElementById('test-ballon');
+const testDown = document.getElementById('test-down');
+const testToGo = document.getElementById('test-togo');
+const testQuarter = document.getElementById('test-quarter');
+const testClock = document.getElementById('test-clock');
 
 // DEV/TEST controls buttons
 const startTestBtn = document.getElementById('start-test-game');
@@ -1202,25 +1235,7 @@ if (newGameButton) {
 
 // (DEV buttons are wired in the consolidated DEV MODE wiring block below.)
 
-// Handle drag‑and‑drop on the field instead of a dedicated drop zone. Cards
-// can be dropped anywhere on the field-display. We compute the drop
-// coordinates to position the overlay cards.
-fieldDisplay.addEventListener('dragover', (e) => {
-  // Prevent default to allow dropping.
-  if (game.awaitingPAT || game.gameOver) return;
-  e.preventDefault();
-});
-fieldDisplay.addEventListener('drop', (e) => {
-  if (game.awaitingPAT || game.gameOver) return;
-  e.preventDefault();
-  const cardId = e.dataTransfer.getData('text/plain');
-  if (!cardId) return;
-  // Determine drop coordinates relative to the field.
-  const rect = fieldDisplay.getBoundingClientRect();
-  const dropX = e.clientX - rect.left;
-  const dropY = e.clientY - rect.top;
-  playCard(cardId, dropX, dropY);
-});
+// Drag-and-drop has been replaced by click-to-play, so field drop listeners are removed.
 
 // PAT options
 btnKickPAT.addEventListener('click', () => {
@@ -1445,7 +1460,8 @@ function renderHand() {
     const card = typeof cardId === 'string' ? CARD_MAP[cardId] : CARD_MAP[cardId.id];
     const div = document.createElement('div');
     div.className = 'card';
-    div.draggable = true;
+    // Dragging disabled; click-to-play instead
+    div.draggable = false;
     div.dataset.id = card.id;
     div.innerHTML = `<img src="${card.art}" alt="${card.label}"><div class="label">${card.label}</div>`;
     // Fallback: if the image fails to load (missing or misnamed asset),
@@ -1459,20 +1475,10 @@ function renderHand() {
         div.classList.add('no-image');
       };
     }
-    div.addEventListener('dragstart', (e) => {
-      // When dragging begins, add a class so CSS can elevate the card above the field
-      div.classList.add('dragging');
-      // Set both plain and default text data types for compatibility across browsers
-      e.dataTransfer.setData('text/plain', card.id);
-      e.dataTransfer.setData('text', card.id);
-      // Hide the preview when a drag begins
-      if (cardPreview) {
-        cardPreview.style.display = 'none';
-      }
-    });
-    div.addEventListener('dragend', () => {
-      // Remove the dragging class once the drag operation ends
-      div.classList.remove('dragging');
+    // Click to play the selected card
+    div.addEventListener('click', () => {
+      // Use centre-bottom default for overlay positioning, though overlays are disabled below
+      playCard(card.id);
     });
     // Show a large fixed-position preview overlay on hover so it sits
     // above all UI and is never clipped by container overflow.
@@ -1558,11 +1564,13 @@ function playCard(cardId, dropX, dropY) {
     attemptFieldGoal();
     return;
   }
-  // Show the player's card and AI's card on the field for three seconds.
-  showCardOverlay(playerCard, aiCard, dropX, dropY, () => {
-    // After overlay fades, ensure play art (ball path, players) remains briefly
-    // The actual animation is triggered within resolvePlay
-  });
+  // If a JSON-driven animation exists for this card, skip the overlay cards so
+  // the animation can start immediately and clearly.
+  // Disable overlay reveal so cards do not appear on the field during resolution.
+  // const hasJsonAnim = !!getPlayArtForCard(playerCard);
+  // if (!hasJsonAnim) {
+  //   showCardOverlay(playerCard, aiCard, dropX, dropY, () => {});
+  // }
   // Resolve the play between the player and AI cards. We no longer remove
   // cards from the hands; the player and AI always have access to their
   // full decks each play. After resolution, a new hand will be dealt.
@@ -2977,25 +2985,26 @@ function showCardOverlay(playerCard, aiCard, x, y, done) {
 // Basic play art renderer: shows offense circles, defense Xs, and a simple route/ball motion.
 function renderPlayArt(offenseCard, defenseCard, outcome) {
   if (!playArtSvg || !fieldDisplay) return;
-  const def = getPlayArtForCard(offenseCard);
-  if (!def) return; // Only run JSON-driven animations
-  // Delay until overlay cards are removed so the animation is visible.
-  if (game.overlayActive) {
-    setTimeout(() => { renderJsonPlayArt(def, outcome, 0); }, 3100);
-  } else {
-    renderJsonPlayArt(def, outcome, 0);
+  let def = getPlayArtForCard(offenseCard);
+  if (!def && typeof location !== 'undefined' && location.protocol === 'file:') {
+    try { def = buildPowerUpMiddleFallback(); } catch {}
   }
+  if (!def) return; // Only run JSON-driven animations
+  try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'choose_def', id: def && def.id, label: offenseCard && offenseCard.label, from: (typeof location!=='undefined'?location.protocol:''), fallback: !getPlayArtForCard(offenseCard) }); } catch {}
+  // Start immediately; overlay is skipped when JSON is present.
+  renderJsonPlayArt(def, outcome, 0);
 }
 
 // Render from JSON definition (offense only). Direction: player drives L→R, AI R→L.
 function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
   if (!def || !def.play_art || !def.play_art.animation_blueprint) return;
-  if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'start', play: (def && def.play_name) || 'unknown', startDelayMs, outcome });
+  if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'start', id: def && def.id, play: (def && (def.play_name||def.label)) || 'unknown', startDelayMs, outcome });
   clearPlayArt();
   const bp = def.play_art.animation_blueprint;
   const entities = bp.entities || [];
   const originAbs = game.ballOn; // LOS center x reference in absolute yards
   const dir = game.possession === 'player' ? 1 : -1; // L→R for player, R→L for AI
+  try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'setup', originAbs, dir, possession: game.possession, ballOn: game.ballOn, toGo: game.toGo }); } catch {}
 
   // Helpers to convert normalized blueprint coords to SVG coords
   function normToSvg(point) {
@@ -3024,6 +3033,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
       node.setAttribute('data-id', ent.id);
       nodes[ent.id] = node;
       playArtSvg.appendChild(node);
+      try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'node', id: ent.id, role: ent.role, startNorm: ent.start, startSvg: p }); } catch {}
     }
   }
 
@@ -3033,6 +3043,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
   let ballStart = qb ? normToSvg(qb.start) : { x: yardToSvgX(originAbs), y: 300 };
   const ball = drawBall(ballStart.x, ballStart.y, 6);
   playArtSvg.appendChild(ball);
+  try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'ball_init', at: ballStart, hasQB: !!qb, hasHB: !!hb }); } catch {}
 
   // Build paths for FB insert and HB follow if present
   function pathFromNormPoints(points) {
@@ -3045,6 +3056,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
   const timeline = bp.timeline || [];
   let fbPathEl = null;
   let hbPathEl = null;
+  let lastHandoffSvg = null;
   for (const frame of timeline) {
     const actions = frame.actions || [];
     for (const act of actions) {
@@ -3052,26 +3064,37 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
         fbPathEl = pathFromNormPoints(act.path);
         fbPathEl.id = `fb-${Math.floor(Math.random()*1e9)}`;
         playArtSvg.appendChild(fbPathEl);
+        try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'path', actor: 'FB', id: fbPathEl.id, d: fbPathEl.getAttribute('d'), points: act.path }); } catch {}
       }
       if ((act.type === 'follow' || act.type === 'handoff') && act.actor === 'HB' && Array.isArray(act.path)) {
-        hbPathEl = pathFromNormPoints(act.path);
+        // If we already have a handoff point, ensure HB path starts there to avoid a jump
+        let hbPoints = act.path.slice();
+        if (lastHandoffSvg) {
+          hbPoints = [{ x: (0.5), y: (act.path[0] && act.path[0].y) || 0 }].concat(act.path.slice(1));
+        }
+        hbPathEl = pathFromNormPoints(hbPoints);
         hbPathEl.id = `hb-${Math.floor(Math.random()*1e9)}`;
         playArtSvg.appendChild(hbPathEl);
+        try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'path', actor: 'HB', id: hbPathEl.id, d: hbPathEl.getAttribute('d'), points: act.path }); } catch {}
       }
       if (act.type === 'handoff' && act.from === 'QB' && act.to === 'HB' && act.handoff_point) {
         // Move ball from QB to handoff point then along HB path
         const hp = normToSvg(act.handoff_point);
+        lastHandoffSvg = hp;
         const handoffPath = createSvgElement('path', { d: `M ${ballStart.x} ${ballStart.y} L ${hp.x} ${hp.y}`, class: 'playart-route' });
         handoffPath.id = `handoff-${Math.floor(Math.random()*1e9)}`;
         playArtSvg.appendChild(handoffPath);
+        try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'handoff_path', id: handoffPath.id, d: handoffPath.getAttribute('d'), handoffPointNorm: act.handoff_point, handoffPointSvg: hp }); } catch {}
         const anim1 = document.createElementNS(NS, 'animateMotion');
         if (startDelayMs > 0) anim1.setAttribute('begin', `${startDelayMs}ms`);
         anim1.setAttribute('dur', '220ms');
         anim1.setAttribute('fill', 'freeze');
         const mp1 = document.createElementNS(NS, 'mpath');
-        mp1.setAttribute('href', `#${handoffPath.id}`);
+        try { mp1.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${handoffPath.id}`); } catch {}
+        try { mp1.setAttribute('href', `#${handoffPath.id}`); } catch {}
         anim1.appendChild(mp1);
         ball.appendChild(anim1);
+        try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'anim_ball_to_handoff', beginMs: startDelayMs, durMs: 220, pathId: handoffPath.id }); } catch {}
         // Chain second motion after short delay if hb path exists
         if (hbPathEl) {
           const anim2 = document.createElementNS(NS, 'animateMotion');
@@ -3080,9 +3103,11 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
           anim2.setAttribute('dur', '800ms');
           anim2.setAttribute('fill', 'freeze');
           const mp2 = document.createElementNS(NS, 'mpath');
-          mp2.setAttribute('href', `#${hbPathEl.id}`);
+          try { mp2.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${hbPathEl.id}`); } catch {}
+          try { mp2.setAttribute('href', `#${hbPathEl.id}`); } catch {}
           anim2.appendChild(mp2);
           ball.appendChild(anim2);
+          try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'anim_ball_follow_hb', beginSec: begin, durMs: 800, pathId: hbPathEl.id }); } catch {}
         }
       }
     }
@@ -3096,22 +3121,28 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
     anim.setAttribute('dur', '800ms');
     anim.setAttribute('fill', 'freeze');
     const mp = document.createElementNS(NS, 'mpath');
-    mp.setAttribute('href', `#${fbPathEl.id}`);
+    try { mp.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${fbPathEl.id}`); } catch {}
+    try { mp.setAttribute('href', `#${fbPathEl.id}`); } catch {}
     anim.appendChild(mp);
     fbNode.appendChild(anim);
+    try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'anim_fb', beginMs: startDelayMs, durMs: 800, pathId: fbPathEl.id }); } catch {}
   }
 
   // Animate HB along his path even if no explicit handoff action created the ball animation
   const hbNode = nodes['HB'];
   if (hbNode && hbPathEl) {
     const anim = document.createElementNS(NS, 'animateMotion');
-    if (startDelayMs > 0) anim.setAttribute('begin', `${startDelayMs}ms`);
+    // Start HB at handoff time (220ms) so ball and HB are in sync
+    const hbBeginMs = startDelayMs + 220;
+    anim.setAttribute('begin', `${hbBeginMs}ms`);
     anim.setAttribute('dur', '800ms');
     anim.setAttribute('fill', 'freeze');
     const mp = document.createElementNS(NS, 'mpath');
-    mp.setAttribute('href', `#${hbPathEl.id}`);
+    try { mp.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${hbPathEl.id}`); } catch {}
+    try { mp.setAttribute('href', `#${hbPathEl.id}`); } catch {}
     anim.appendChild(mp);
     hbNode.appendChild(anim);
+    try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'anim_hb', beginMs: hbBeginMs, durMs: 800, pathId: hbPathEl.id }); } catch {}
   }
 
   // Keep only offense; no defense visuals for this JSON render
@@ -3886,6 +3917,28 @@ if (devCheckbox) {
     if (controlsTest) controlsTest.classList.toggle('hidden', !on);
     // Init debug container with trace support
     if (!window.debug) window.debug = { enabled: false, buffer: [], echoToUi: true, event(){}, traceEnabled: false, traceBuffer: [], callDepth: 0, _orig: {}, enableTrace(){}, disableTrace(){}, _wrapList: [] };
+    // Implement event() to record debug events
+    try {
+      window.debug.event = function(kind, payload) {
+        if (!this.enabled) return;
+        const evt = { t: Date.now(), type: kind || 'info' };
+        if (payload && typeof payload === 'object') {
+          try {
+            // Avoid functions/DOM nodes in payload
+            const safe = JSON.parse(JSON.stringify(payload, (k, v) => (typeof v === 'function' ? `[fn:${v.name||'anon'}]` : v)));
+            Object.assign(evt, safe);
+          } catch {
+            evt.msg = String(payload);
+          }
+        }
+        try { this.buffer.push(evt); } catch {}
+        // Cap buffer
+        if (this.buffer.length > 5000) this.buffer.splice(0, this.buffer.length - 5000);
+        if (this.echoToUi && typeof console !== 'undefined') {
+          try { console.log('[DBG]', kind, evt); } catch {}
+        }
+      };
+    } catch {}
     window.debug.enabled = !!on;
     // Configure tracing when DEV mode toggles
     window.debug.traceEnabled = !!on;
