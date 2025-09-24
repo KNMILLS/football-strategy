@@ -1035,46 +1035,7 @@ if (newGameButton) {
 
 // (Removed duplicate DEV MODE toggle wiring; see consolidated wiring near the bottom.)
 
-// Start test game button
-if (startTestBtn) {
-  startTestBtn.addEventListener('click', () => {
-    startNewGameWithTestSetup();
-  });
-}
-
-// Run full auto game in DEV MODE, logging all actions
-if (runAutoBtn) {
-  runAutoBtn.addEventListener('click', async () => {
-    // Ensure simulation mode logging is visible in the log panel
-    logClear();
-    // Use simulateOneGame but with log/UI active: we suppress overlays only
-    const saved = { showCardOverlay, log };
-    try {
-      showCardOverlay = function() {};
-      // Enable sim mode so coin toss/penalty decisions auto-resolve
-      game.simulationMode = true;
-      // Start with a fresh normal game (uses toss flow, which sim auto-chooses)
-      // We want logs populated, so do not suppress log()
-      // Run until gameOver, snapping via simulateTick
-      startNewGame();
-      let guard = 0;
-      const maxSnaps = 1400;
-      while (!game.gameOver && guard < maxSnaps) {
-        guard++;
-        if (game.awaitingPAT) {
-          // Simple policy: kick PAT
-          attemptExtraPoint();
-          continue;
-        }
-        simulateTick();
-      }
-      saved.log(`\n[Auto] Final: HOME ${game.score.player} — AWAY ${game.score.ai}`);
-    } finally {
-      showCardOverlay = saved.showCardOverlay;
-      game.simulationMode = false;
-    }
-  });
-}
+// (DEV buttons are wired in the consolidated DEV MODE wiring block below.)
 
 // Handle drag‑and‑drop on the field instead of a dedicated drop zone. Cards
 // can be dropped anywhere on the field-display. We compute the drop
@@ -3275,6 +3236,39 @@ if (devCheckbox) {
   applyDev(savedDev);
   devCheckbox.addEventListener('change', () => applyDev(!!devCheckbox.checked));
 }
+
+// Wire DEV buttons safely at end (after DOM is fully built)
+(function wireDevButtons() {
+  const startBtn = document.getElementById('start-test-game');
+  const autoBtn = document.getElementById('run-auto-game');
+  if (startBtn) {
+    startBtn.addEventListener('click', () => {
+      startNewGameWithTestSetup();
+    });
+  }
+  if (autoBtn) {
+    autoBtn.addEventListener('click', () => {
+      logClear();
+      const saved = { showCardOverlay };
+      try {
+        showCardOverlay = function() {};
+        game.simulationMode = true;
+        startNewGame();
+        let guard = 0;
+        const maxSnaps = 1400;
+        while (!game.gameOver && guard < maxSnaps) {
+          guard++;
+          if (game.awaitingPAT) { attemptExtraPoint(); continue; }
+          simulateTick();
+        }
+        log(`\n[Auto] Final: HOME ${game.score.player} — AWAY ${game.score.ai}`);
+      } finally {
+        showCardOverlay = saved.showCardOverlay;
+        game.simulationMode = false;
+      }
+    });
+  }
+})();
 
 if (themeSelect) {
   themeSelect.addEventListener('change', () => {
