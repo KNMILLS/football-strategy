@@ -2180,6 +2180,132 @@ document.addEventListener('DOMContentLoaded', () => {
   updateHUD();
 });
 
+// -----------------------------------------------------------------------------
+// Headless simulation helpers for automated validation and testing
+// -----------------------------------------------------------------------------
+
+// Choose a card for the HOME side (player) during simulation without UI.
+function choosePlayerCardForSimulation() {
+  if (game.possession === 'player') {
+    const deck = OFFENSE_DECKS[game.offenseDeck] || [];
+    return deck[Math.floor(Math.random() * deck.length)];
+  } else {
+    return DEFENSE_DECK[Math.floor(Math.random() * DEFENSE_DECK.length)];
+  }
+}
+
+// Run a single simulated snap without UI.
+function simulateTick() {
+  if (game.awaitingPAT || game.gameOver) return;
+  // Player 4th-down decision similar to AI
+  if (game.possession === 'player' && game.down === 4) {
+    if (game.toGo > 1) {
+      const distance = 100 - game.ballOn;
+      if (distance <= 45) {
+        attemptFieldGoal();
+        return;
+      } else {
+        const punts = (OFFENSE_DECKS[game.offenseDeck] || []).filter((c) => c.type === 'punt');
+        if (punts.length > 0) {
+          const playerCard = punts[0];
+          const aiCard = aiChooseCard();
+          resolvePlay(playerCard, aiCard);
+          return;
+        }
+      }
+    }
+  }
+  // Normal snap
+  const playerCard = choosePlayerCardForSimulation();
+  const aiCard = aiChooseCard();
+  if (game.possession === 'ai' && aiCard && aiCard.type === 'field-goal') {
+    attemptFieldGoal();
+    return;
+  }
+  resolvePlay(playerCard, aiCard);
+}
+
+// Simulate a full game quickly. Returns { home, away, winner }
+function simulateOneGame(options = {}) {
+  const { playerPAT = 'kick' } = options;
+  game.simulationMode = true;
+  startNewGame();
+  let snaps = 0;
+  const maxSnaps = 1200;
+  while (!game.gameOver && snaps < maxSnaps) {
+    snaps++;
+    if (game.awaitingPAT) {
+      if (playerPAT === 'two') attemptTwoPoint();
+      else if (playerPAT === 'auto') {
+        const diff = game.score.ai - game.score.player;
+        if (diff === 1 || diff === 2) attemptTwoPoint(); else attemptExtraPoint();
+      } else {
+        attemptExtraPoint();
+      }
+      continue;
+    }
+    simulateTick();
+  }
+  game.simulationMode = false;
+  return {
+    home: game.score.player,
+    away: game.score.ai,
+    winner: game.score.player === game.score.ai ? 'tie' : (game.score.player > game.score.ai ? 'home' : 'away')
+  };
+}
+
+// Run N games and summarize outcomes. Exposed on window.
+function simulateGames(options = {}) {
+  const { numGames = 100, playerPAT = 'kick', logEachGame = false, suppressUI = true } = options;
+  // Clamp number of games to 1..100
+  const total = Math.min(100, Math.max(1, numGames));
+  // Temporarily suppress UI-heavy functions
+  const saved = { log, updateHUD, dealHands, updateFGOptions, showCardOverlay };
+  if (suppressUI) {
+    log = function() {};
+    updateHUD = function() {};
+    dealHands = function() {};
+    updateFGOptions = function() {};
+    showCardOverlay = function() {};
+  }
+  const summary = { games: 0, homeWins: 0, awayWins: 0, ties: 0, totalHome: 0, totalAway: 0 };
+  for (let i = 0; i < total; i++) {
+    const res = simulateOneGame({ playerPAT });
+    summary.games++;
+    summary.totalHome += res.home;
+    summary.totalAway += res.away;
+    if (res.winner === 'home') summary.homeWins++; else if (res.winner === 'away') summary.awayWins++; else summary.ties++;
+    if (logEachGame && saved.log) {
+      try { saved.log(`Sim ${i + 1}: HOME ${res.home} — AWAY ${res.away} (${res.winner})`); } catch {}
+    }
+  }
+  // Restore
+  if (suppressUI) {
+    log = saved.log;
+    updateHUD = saved.updateHUD;
+    dealHands = saved.dealHands;
+    updateFGOptions = saved.updateFGOptions;
+    showCardOverlay = saved.showCardOverlay;
+  }
+  const report = {
+    games: summary.games,
+    homeWins: summary.homeWins,
+    awayWins: summary.awayWins,
+    ties: summary.ties,
+    avgHome: Number((summary.totalHome / summary.games).toFixed(2)),
+    avgAway: Number((summary.totalAway / summary.games).toFixed(2))
+  };
+  if (typeof window !== 'undefined') window.lastSimulationSummary = report;
+  if (typeof console !== 'undefined') console.log('Simulation Summary:', report);
+  return report;
+}
+
+if (typeof window !== 'undefined') {
+  window.simulateTick = simulateTick;
+  window.simulateOneGame = simulateOneGame;
+  window.simulateGames = simulateGames;
+}
+
 // Format richer penalty narration matching the GDD phrasing.
 function formatPenaltyNarration(onWho, yards, automaticFirstDown, offenseTeamName) {
   const teamOffense = offenseTeamName === 'HOME' ? 'HOME' : 'AWAY';
@@ -2243,6 +2369,27 @@ function handlePenaltyDecision(ctx) {
 
   // Decision maker is ALWAYS the non-penalized team.
   const deciderIsPlayer = penalty.on === 'offense' ? !offenseIsPlayer : offenseIsPlayer;
+  // If simulation mode is active, auto-decide without UI even when the player would decide.
+  if (game.simulationMode) {
+    const deciderIsOffense = penalty.on === 'defense';
+    const aiAccepts = decidePenaltyAI({
+      penalty,
+      acceptBallOn,
+      acceptDown,
+      acceptToGo,
+      declineBallOn: declineClamped,
+      declineDown,
+      declineToGo,
+      preDown,
+      preToGo,
+      aiIsOffense: deciderIsOffense,
+      offenseIsPlayer
+    });
+    applyPenaltyDecision(aiAccepts ? 'accept' : 'decline', {
+      acceptBallOn, acceptDown, acceptToGo, declineBallOn: declineClamped, declineDown, declineToGo
+    });
+    return;
+  }
   // If AI decides (either on offense for defensive penalty or on defense for offensive penalty)
   if (!deciderIsPlayer) {
     const aiAccepts = decidePenaltyAI({
