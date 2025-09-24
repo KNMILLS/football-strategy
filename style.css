@@ -692,6 +692,29 @@ footer#footer {
   z-index: 10000;
 }
 
+/* Tiny toast for animation debug */
+.vfx-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(0, 229, 255, 0.12);
+  color: #e6f0ff;
+  border: 1px solid rgba(0, 229, 255, 0.45);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  opacity: 0;
+  animation: toast-pop 1400ms ease-out forwards;
+}
+@keyframes toast-pop {
+  0% { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* Big arcade banner (e.g., TOUCHDOWN!, INTERCEPTION!) */
 .vfx-banner {
   position: absolute;

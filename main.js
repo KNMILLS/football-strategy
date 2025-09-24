@@ -722,10 +722,33 @@ async function loadPlayArtData() {
     if (res.ok) {
       const obj = await res.json();
       PLAY_ART_DEFS[obj.id] = obj;
+      return;
     }
   } catch (e) {
     // ignore network errors in offline contexts
   }
+  // Inline fallback if fetch failed (e.g., file://)
+  try {
+    PLAY_ART_DEFS['O_PRO_POWER_UP_MIDDLE'] = {
+      id: 'O_PRO_POWER_UP_MIDDLE',
+      play_art: {
+        animation_blueprint: {
+          entities: [
+            { id: 'QB', role: 'quarterback', start: { x: 0.50, y: -0.03 } },
+            { id: 'FB', role: 'fullback', start: { x: 0.50, y: -0.07 } },
+            { id: 'HB', role: 'halfback', start: { x: 0.50, y: -0.12 } }
+          ],
+          timeline: [
+            { t: 0.28, actions: [ { type: 'handoff', from: 'QB', to: 'HB', handoff_point: { x: 0.50, y: -0.01 } } ] },
+            { t: 0.30, actions: [
+              { type: 'lead_insert', actor: 'FB', path: [ { x: 0.52, y: 0.01 }, { x: 0.52, y: 0.06 } ] },
+              { type: 'follow', actor: 'HB', path: [ { x: 0.52, y: 0.00 }, { x: 0.52, y: 0.10 } ] }
+            ]}
+          ]
+        }
+      }
+    };
+  } catch {}
 }
 
 function getPlayArtForCard(card) {
@@ -3053,6 +3076,7 @@ function renderPlayArt(offenseCard, defenseCard, outcome) {
 // Render from JSON definition (offense only). Direction: player drives L→R, AI R→L.
 function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
   if (!def || !def.play_art || !def.play_art.animation_blueprint) return;
+  clearPlayArt();
   const bp = def.play_art.animation_blueprint;
   const entities = bp.entities || [];
   const originAbs = game.ballOn; // LOS center x reference in absolute yards
@@ -3060,14 +3084,14 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
 
   // Helpers to convert normalized blueprint coords to SVG coords
   function normToSvg(point) {
-    // Blueprint x: 0..1. Anchor 0.5 at LOS, extend +/- 25 yards worth of screen width
-    const yardsPerUnit = 25; // visual framing
-    const yardOffset = (point.x - 0.5) * yardsPerUnit * dir;
-    const absX = originAbs + yardOffset;
-    let svgX = yardToSvgX(Math.max(0, Math.min(100, absX)));
-    // Blueprint y: -0.2..0.8 mapped vertically around LOS row. Use 500px height space
-    const baseY = 250; // middle
-    const svgY = baseY + point.y * 300; // scale y window
+    // Map blueprint downfield (y) to field X (yards), and blueprint lateral (x) to SVG Y (screen rows)
+    const yardsPerUnitDownfield = 100; // 0.10 -> 10 yards
+    const absX = originAbs + dir * (point.y * yardsPerUnitDownfield);
+    const svgX = yardToSvgX(Math.max(0, Math.min(100, absX)));
+    // Vertical stacking: map x in [0,1] to rows around center
+    const baseY = 250; // centerline
+    const lateralScalePx = 220; // spread formation vertically
+    const svgY = baseY + (point.x - 0.5) * lateralScalePx;
     return { x: svgX, y: svgY };
   }
 
@@ -3177,6 +3201,18 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
 
   // Keep only offense; no defense visuals for this JSON render
   scheduleCleanup(2200 + startDelayMs);
+  // Toast to confirm it triggered
+  showToast('Animating: Power Up Middle');
+}
+
+function showToast(text) {
+  const overlay = document.getElementById('vfx-overlay');
+  if (!overlay) return;
+  const d = document.createElement('div');
+  d.className = 'vfx-toast';
+  d.textContent = text;
+  overlay.appendChild(d);
+  setTimeout(() => { d.remove(); }, 1500);
 }
 
 function log(msg) {
@@ -3900,9 +3936,67 @@ if (devCheckbox) {
   const applyDev = (on) => {
     if (controlsNormal) controlsNormal.classList.toggle('hidden', !!on);
     if (controlsTest) controlsTest.classList.toggle('hidden', !on);
-    // Init simple debug container
-    if (!window.debug) window.debug = { enabled: false, buffer: [], echoToUi: true, event(){} };
+    // Init debug container with trace support
+    if (!window.debug) window.debug = { enabled: false, buffer: [], echoToUi: true, event(){}, traceEnabled: false, traceBuffer: [], callDepth: 0, _orig: {}, enableTrace(){}, disableTrace(){}, _wrapList: [] };
     window.debug.enabled = !!on;
+    // Configure tracing when DEV mode toggles
+    window.debug.traceEnabled = !!on;
+    // Lazy init wrappers only once
+    if (!window.debug._wrappedInit) {
+      window.debug._wrappedInit = true;
+      window.debug._wrapList = [
+        'resolvePlay','determineOutcome','parseResultString','resolveKickoff','resolveLongGain',
+        'attemptExtraPoint','attemptTwoPoint','aiAttemptPAT','attemptFieldGoal','aiChooseCard',
+        'choosePlayerCardForSimulation','simulateTick','simulateOneGame','kickoff','resolvePunt',
+        'handlePenaltyDecision','applyPenaltyDecision','decidePenaltyAI','handleSafety',
+        'handleClockAndQuarter','maybePenalty','getFormationDescription','describePlayAction',
+        'updateHUD','changePossession'
+      ];
+      const getGameSummary = () => ({
+        q: game.quarter, clk: game.clock, d: game.down, toGo: game.toGo, ballOn: game.ballOn,
+        poss: game.possession, score: { ...game.score }
+      });
+      const safe = (val) => {
+        try { return JSON.parse(JSON.stringify(val, (k, v) => (typeof v === 'function' ? `[fn:${v.name||'anon'}]` : v))); } catch { return String(val); }
+      };
+      window.debug.enableTrace = function enableTrace() {
+        if (!this._orig) this._orig = {};
+        for (const name of this._wrapList) {
+          const fn = window[name];
+          if (typeof fn === 'function' && !this._orig[name]) {
+            this._orig[name] = fn;
+            const dbg = this;
+            window[name] = function tracedFunction(...args) {
+              if (!dbg.traceEnabled) return fn.apply(this, args);
+              const depth = ++dbg.callDepth;
+              const start = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+              const entry = { t: Date.now(), phase: 'enter', name, depth, args: safe(args), state: getGameSummary() };
+              try { dbg.traceBuffer.push(entry); } catch {}
+              try {
+                const ret = fn.apply(this, args);
+                const end = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+                try { dbg.traceBuffer.push({ t: Date.now(), phase: 'return', name, depth, dt: Math.round((end - start)*1000)/1000, result: safe(ret), state: getGameSummary() }); } catch {}
+                return ret;
+              } catch (err) {
+                const end = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+                try { dbg.traceBuffer.push({ t: Date.now(), phase: 'throw', name, depth, dt: Math.round((end - start)*1000)/1000, error: String(err), state: getGameSummary() }); } catch {}
+                throw err;
+              } finally {
+                dbg.callDepth = Math.max(0, dbg.callDepth - 1);
+              }
+            };
+          }
+        }
+      };
+      window.debug.disableTrace = function disableTrace() {
+        if (!this._orig) return;
+        for (const [name, fn] of Object.entries(this._orig)) {
+          window[name] = fn;
+        }
+        this._orig = {};
+      };
+    }
+    if (window.debug.traceEnabled) window.debug.enableTrace(); else window.debug.disableTrace();
     try { localStorage.setItem('gs_dev_mode', on ? '1' : '0'); } catch {}
   };
   applyDev(savedDev);
@@ -3940,10 +4034,38 @@ if (devCheckbox) {
   }
   if (dlBtn) {
     dlBtn.addEventListener('click', () => {
-      const payload = { meta: { ts: new Date().toISOString(), q: game.quarter, clock: game.clock, down: game.down, toGo: game.toGo, ballOn: game.ballOn, possession: game.possession, score: { ...game.score } }, events: (window.debug && window.debug.buffer) ? window.debug.buffer : [] };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const meta = [
+        `Timestamp: ${new Date().toISOString()}`,
+        `Quarter: ${game.quarter}`,
+        `Clock: ${game.clock}s`,
+        `Down/ToGo: ${game.down} & ${game.toGo}`,
+        `BallOn: ${game.ballOn}`,
+        `Possession: ${game.possession.toUpperCase()}`,
+        `Score: HOME ${game.score.player} — AWAY ${game.score.ai}`
+      ].join('\n');
+      const header = `=== GRIDIRON FULL DEBUG ===\n${meta}\n`;
+      const gameLog = `\n=== GAME LOG ===\n${logElement.textContent || ''}`;
+      const dbgEvents = (window.debug && window.debug.buffer) ? window.debug.buffer : [];
+      const dbgText = `\n=== DEBUG EVENTS (${dbgEvents.length}) ===\n` + dbgEvents.map((e,i)=>{
+        try { return `${i+1}. [${new Date(e.t||Date.now()).toISOString()}] ${e.type||'info'} ${e.msg ? e.msg : JSON.stringify({ ...e, t: undefined })}`; } catch { return `${i+1}. ${String(e)}`; }
+      }).join('\n');
+      const trace = (window.debug && window.debug.traceBuffer) ? window.debug.traceBuffer : [];
+      const traceText = `\n=== TRACE (${trace.length}) ===\n` + trace.map((ev,i)=>{
+        const indent = '  '.repeat(Math.max(0,(ev.depth||1)-1));
+        const time = new Date(ev.t||Date.now()).toISOString();
+        if (ev.phase === 'enter') {
+          return `${i+1}. ${indent}> ${ev.name}(${JSON.stringify(ev.args)}) @ ${time}\n${indent}   state=${JSON.stringify(ev.state)}`;
+        } else if (ev.phase === 'return') {
+          return `${i+1}. ${indent}< ${ev.name} => ${JSON.stringify(ev.result)} (+${ev.dt}ms) @ ${time}\n${indent}   state=${JSON.stringify(ev.state)}`;
+        } else if (ev.phase === 'throw') {
+          return `${i+1}. ${indent}! ${ev.name} !! ${ev.error} (+${ev.dt}ms) @ ${time}\n${indent}   state=${JSON.stringify(ev.state)}`;
+        }
+        return `${i+1}. ${indent}? ${ev.name} ${JSON.stringify(ev)}`;
+      }).join('\n');
+      const content = header + gameLog + dbgText + traceText + '\n';
+      const blob = new Blob([content], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'gridiron-debug.json'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+      const a = document.createElement('a'); a.href = url; a.download = 'gridiron-full-debug.log'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
     });
   }
 })();
