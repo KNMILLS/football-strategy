@@ -584,6 +584,29 @@ const CARD_MAP = (() => {
   return map;
 })();
 
+// -----------------------------------------------------------------------------
+// Goal-line restriction ("white sign") metadata
+// Certain offense cards have a circled-number restriction and cannot be used
+// when the ball is between the defender’s 1 and that number (inclusive).
+// If metadata is not found in the external JSON, define a minimal mapping
+// here keyed by offensive card id to the restricted distance (yards).
+// Example: { 'Pro_Style_LongBomb': 5 } blocks use inside opponent 5.
+const WHITE_SIGN_RESTRICTIONS = {
+  // Add entries as needed if/when metadata becomes available
+  // 'Pro_Style_LongBomb': 5,
+  // 'Aerial_Style_LongBomb': 5,
+  // 'Ball_Control_LongBomb': 5
+};
+
+function isRestrictedOffenseCard(card, distanceToOpponentGoal) {
+  if (!card || (card.type !== 'run' && card.type !== 'pass')) return false;
+  const limit = WHITE_SIGN_RESTRICTIONS[card.id];
+  if (!limit) return false;
+  // distanceToOpponentGoal is yards from line of scrimmage to opponent goal
+  // For HOME offense (player), this is 100 - ballOn; for AWAY offense, ballOn.
+  return distanceToOpponentGoal <= limit && distanceToOpponentGoal >= 1;
+}
+
 // ---------- RNG utilities ----------
 // Linear congruential generator for reproducible randomness. Returns values
 // in [0,1).
@@ -713,6 +736,21 @@ const btnKickFG = document.getElementById('kick-fg');
 let penaltyModal;
 let penaltyAcceptBtn;
 let penaltyDeclineBtn;
+
+// Coin toss / opening choice modal
+let tossModal;
+let tossReceiveBtn;
+let tossKickBtn;
+
+// Punt-in-end-zone choice modal
+let puntEZModal;
+let puntEZReturnBtn;
+let puntEZDownBtn;
+
+// Safety free-kick choice modal
+let safetyModal;
+let safetyKickoffBtn;
+let safetyFreePuntBtn;
 
 // Create an onside-kick toggle in the controls panel so the player can choose
 // to attempt an onside on their next kickoff without modifying the HTML file.
@@ -888,6 +926,114 @@ function initField() {
     penaltyModal.appendChild(btnRow);
     document.body.appendChild(penaltyModal);
   }
+  // Create coin toss / opening choice modal
+  if (!tossModal) {
+    tossModal = document.createElement('div');
+    tossModal.id = 'toss-modal';
+    tossModal.style.position = 'fixed';
+    tossModal.style.left = '50%';
+    tossModal.style.top = '50%';
+    tossModal.style.transform = 'translate(-50%, -50%)';
+    tossModal.style.background = '#0f2744';
+    tossModal.style.border = '2px solid #ffeb3b';
+    tossModal.style.borderRadius = '8px';
+    tossModal.style.padding = '12px';
+    tossModal.style.color = '#ffeb3b';
+    tossModal.style.minWidth = '320px';
+    tossModal.style.zIndex = '10000';
+    tossModal.style.display = 'none';
+    const text = document.createElement('div');
+    text.id = 'toss-text';
+    text.textContent = 'Opening choice: Receive or Kick?';
+    text.style.marginBottom = '8px';
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    row.style.justifyContent = 'flex-end';
+    tossReceiveBtn = document.createElement('button');
+    tossReceiveBtn.className = 'btn';
+    tossReceiveBtn.textContent = 'Receive';
+    tossKickBtn = document.createElement('button');
+    tossKickBtn.className = 'btn';
+    tossKickBtn.textContent = 'Kick';
+    row.appendChild(tossKickBtn);
+    row.appendChild(tossReceiveBtn);
+    tossModal.appendChild(text);
+    tossModal.appendChild(row);
+    document.body.appendChild(tossModal);
+  }
+  // Create punt-in-end-zone decision modal
+  if (!puntEZModal) {
+    puntEZModal = document.createElement('div');
+    puntEZModal.id = 'punt-ez-modal';
+    puntEZModal.style.position = 'fixed';
+    puntEZModal.style.left = '50%';
+    puntEZModal.style.top = '50%';
+    puntEZModal.style.transform = 'translate(-50%, -50%)';
+    puntEZModal.style.background = '#0f2744';
+    puntEZModal.style.border = '2px solid #ffeb3b';
+    puntEZModal.style.borderRadius = '8px';
+    puntEZModal.style.padding = '12px';
+    puntEZModal.style.color = '#ffeb3b';
+    puntEZModal.style.minWidth = '360px';
+    puntEZModal.style.zIndex = '10000';
+    puntEZModal.style.display = 'none';
+    const text = document.createElement('div');
+    text.id = 'punt-ez-text';
+    text.style.whiteSpace = 'pre-line';
+    text.style.marginBottom = '8px';
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    row.style.justifyContent = 'flex-end';
+    puntEZReturnBtn = document.createElement('button');
+    puntEZReturnBtn.className = 'btn';
+    puntEZReturnBtn.textContent = 'Return';
+    puntEZDownBtn = document.createElement('button');
+    puntEZDownBtn.className = 'btn';
+    puntEZDownBtn.textContent = 'Down at 20';
+    row.appendChild(puntEZDownBtn);
+    row.appendChild(puntEZReturnBtn);
+    puntEZModal.appendChild(text);
+    puntEZModal.appendChild(row);
+    document.body.appendChild(puntEZModal);
+  }
+  // Create safety free-kick choice modal
+  if (!safetyModal) {
+    safetyModal = document.createElement('div');
+    safetyModal.id = 'safety-modal';
+    safetyModal.style.position = 'fixed';
+    safetyModal.style.left = '50%';
+    safetyModal.style.top = '50%';
+    safetyModal.style.transform = 'translate(-50%, -50%)';
+    safetyModal.style.background = '#0f2744';
+    safetyModal.style.border = '2px solid #ffeb3b';
+    safetyModal.style.borderRadius = '8px';
+    safetyModal.style.padding = '12px';
+    safetyModal.style.color = '#ffeb3b';
+    safetyModal.style.minWidth = '380px';
+    safetyModal.style.zIndex = '10000';
+    safetyModal.style.display = 'none';
+    const text = document.createElement('div');
+    text.id = 'safety-text';
+    text.style.whiteSpace = 'pre-line';
+    text.style.marginBottom = '8px';
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    row.style.justifyContent = 'flex-end';
+    safetyKickoffBtn = document.createElement('button');
+    safetyKickoffBtn.className = 'btn';
+    safetyKickoffBtn.textContent = 'Safety Kickoff (+25)';
+    safetyFreePuntBtn = document.createElement('button');
+    safetyFreePuntBtn.className = 'btn';
+    safetyFreePuntBtn.textContent = 'Free Kick Punt';
+    row.appendChild(safetyFreePuntBtn);
+    row.appendChild(safetyKickoffBtn);
+    safetyModal.appendChild(text);
+    safetyModal.appendChild(row);
+    document.body.appendChild(safetyModal);
+  }
 }
 
 // ---------- Event handlers ----------
@@ -975,17 +1121,46 @@ function startNewGame() {
   game.inTwoMinute = false;
   logClear();
   log(`New game: deck=${deckName}`);
-  // Kickoff to decide starting team: simple coin flip
-  if (game.rng() < 0.5) {
-    game.possession = 'player';
-    log('HOME receives the kickoff.');
-  } else {
-    game.possession = 'ai';
-    log('AWAY receives the kickoff.');
-  }
-  kickoff();
-  updateHUD();
-  dealHands();
+  // Coin toss and opening choice per rules: player chooses Receive or Kick.
+  // Store opening/second-half preferences on game.
+  game.openingChoice = null; // 'receive'|'kick'
+  game.secondHalfReceiver = null; // 'player'|'ai'
+  const showToss = () => {
+    if (!tossModal) {
+      // Fallback: default to receive
+      game.openingChoice = 'receive';
+      game.secondHalfReceiver = 'ai';
+      game.possession = 'player';
+      log('HOME chooses to receive the opening kickoff.');
+      kickoff();
+      updateHUD();
+      dealHands();
+      return;
+    }
+    tossModal.style.display = 'block';
+    tossReceiveBtn.onclick = () => {
+      tossModal.style.display = 'none';
+      game.openingChoice = 'receive';
+      game.secondHalfReceiver = 'ai';
+      game.possession = 'player';
+      log('Opening choice: HOME receives. AWAY will receive to start the second half.');
+      kickoff();
+      updateHUD();
+      dealHands();
+    };
+    tossKickBtn.onclick = () => {
+      tossModal.style.display = 'none';
+      game.openingChoice = 'kick';
+      // Opponent chooses for second half per rule: if player kicks, opponent chooses; simple heuristic: opponent chooses receive in second half as well
+      game.secondHalfReceiver = 'ai';
+      game.possession = 'ai';
+      log('Opening choice: HOME kicks. AWAY receives now and also chooses to receive to start the second half.');
+      kickoff();
+      updateHUD();
+      dealHands();
+    };
+  };
+  showToss();
 }
 
 function kickoff() {
@@ -1160,8 +1335,27 @@ function playCard(cardId, dropX, dropY) {
       return;
     }
     if (game.possession === 'ai' && playerCard.label.includes('4th Down Only') && game.down !== 4) {
-      log('AI punt card used on wrong down.');
-      // continue anyway for AI
+      log('AI attempted a 4th-down-only punt on a non-4th down. Play selection invalid.');
+      return;
+    }
+  }
+  // Enforce goal-line "white sign" restriction: some offense cards cannot be used
+  // when within a circled-number distance of the defender’s goal line.
+  if (game.possession === 'player' && isRestrictedOffenseCard(playerCard, game.ballOn)) {
+    log('This play is restricted near the goal line and cannot be used here.');
+    return;
+  }
+  if (game.possession === 'ai' && isRestrictedOffenseCard(playerCard, 100 - game.ballOn)) {
+    // AI offense uses absolute distance to HOME goal mirrored
+    log('AI attempted a restricted play near the goal line. Re-selecting.');
+    // Simple fallback: choose a different non-restricted offensive card of same type if possible
+    const deck = OFFENSE_DECKS[game.aiOffenseDeck];
+    const alternatives = deck.filter((c) => c.type === playerCard.type && !isRestrictedOffenseCard(c, 100 - game.ballOn));
+    const aiAlt = alternatives[0] || deck.find((c) => c.type !== 'punt') || deck[0];
+    // Proceed with alternative by swapping playerCard variable for AI offense path
+    if (game.possession === 'ai') {
+      // In AI offense, the "playerCard" variable holds AI's offense
+      playerCard = aiAlt;
     }
   }
   // AI chooses its card or special action
@@ -1226,7 +1420,8 @@ function aiChooseCard() {
         if (distance <= 45) {
           return { type: 'field-goal' };
         } else {
-          const punts = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'punt');
+          let punts = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'punt');
+          // Enforce 4th Down Only for AI as well: all punts here are on 4th so allowed; filter out non-4th-only preference not required
           if (punts.length > 0) {
             return punts[0];
           }
@@ -1246,33 +1441,41 @@ function aiChooseCard() {
       }
     }
     // Non‑fourth down logic. Determine preferred play type based on yardage.
+    // Additionally: never select a 4th Down Only punt before 4th down.
+    const avoidRestricted = (card) => {
+      if (card.type === 'punt' && card.label && card.label.includes('4th Down Only') && game.down !== 4) return false;
+      // Avoid white-sign near goal line
+      if (isRestrictedOffenseCard(card, 100 - game.ballOn)) return false;
+      return true;
+    };
     if (game.toGo <= 3) {
       // Short yardage: favour running plays
-      const runs = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'run');
+      const runs = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'run' && avoidRestricted(card));
       if (runs.length > 0) {
         return runs[Math.floor(Math.random() * runs.length)];
       }
     }
     if (game.toGo >= 8 || game.down >= 3) {
       // Long yardage or late downs: favour passing plays
-      const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'pass');
+      const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'pass' && avoidRestricted(card));
       if (passes.length > 0) {
         return passes[Math.floor(Math.random() * passes.length)];
       }
     }
     // Balanced situation: randomly choose run or pass
     if (Math.random() < 0.5) {
-      const runs = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'run');
+      const runs = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'run' && avoidRestricted(card));
       if (runs.length > 0) {
         return runs[Math.floor(Math.random() * runs.length)];
       }
     }
-    const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'pass');
+    const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'pass' && avoidRestricted(card));
     if (passes.length > 0) {
       return passes[Math.floor(Math.random() * passes.length)];
     }
     // Fallback to the first card in the deck if no other conditions match
-    return OFFENSE_DECKS[game.aiOffenseDeck][0];
+    const fallback = OFFENSE_DECKS[game.aiOffenseDeck].find(avoidRestricted) || OFFENSE_DECKS[game.aiOffenseDeck][0];
+    return fallback;
   }
 }
 
@@ -1400,10 +1603,7 @@ function resolvePlay(playerCard, aiCard) {
     // Flip possession without modifying ballOn yet. changePossession()
     // will flip the ballOn coordinate and reset down/toGo.
     changePossession();
-    // Apply interception return if any. interceptReturn value may be
-    // negative (original charts indicate negative yardage towards the
-    // defender's goal). We treat this as yards advanced by the new
-    // offense.
+    // Apply interception return if any.
     const returnYards = Math.abs(outcome.interceptReturn);
     if (returnYards) {
       if (game.possession === 'player') {
@@ -1412,6 +1612,40 @@ function resolvePlay(playerCard, aiCard) {
         game.ballOn -= returnYards;
       }
       log(`Interception return: ${returnYards} yards`);
+    }
+    // Interception end-zone/limits handling:
+    // - If spot ends inside defender’s own end zone → touchback to own 20
+    // - If spot would be past the back of defender’s end zone → treat pass as incomplete (no turnover)
+    // - If return crosses into offense’s end zone → TD (handled below)
+    if (game.possession === 'player') {
+      // Player now on offense after INT: defender was AI; own end zone is at 0, opponent at 100
+      if (game.ballOn < 0) {
+        // beyond back of player end zone is not reachable due to clamp below; treat as incomplete instead of turnover
+        // Revert turnover: give ball back to previous offense and revert field position
+        changePossession(); // flips back to AI
+        log('Pass ruled incomplete: ball would have been beyond the end line.');
+        updateHUD();
+        dealHands();
+        return;
+      }
+      if (game.ballOn === 0) {
+        // In player end zone as new offense → touchback to 20
+        game.ballOn = 20;
+        log('Interception in the end zone. Touchback. HOME ball at the 20.');
+      }
+    } else {
+      // AI now on offense after INT: own end zone at 100
+      if (game.ballOn > 100) {
+        changePossession();
+        log('Pass ruled incomplete: ball would have been beyond the end line.');
+        updateHUD();
+        dealHands();
+        return;
+      }
+      if (game.ballOn === 100) {
+        game.ballOn = 80;
+        log('Interception in the end zone. Touchback. AWAY ball at the 20.');
+      }
     }
     // Clamp ball position within bounds
     if (game.ballOn > 100) game.ballOn = 100;
@@ -1455,6 +1689,13 @@ function resolvePlay(playerCard, aiCard) {
     game.ballOn += netYards;
   } else {
     game.ballOn -= netYards;
+  }
+  // Passes completed beyond the end zone: keep completion semantics, then clamp to goal for TD.
+  // We do not convert to incomplete due to overshoot; treat excess as YAC.
+  if (outcome.category !== 'incomplete' && (game.ballOn > 100 || game.ballOn < 0)) {
+    if (game.ballOn > 100) game.ballOn = 100;
+    if (game.ballOn < 0) game.ballOn = 0;
+    log('Completion carries into the end zone for a touchdown.');
   }
   // Clamp field
   if (game.ballOn > 100) game.ballOn = 100;
@@ -1559,6 +1800,18 @@ function resolvePlay(playerCard, aiCard) {
     game.score.ai += 6;
     log('Touchdown! AWAY scores 6 points.');
   }
+  // Safety detection: offense tackled in own end zone after applying yards/sacks
+  // Player offense own end is at 0; AI offense own end is at 100.
+  if (!touchdown) {
+    if (game.possession === 'player' && game.ballOn <= 0) {
+      handleSafety('ai');
+      return;
+    }
+    if (game.possession === 'ai' && game.ballOn >= 100) {
+      handleSafety('player');
+      return;
+    }
+  }
   if (touchdown) {
     // Trigger PAT sequence differently for player and AI. When the
     // player scores, show the PAT options so they can choose. When the
@@ -1610,21 +1863,96 @@ function resolvePunt() {
   } else {
     game.ballOn -= puntDistance;
   }
-  // Touchback handling
-  if (game.ballOn >= 100) {
-    // Into AI end zone → touchback to AI 20 (ballOn = 80)
-    game.ballOn = 80;
-    log('Touchback. Ball comes out to the 20.');
-    // Switch possession
+  // End zone handling
+  if (game.ballOn > 100 || game.ballOn < 0) {
+    // Through end zone → automatic touchback, ignore return choice
+    if (game.ballOn > 100) {
+      game.ballOn = 80;
+    } else {
+      game.ballOn = 20;
+    }
+    log('Punt sails through the end zone. Touchback to the 20.');
     game.possession = game.possession === 'player' ? 'ai' : 'player';
     game.down = 1; game.toGo = 10;
-  } else if (game.ballOn <= 0) {
-    // Into player end zone → touchback to player 20 (ballOn = 20)
-    game.ballOn = 20;
-    log('Touchback. Ball comes out to the 20.');
-    // Switch possession
-    game.possession = game.possession === 'player' ? 'ai' : 'player';
-    game.down = 1; game.toGo = 10;
+  } else if (game.ballOn === 100 || game.ballOn === 0) {
+    // Lands in end zone: receiving team choice to return or down at 20
+    const receivingIsPlayer = game.possession === 'ai';
+    const teamName = receivingIsPlayer ? 'HOME' : 'AWAY';
+    const doDownAt20 = () => {
+      game.ballOn = receivingIsPlayer ? 20 : 80;
+      log(`${teamName} choose to down it in the end zone. Touchback to the 20.`);
+      game.possession = game.possession === 'player' ? 'ai' : 'player';
+      game.down = 1; game.toGo = 10;
+    };
+    const doReturn = () => {
+      log(`${teamName} elect to return from the end zone.`);
+      // Resolve return as normal from the end zone spot (0 or 100)
+      const retRoll = rollD6() + rollD6();
+      const ret = PUNT_RETURN_TABLE[retRoll] || { yards: 0 };
+      let returnYards = 0;
+      let fumbleTurnover = false;
+      if (ret.type === 'FC') {
+        log(`${teamName} signals for a fair catch in the end zone.`);
+      } else if (ret.type === 'LG') {
+        returnYards = resolveLongGain();
+        log(`${teamName} with a big return of ${returnYards} yards!`);
+      } else {
+        returnYards = ret.yards || 0;
+        if (returnYards > 0) log(`${teamName} returns it ${returnYards} yards.`);
+        if (retRoll <= 4) {
+          if (Math.random() < 0.15) {
+            log('Returner fumbles!');
+            fumbleTurnover = Math.random() < 0.5;
+          }
+        }
+      }
+      if (game.possession === 'player') {
+        // Player punted; AI receiving towards 0
+        game.ballOn -= returnYards;
+      } else {
+        game.ballOn += returnYards;
+      }
+      if (game.ballOn > 100) game.ballOn = 100;
+      if (game.ballOn < 0) game.ballOn = 0;
+      if (!fumbleTurnover) {
+        game.possession = game.possession === 'player' ? 'ai' : 'player';
+        game.down = 1; game.toGo = 10;
+        log(`Possession changes to ${game.possession === 'player' ? 'HOME' : 'AWAY'}.`);
+      } else {
+        const recovering = game.possession === 'player' ? 'HOME' : 'AWAY';
+        log(`Ball is loose and recovered by ${recovering}!`);
+      }
+    };
+    if (receivingIsPlayer) {
+      if (!puntEZModal) {
+        doDownAt20();
+      } else {
+        const text = document.getElementById('punt-ez-text');
+        text.textContent = 'Punt lands in the end zone. Return or take touchback at the 20?';
+        puntEZModal.style.display = 'block';
+        puntEZReturnBtn.onclick = () => {
+          puntEZModal.style.display = 'none';
+          doReturn();
+          finalizeAfterPunt();
+        };
+        puntEZDownBtn.onclick = () => {
+          puntEZModal.style.display = 'none';
+          doDownAt20();
+          finalizeAfterPunt();
+        };
+        return; // will finalize in callbacks
+      }
+    } else {
+      // AI decides: simple heuristic — if deep in own end (which it is), usually down it unless trailing late
+      const shouldReturn = (function(){
+        if (game.quarter === 4 && game.clock < 2 * 60) {
+          const diff = (game.score.player - game.score.ai);
+          return diff > 0; // if AI trailing, try to return
+        }
+        return false;
+      })();
+      if (shouldReturn) doReturn(); else doDownAt20();
+    }
   } else {
     // In play: resolve return
     const retRoll = rollD6() + rollD6();
@@ -1676,6 +2004,10 @@ function resolvePunt() {
       log(`Possession changes to ${newTeam}.`);
     }
   }
+  finalizeAfterPunt();
+}
+
+function finalizeAfterPunt() {
   updateFGOptions();
   // Deduct time for the punt (15 seconds) and handle clock/quarter
   game.clock -= TIME_KEEPING.punt;
@@ -1829,6 +2161,88 @@ function changePossession() {
   updateFGOptions();
 }
 
+// Handle safety scoring and subsequent free kick by team scored against.
+// scorer is 'player' or 'ai' indicating who receives 2 points.
+function handleSafety(scorer) {
+  if (scorer === 'player') {
+    game.score.player += 2;
+    log('Safety! HOME is awarded 2 points.');
+  } else {
+    game.score.ai += 2;
+    log('Safety! AWAY is awarded 2 points.');
+  }
+  // Free kick by team scored against from its own 20.
+  const freeKicker = scorer === 'player' ? 'ai' : 'player';
+  // Set ball to 20 for the kicking team perspective before kick
+  game.possession = freeKicker === 'player' ? 'ai' : 'player'; // receiving set temporarily for kickoff logic below
+  // Present choice: Safety kickoff (+25) or Free kick punt
+  const doSafetyKickoff = () => {
+    // Safety kickoff uses normal kickoff table, plus +25 to final yardline result.
+    const kickerTeam = freeKicker;
+    const result = resolveKickoff(false, kickerTeam);
+    let yard = result.yardLine + 25;
+    if (yard > 100) yard = 100;
+    // Receiving team is opposite of kicker
+    game.possession = kickerTeam === 'player' ? 'ai' : 'player';
+    if (!result.turnover) {
+      if (game.possession === 'player') {
+        game.ballOn = yard;
+        log(`Safety kickoff returned to the ${formatYardForLog(yard)}. HOME takes over.`);
+      } else {
+        game.ballOn = 100 - yard;
+        log(`Safety kickoff returned to the ${formatYardForLog(yard)}. AWAY takes over.`);
+      }
+    } else {
+      if (kickerTeam === 'player') {
+        game.possession = 'player';
+        game.ballOn = 100 - yard;
+      } else {
+        game.possession = 'ai';
+        game.ballOn = yard;
+      }
+      const recoveringTeam = game.possession === 'player' ? 'HOME' : 'AWAY';
+      log(`Kickoff fumble on safety kick! ${recoveringTeam} recover at the ${formatYardForLog(yard)}.`);
+    }
+    game.down = 1; game.toGo = 10;
+    game.clock -= TIME_KEEPING.kickoff;
+    checkTwoMinuteWarning();
+    handleClockAndQuarter();
+    updateHUD();
+    dealHands();
+  };
+  const doFreeKickPunt = () => {
+    // Model as a punt from the kicking team's 20 with no rush
+    const wasPossession = game.possession;
+    game.possession = freeKicker; // set offense to kicking team for punt resolution
+    const originalBallOn = game.ballOn;
+    game.ballOn = freeKicker === 'player' ? 20 : 80;
+    log('Free kick punt from the 20 after safety.');
+    resolvePunt();
+    // resolvePunt handles time and possession; ensure time matches punt category
+  };
+  const kickerIsAI = freeKicker === 'ai';
+  if (kickerIsAI) {
+    // AI chooses: simple heuristic — if trailing, try kickoff (+25) for better field; else punt
+    const trailing = game.score.ai < game.score.player;
+    if (trailing) doSafetyKickoff(); else doFreeKickPunt();
+  } else {
+    if (!safetyModal) {
+      doSafetyKickoff();
+    } else {
+      const text = document.getElementById('safety-text');
+      text.textContent = 'Safety free kick: choose Safety Kickoff (+25 yards to result) or Free Kick Punt from the 20.';
+      safetyModal.style.display = 'block';
+      safetyKickoffBtn.onclick = () => {
+        safetyModal.style.display = 'none';
+        doSafetyKickoff();
+      };
+      safetyFreePuntBtn.onclick = () => {
+        safetyModal.style.display = 'none';
+        doFreeKickPunt();
+      };
+    }
+  }
+}
 function handleClockAndQuarter() {
   // If clock reaches zero, advance quarter
   while (game.clock <= 0 && !game.gameOver) {
@@ -1857,8 +2271,14 @@ function handleClockAndQuarter() {
     log(`Start of quarter ${game.quarter}.`);
     // Kickoff at start of 3rd quarter (start of second half)
     if (game.quarter === 3) {
-      // Team that did not receive the opening kickoff receives the second half
-      game.possession = game.possession === 'player' ? 'ai' : 'player';
+      // Second half receiver is determined by opening choice logic
+      if (game.secondHalfReceiver === 'player' || game.secondHalfReceiver === 'ai') {
+        game.possession = game.secondHalfReceiver;
+      } else {
+        // Fallback to opposite of who received opening
+        game.possession = game.possession === 'player' ? 'ai' : 'player';
+      }
+      log('Start of second half. ' + (game.possession === 'player' ? 'HOME' : 'AWAY') + ' receives.');
       kickoff();
     }
     // Reset two-minute warning flags when a new quarter begins
@@ -2001,18 +2421,53 @@ function attemptFieldGoal() {
     }
   } else {
     log(`Field goal from ${distance} yards is no good.`);
+    // Missed FG spotting per rules: flip possession, spot at kick spot if beyond 20, else at 20.
+    // Spot of kick is LOS minus 7 yards relative to offense direction.
+    let los = game.possession === 'player' ? game.ballOn : game.ballOn; // LOS as absolute
+    let spotOfKick;
+    if (game.possession === 'player') {
+      spotOfKick = Math.max(0, los - 7);
+    } else {
+      spotOfKick = Math.min(100, los + 7);
+    }
+    // Flip possession first
+    game.possession = game.possession === 'player' ? 'ai' : 'player';
+    // Determine new ball placement for defense
+    if (game.possession === 'player') {
+      // Player takes over after AI miss. Distance from player's goal is spotOfKick.
+      const distanceFromPlayerGoal = 100 - spotOfKick; // convert since AI was kicking toward 0
+      if ((spotOfKick >= 20)) {
+        game.ballOn = spotOfKick; // already absolute from HOME goal
+        log(`Missed field goal: HOME takes over at the spot of the kick (${formatYardForLog(spotOfKick)}).`);
+      } else {
+        game.ballOn = 20;
+        log('Missed field goal: HOME takes over at the 20.');
+      }
+    } else {
+      // AI takes over after player miss. AI direction toward 0; spotOfKick computed toward 100-> subtract handled above
+      if (spotOfKick <= 80) {
+        game.ballOn = spotOfKick; // absolute
+        log(`Missed field goal: AWAY takes over at the spot of the kick (${formatYardForLog(spotOfKick)}).`);
+      } else {
+        game.ballOn = 80;
+        log('Missed field goal: AWAY takes over at the 20.');
+      }
+    }
+    game.down = 1; game.toGo = 10;
   }
   // After FG attempt, possession flips and kickoff
   game.awaitingFG = false;
   fgOptions.classList.add('hidden');
-  // Flip possession regardless of success
-  game.possession = game.possession === 'player' ? 'ai' : 'player';
   // Deduct time for the field goal itself
   game.clock -= TIME_KEEPING.fieldgoal;
   // Check for two-minute warning after field goal attempt
   checkTwoMinuteWarning();
-  // Perform the kickoff; this will deduct kickoff time and handle quarter transitions
-  kickoff();
+  // On make: kickoff; on miss: no kickoff
+  if (success) {
+    // Flip possession and kickoff after made FG
+    game.possession = game.possession === 'player' ? 'ai' : 'player';
+    kickoff();
+  }
   // Update UI and hands
   updateHUD();
   dealHands();
@@ -2335,8 +2790,17 @@ function handlePenaltyDecision(ctx) {
     return preBallOn - yards;
   })();
   const declineClamped = Math.max(0, Math.min(100, declineBallOn));
-  const declineToGo = Math.max(1, Math.round(Math.abs((offenseIsPlayer ? preBallOn + preToGo : preBallOn - preToGo) - declineClamped)));
-  const declineDown = declineToGo <= 0 ? 1 : preDown + 1;
+  const declineTarget = offenseIsPlayer ? preBallOn + preToGo : preBallOn - preToGo;
+  const declineDist = Math.round(Math.abs(declineTarget - declineClamped));
+  let declineDown = preDown + 1;
+  let declineToGo;
+  if (declineDist <= 0) {
+    // Achieved the line to gain on the play; next series starts 1st & 10
+    declineDown = 1;
+    declineToGo = 10;
+  } else {
+    declineToGo = declineDist;
+  }
 
   // Accept outcome: enforce penalty from previous spot with automatic first down if given.
   let acceptBallOn = preBallOn;
@@ -2418,6 +2882,8 @@ function handlePenaltyDecision(ctx) {
     applyPenaltyDecision('accept', { acceptBallOn, acceptDown, acceptToGo, declineBallOn: declineClamped, declineDown, declineToGo });
     return;
   }
+  // Guard UI while the modal is open
+  game.overlayActive = true;
   const foulText = formatPenaltyNarration(penalty.on, penalty.yards, penalty.firstDown === true, offenseTeamName);
   const acceptDesc = `${offenseTeamName} at ${formatYardForLog(acceptBallOn)}, ${['1st','2nd','3rd','4th'][acceptDown-1] || acceptDown+'th'} & ${acceptToGo}`;
   const declineDesc = `${offenseTeamName} at ${formatYardForLog(declineClamped)}, ${['1st','2nd','3rd','4th'][declineDown-1] || declineDown+'th'} & ${declineToGo}`;
@@ -2429,10 +2895,12 @@ function handlePenaltyDecision(ctx) {
   penaltyDeclineBtn.onclick = null;
   penaltyAcceptBtn.onclick = () => {
     penaltyModal.style.display = 'none';
+    game.overlayActive = false;
     applyPenaltyDecision('accept', { acceptBallOn, acceptDown, acceptToGo, declineBallOn: declineClamped, declineDown, declineToGo });
   };
   penaltyDeclineBtn.onclick = () => {
     penaltyModal.style.display = 'none';
+    game.overlayActive = false;
     applyPenaltyDecision('decline', { acceptBallOn, acceptDown, acceptToGo, declineBallOn: declineClamped, declineDown, declineToGo });
   };
 }
