@@ -3234,8 +3234,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   initField();
   // Load JSON data tables (non-fatal if missing)
   await loadDataTables();
-  await loadPlayArtData();
-  await loadPlayArtDataset();
+  try { if (typeof loadPlayArtData === 'function') await loadPlayArtData(); } catch {}
+  try { if (typeof loadPlayArtDataset === 'function') await loadPlayArtDataset(); } catch {}
   // Load animator module and animations data
   try {
     // Prefer preloaded module (index.html)
