@@ -669,6 +669,7 @@ const game = {
   , pendingUntimedDown: false
   , inUntimedDown: false
   , nextKickOnside: false
+  , simulationMode: false
 };
 
 // ---------- UI elements ----------
@@ -811,8 +812,8 @@ function initField() {
   }
 
   // Add painted end zones with simple text. Wrap the text in a span so we
-  // can rotate it via CSS. HOME is rotated 90° and VISITORS is rotated
-  // -90° to face into the field.
+  // can rotate it via CSS. Both labels have been flipped 180° from before:
+  // HOME now 270°, VISITORS now 90°.
   const homeZone = document.createElement('div');
   homeZone.className = 'end-zone home';
   const homeSpan = document.createElement('span');
