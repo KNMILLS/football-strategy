@@ -741,6 +741,17 @@ let penaltyModal;
 let penaltyAcceptBtn;
 let penaltyDeclineBtn;
 
+// Coin toss and other decision modals (created dynamically)
+let tossModal;
+let tossReceiveBtn;
+let tossKickBtn;
+let puntEZModal;
+let puntEZReturnBtn;
+let puntEZDownBtn;
+let safetyModal;
+let safetyKickoffBtn;
+let safetyFreePuntBtn;
+
 // Create an onside-kick toggle in the controls panel so the player can choose
 // to attempt an onside on their next kickoff without modifying the HTML file.
 let onsideToggle;
@@ -1718,6 +1729,29 @@ function resolvePlay(playerCard, aiCard) {
   // Clamp field
   if (game.ballOn > 100) game.ballOn = 100;
   if (game.ballOn < 0) game.ballOn = 0;
+  // Safety detection: if the offense is tackled in its own end zone
+  // (HOME offense at <=0; AWAY offense at >=100), score a safety.
+  if (!game.gameOver) {
+    let safetyScorer = null;
+    if (game.possession === 'player' && game.ballOn <= 0) {
+      safetyScorer = 'ai';
+    } else if (game.possession === 'ai' && game.ballOn >= 100) {
+      safetyScorer = 'player';
+    }
+    if (safetyScorer) {
+      // Deduct time for the play, then handle safety and return
+      let timeOffForPlay = calculateTimeOff(outcome);
+      if (game.inTwoMinute && (outcome.outOfBounds || outcome.category === 'incomplete')) {
+        timeOffForPlay = 0;
+      }
+      if (game.inUntimedDown) timeOffForPlay = 0;
+      game.clock -= timeOffForPlay;
+      checkTwoMinuteWarning();
+      handleClockAndQuarter();
+      handleSafety(safetyScorer);
+      return;
+    }
+  }
   // If there was a long gain penalty, reposition the ball from midfield.
   if (penalty && penalty.isLongGain) {
     // Compute new spot relative to the 50 yard line. When the offense is
