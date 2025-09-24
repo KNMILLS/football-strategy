@@ -2977,109 +2977,20 @@ function showCardOverlay(playerCard, aiCard, x, y, done) {
 // Basic play art renderer: shows offense circles, defense Xs, and a simple route/ball motion.
 function renderPlayArt(offenseCard, defenseCard, outcome) {
   if (!playArtSvg || !fieldDisplay) return;
-  // If we have a JSON-defined animation for this card, prefer it. Delay until
-  // overlay cards are removed so the animation is visible.
   const def = getPlayArtForCard(offenseCard);
-  if (def) {
-    if (game.overlayActive) {
-      setTimeout(() => {
-        renderJsonPlayArt(def, outcome, /*startDelayMs=*/0);
-      }, 3100);
-    } else {
-      renderJsonPlayArt(def, outcome, /*startDelayMs=*/0);
-    }
-    return;
-  }
-  const rect = fieldDisplay.getBoundingClientRect();
-  const fieldW = rect.width;
-  const fieldH = rect.height;
-
-  // Compute LOS and first down x in SVG units
-  const losX = yardToSvgX(game.ballOn);
-  const firstDownAbs = game.possession === 'player' ? Math.min(100, game.ballOn + game.toGo) : Math.max(0, game.ballOn - game.toGo);
-  const firstX = yardToSvgX(firstDownAbs);
-
-  // Vertical lanes (offense bottom -> top, defense top -> bottom)
-  const lanes = [150, 220, 290, 360, 430];
-
-  // Place 5 offense players slightly below center (toward bottom)
-  const offenseY = 380;
-  const defenseY = 120;
-
-  // Draw players
-  for (let i = 0; i < 5; i++) {
-    const ox = losX - 80 + i * 40;
-    const dx = losX - 80 + i * 40;
-    playArtSvg.appendChild(drawOffenseCircle(ox, offenseY, 10));
-    playArtSvg.appendChild(drawDefenseX(dx, defenseY, 10));
-  }
-
-  // Ball start near center offense
-  const qbX = losX;
-  const qbY = offenseY;
-  const ball = drawBall(qbX, qbY, 6);
-  playArtSvg.appendChild(ball);
-
-  // Simple routes based on offenseCard.type
-  const NS = 'http://www.w3.org/2000/svg';
-
-  function addPath(points) {
-    const path = drawRoute(points);
-    // Ensure path has id for motion path reference
-    path.id = `route-${Math.floor(Math.random() * 1e9)}`;
-    playArtSvg.appendChild(path);
-    return path;
-  }
-
-  if (offenseCard && offenseCard.type === 'run') {
-    // Run: route forward 8-12 yards based on outcome yards
-    const yards = Math.max(-5, Math.min(20, Number(outcome.yards || 0)));
-    const advance = (yards / 100) * 1000 * 0.9; // scale to SVG width but reduce slightly
-    const dir = game.possession === 'player' ? 1 : -1;
-    const endX = qbX + dir * advance;
-    const path = addPath([{ x: qbX, y: qbY }, { x: endX, y: qbY - 20 }]);
-    // Animate ball along path
-    const animate = document.createElementNS(NS, 'animateMotion');
-    animate.setAttribute('dur', '900ms');
-    animate.setAttribute('fill', 'freeze');
-    const mpath = document.createElementNS(NS, 'mpath');
-    mpath.setAttribute('href', `#${path.id}`);
-    animate.appendChild(mpath);
-    ball.appendChild(animate);
-  } else if (offenseCard && offenseCard.type === 'pass') {
-    // Pass: draw a curved route to first-down or completion depth
-    const yards = Math.max(-10, Math.min(40, Number(outcome.yards || 0)));
-    const targetAbs = game.possession === 'player' ? Math.min(100, game.ballOn + Math.max(5, yards)) : Math.max(0, game.ballOn - Math.max(5, yards));
-    const tx = yardToSvgX(targetAbs);
-    const ty = defenseY + 80; // mid-field catch height
-    const path = createSvgElement('path', { d: `M ${qbX} ${qbY} Q ${(qbX + tx) / 2} ${qbY - 120} ${tx} ${ty}`, class: 'playart-route' });
-    path.id = `route-${Math.floor(Math.random() * 1e9)}`;
-    playArtSvg.appendChild(path);
-    const animate = document.createElementNS(NS, 'animateMotion');
-    animate.setAttribute('dur', '1000ms');
-    animate.setAttribute('fill', 'freeze');
-    const mpath = document.createElementNS(NS, 'mpath');
-    mpath.setAttribute('href', `#${path.id}`);
-    animate.appendChild(mpath);
-    ball.appendChild(animate);
+  if (!def) return; // Only run JSON-driven animations
+  // Delay until overlay cards are removed so the animation is visible.
+  if (game.overlayActive) {
+    setTimeout(() => { renderJsonPlayArt(def, outcome, 0); }, 3100);
   } else {
-    // Default: small motion and return
-    const path = addPath([{ x: qbX, y: qbY }, { x: qbX + 20, y: qbY - 10 }]);
-    const animate = document.createElementNS(NS, 'animateMotion');
-    animate.setAttribute('dur', '600ms');
-    animate.setAttribute('fill', 'freeze');
-    const mpath = document.createElementNS(NS, 'mpath');
-    mpath.setAttribute('href', `#${path.id}`);
-    animate.appendChild(mpath);
-    ball.appendChild(animate);
+    renderJsonPlayArt(def, outcome, 0);
   }
-
-  scheduleCleanup(1600);
 }
 
 // Render from JSON definition (offense only). Direction: player drives L→R, AI R→L.
 function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
   if (!def || !def.play_art || !def.play_art.animation_blueprint) return;
+  if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'start', play: (def && def.play_name) || 'unknown', startDelayMs, outcome });
   clearPlayArt();
   const bp = def.play_art.animation_blueprint;
   const entities = bp.entities || [];
@@ -3205,6 +3116,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
 
   // Keep only offense; no defense visuals for this JSON render
   scheduleCleanup(2200 + startDelayMs);
+  if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'scheduled_cleanup', atMs: 2200 + startDelayMs });
   // Toast to confirm it triggered
   showToast('Animating: Power Up Middle');
 }
@@ -3239,7 +3151,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (scoreDisplay) scoreDisplay.textContent = 'HOME 0 — AWAY 0';
   if (hudPossession) hudPossession.textContent = 'HOME';
   updateHUD();
-
+  // Emit initial snapshot for debug
+  try {
+    if (window.debug && window.debug.enabled) window.debug.event('snapshot', { action: 'init', state: { q: game.quarter, clk: game.clock, d: game.down, toGo: game.toGo, ballOn: game.ballOn, poss: game.possession, score: { ...game.score } } });
+  } catch {}
   // Wire UI state capture for dropdowns and inputs
   const captureSelect = (el, id) => {
     if (!el) return;
@@ -4031,6 +3946,8 @@ if (devCheckbox) {
       };
     }
     if (window.debug.traceEnabled) window.debug.enableTrace(); else window.debug.disableTrace();
+    // Emit DEV mode toggle event
+    if (window.debug && window.debug.enabled) window.debug.event('mode', { dev: !!on });
     try { localStorage.setItem('gs_dev_mode', on ? '1' : '0'); } catch {}
   };
   applyDev(savedDev);

@@ -170,6 +170,12 @@
     // Preload data tables before main logic runs
     window.__GRIDIRON_PRELOAD__ = true;
   </script>
+  <script>
+    // Force DEV mode on for this session when hash contains dev
+    (function(){ try {
+      if (location.hash && location.hash.includes('dev')) localStorage.setItem('gs_dev_mode','1');
+    } catch {} })();
+  </script>
   <script src="main.js"></script>
 </body>
 </html>
