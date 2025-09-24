@@ -2520,6 +2520,8 @@ function aiAttemptPAT() {
 function attemptFieldGoal() {
   // Determine distance: distance from ball to opponent goal line
   const distance = game.possession === 'player' ? 100 - game.ballOn : game.ballOn;
+  // NFL-style attempt distance adds 17-18 yards (snap + uprights depth). Use 18 per request.
+  const attemptYards = distance + 18;
   // Determine the column for the place kicking table
   let col;
   if (distance <= 12) {
@@ -2545,13 +2547,14 @@ function attemptFieldGoal() {
   if (success) {
     if (game.possession === 'player') {
       game.score.player += 3;
-      log(`Field goal from ${distance} yards is good!`);
+      log(`They line up for a ${attemptYards} yard field goal attempt... and it's GOOD!`);
     } else {
       game.score.ai += 3;
-      log(`AWAY field goal from ${distance} yards is good.`);
+      log(`They line up for a ${attemptYards} yard field goal attempt... and it's GOOD!`);
     }
   } else {
-    log(`Field goal from ${distance} yards is no good.`);
+    const missSide = Math.random() < 0.5 ? 'wide left' : 'wide right';
+    log(`They line up for a ${attemptYards} yard field goal attempt... and they MISS, ${missSide}.`);
     // Missed FG spotting per rules: flip possession, spot at kick spot if beyond 20, else at 20.
     // Spot of kick is LOS minus 7 yards relative to offense direction.
     let los = game.possession === 'player' ? game.ballOn : game.ballOn; // LOS as absolute
