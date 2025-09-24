@@ -1994,7 +1994,16 @@ function resolvePunt() {
       }
     };
     if (receivingIsPlayer) {
-      if (!puntEZModal) {
+      // In simulation mode, auto-decide without showing a modal
+      if (game.simulationMode) {
+        const shouldReturn = (function(){
+          if (game.quarter === 4 && game.clock < 2 * 60) {
+            const diff = (game.score.player - game.score.ai);
+            return diff < 0; // if HOME trailing, try to return
+          }
+        return false; })();
+        if (shouldReturn) doReturn(); else doDownAt20();
+      } else if (!puntEZModal) {
         doDownAt20();
       } else {
         const text = document.getElementById('punt-ez-text');
@@ -2344,7 +2353,7 @@ function handleSafety(scorer) {
     // resolvePunt handles time and possession; ensure time matches punt category
   };
   const kickerIsAI = freeKicker === 'ai';
-  if (kickerIsAI) {
+  if (kickerIsAI || game.simulationMode) {
     // AI chooses: simple heuristic — if trailing, try kickoff (+25) for better field; else punt
     const trailing = game.score.ai < game.score.player;
     if (trailing) doSafetyKickoff(); else doFreeKickPunt();
@@ -2786,7 +2795,16 @@ function choosePlayerCardForSimulation() {
 
 // Run a single simulated snap without UI.
 function simulateTick() {
-  if (game.awaitingPAT || game.gameOver) return;
+  if (game.gameOver) return;
+  // Auto-resolve PATs in simulation mode
+  if (game.awaitingPAT) {
+    if (game.simulationMode) {
+      const diff = game.score.ai - game.score.player;
+      if (diff === 1 || diff === 2) attemptTwoPoint(); else attemptExtraPoint();
+      return;
+    }
+    return;
+  }
   // Player 4th-down decision similar to AI
   if (game.possession === 'player' && game.down === 4) {
     if (game.toGo > 1) {
@@ -3145,6 +3163,53 @@ function vfxShake(element) {
   element.classList.add('shake');
 }
 
+// Add: Theme change banner helper and transition wiring
+function vfxBanner(text, options) {
+  if (!vfxOverlay) return;
+  const opts = options || {};
+  const el = document.createElement('div');
+  el.className = 'vfx-banner' + (opts.gold ? ' vfx-banner--gold' : '');
+  el.textContent = text;
+  vfxOverlay.appendChild(el);
+  const ttl = typeof opts.ttlMs === 'number' ? opts.ttlMs : 1400;
+  setTimeout(() => { el.remove(); }, ttl);
+}
+
+function showThemeTransition(themeName) {
+  // Pick banner wording and VFX accent by theme
+  const t = (themeName || '').toLowerCase();
+  let label = 'THEME UPDATED';
+  let gold = false;
+  switch (t) {
+    case 'arcade':
+      label = 'ARCADE THEME';
+      gold = true;
+      vfxParticles(undefined, undefined, 22, true);
+      break;
+    case 'retro':
+      label = 'RETRO ARCADE';
+      vfxParticles(undefined, undefined, 16, false);
+      break;
+    case 'board':
+      label = 'BOARD GAME THEME';
+      break;
+    case 'vintage':
+      label = 'VINTAGE NFL';
+      break;
+    case 'modern':
+      label = 'MODERN NFL';
+      gold = true;
+      break;
+    case 'minimalist':
+      label = 'MINIMAL THEME';
+      break;
+  }
+  vfxBanner(label, { gold, ttlMs: 1500 });
+  if (typeof SFX !== 'undefined' && SFX && SFX.onThemeChange) {
+    SFX.onThemeChange(t);
+  }
+}
+
 // DEV MODE wiring and Theme/SFX managers
 const devCheckbox = document.getElementById('dev-mode-checkbox');
 const controlsNormal = document.getElementById('controls-normal');
@@ -3308,6 +3373,39 @@ const SFX = (() => {
     src.stop(now + (dur || 0.12) + 0.02);
   }
 
+  // Theme change sting
+  function onThemeChange(name) {
+    const t = (name || theme || 'arcade').toLowerCase();
+    if (!enabled) return;
+    ensureContext();
+    switch (t) {
+      case 'arcade':
+        beep(660, 0.08, 'square');
+        setTimeout(() => beep(880, 0.09, 'square'), 50);
+        setTimeout(() => noiseBurst(0.08), 70);
+        break;
+      case 'retro':
+        beep(523.25, 0.08, 'square');
+        setTimeout(() => beep(659.25, 0.08, 'square'), 60);
+        break;
+      case 'board':
+        beep(392.00, 0.1, 'sine');
+        setTimeout(() => beep(523.25, 0.1, 'sine'), 80);
+        break;
+      case 'vintage':
+        glide(700, 300, 0.16, 'triangle', 0.6);
+        break;
+      case 'modern':
+        glide(1200, 500, 0.14, 'sawtooth', 0.7);
+        break;
+      case 'minimalist':
+        beep(720, 0.06, 'sine');
+        break;
+      default:
+        beep(660, 0.06);
+    }
+  }
+
   // Public event hooks
   function onTouchdown() {
     if (theme === 'arcade') {
@@ -3370,7 +3468,7 @@ const SFX = (() => {
     }
   }
 
-  return { setEnabled, setVolume, setThemeName, onTouchdown, onFieldGoal, onPAT, onSack, onTurnover, onFirstDown };
+  return { setEnabled, setVolume, setThemeName, onThemeChange, onTouchdown, onFieldGoal, onPAT, onSack, onTurnover, onFirstDown };
 })();
 
 // Wire DEV MODE toggle and controls
@@ -3441,6 +3539,8 @@ if (themeSelect) {
   themeSelect.addEventListener('change', () => {
     ThemeManager.setTheme(themeSelect.value);
     SFX.setThemeName(themeSelect.value);
+    // Show banner and play a short theme sting
+    showThemeTransition(themeSelect.value);
   });
 }
 if (sfxEnabledInput) {
