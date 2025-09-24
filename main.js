@@ -1575,10 +1575,22 @@ function resolvePlay(playerCard, aiCard) {
     resolvePunt();
     return;
   }
-  // Determine the outcome of the play from the charts.
   const outcome = determineOutcome(offenseCard, defenseCard);
+  if (outcome.category === 'loss' && /Sack/i.test(outcome.raw || '')) {
+    vfxShake(fieldDisplay);
+    vfxBanner('SACK!', '');
+    SFX.onSack();
+  }
   let yards = outcome.yards;
   let penalty = outcome.penalty;
+  if (!penalty) {
+    penalty = maybePenalty();
+  }
+  if (penalty) {
+    handlePenaltyDecision({ offenseCard, outcome, penalty, yards, preBallOn: game.ballOn, preDown: game.down, preToGo: game.toGo, teamName });
+    return;
+  }
+  let netYards = yards;
   // If no penalty defined in the chart result, apply the random penalty chance.
   if (!penalty) {
     penalty = maybePenalty();
@@ -1597,7 +1609,6 @@ function resolvePlay(playerCard, aiCard) {
     });
     return;
   }
-  let netYards = yards;
   // Apply penalty yards with rules fidelity. If the result was a long gain
   // ("LG") and a penalty is present, measure from the 50 yard line rather
   // than adding/subtracting yards from the result. Otherwise clamp the
@@ -1742,12 +1753,14 @@ function resolvePlay(playerCard, aiCard) {
   } else {
     game.ballOn -= netYards;
   }
-  // Passes completed beyond the end zone: keep completion semantics, then clamp to goal for TD.
-  // We do not convert to incomplete due to overshoot; treat excess as YAC.
+  // If the ball overshoots into the end zone, clamp to goal. Only log
+  // "completion carries" phrasing for pass plays; for runs, rely on TD log.
   if (outcome.category !== 'incomplete' && (game.ballOn > 100 || game.ballOn < 0)) {
     if (game.ballOn > 100) game.ballOn = 100;
     if (game.ballOn < 0) game.ballOn = 0;
-    log('Completion carries into the end zone for a touchdown.');
+    if (offenseCard.type === 'pass') {
+      log('Completion carries into the end zone for a touchdown.');
+    }
   }
   // Clamp field
   if (game.ballOn > 100) game.ballOn = 100;
@@ -3174,13 +3187,31 @@ const SFX = (() => {
     ensureContext();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    osc.type = type || 'square';
+    osc.type = type || (theme === 'board' ? 'sine' : 'square');
     osc.frequency.value = freq;
     gain.gain.value = 0.0001;
     osc.connect(gain).connect(masterGain);
     const now = audioCtx.currentTime;
     gain.gain.exponentialRampToValueAtTime(volume, now + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    osc.start(now);
+    osc.stop(now + dur + 0.02);
+  }
+  function whoosh(dur, high) {
+    if (!enabled) return;
+    ensureContext();
+    const start = high ? 1500 : 900;
+    const end = high ? 300 : 120;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(start, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(end, audioCtx.currentTime + dur);
+    gain.gain.value = 0.0001;
+    const now = audioCtx.currentTime;
+    gain.gain.exponentialRampToValueAtTime(volume * 0.7, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    osc.connect(gain).connect(masterGain);
     osc.start(now);
     osc.stop(now + dur + 0.02);
   }
@@ -3195,7 +3226,7 @@ const SFX = (() => {
     noise.buffer = noiseBuffer;
     const filter = audioCtx.createBiquadFilter();
     filter.type = 'bandpass';
-    filter.frequency.value = theme === 'modern' ? 1200 : 800;
+    filter.frequency.value = theme === 'modern' ? 1200 : theme === 'retro' ? 900 : 800;
     const gain = audioCtx.createGain();
     gain.gain.value = 0.0001;
     noise.connect(filter).connect(gain).connect(masterGain);
@@ -3207,24 +3238,36 @@ const SFX = (() => {
   }
   // Public event hooks
   function onTouchdown() {
-    if (theme === 'arcade' || theme === 'retro') {
-      beep(440, 0.1, 'square'); beep(660, 0.12, 'square'); beep(880, 0.14, 'square');
-    } else if (theme === 'board') {
-      beep(523.25, 0.12, 'sine'); beep(659.25, 0.12, 'sine');
-    } else if (theme === 'vintage') {
-      beep(392, 0.12, 'triangle'); beep(523.25, 0.12, 'triangle');
-    } else if (theme === 'modern' || theme === 'minimalist') {
-      beep(880, 0.08, 'sawtooth');
+    switch (theme) {
+      case 'arcade': case 'retro':
+        beep(440, 0.1); beep(660, 0.12); beep(880, 0.14);
+        break;
+      case 'board':
+        beep(523.25, 0.12, 'sine'); beep(659.25, 0.12, 'sine');
+        break;
+      case 'vintage':
+        beep(392, 0.12, 'triangle'); beep(523.25, 0.12, 'triangle');
+        break;
+      case 'modern': case 'minimalist':
+        whoosh(0.25, true);
+        break;
     }
-    noiseCrowd(0.8);
+    noiseCrowd(0.9);
   }
   function onFieldGoal(good) {
-    if (good) { beep(784, 0.08, 'square'); noiseCrowd(0.5); } else { beep(200, 0.2, 'sawtooth'); }
+    if (good) {
+      if (theme === 'board') beep(659.25, 0.09, 'sine'); else beep(784, 0.08);
+      noiseCrowd(0.6);
+    } else {
+      beep(200, 0.2, 'sawtooth');
+    }
   }
   function onPAT(good) { onFieldGoal(good); }
-  function onSack() { beep(150, 0.12, 'sawtooth'); }
-  function onTurnover() { beep(180, 0.18, 'triangle'); }
-  function onFirstDown() { beep(660, 0.06, 'square'); }
+  function onSack() { whoosh(0.18, false); }
+  function onTurnover() { beep(180, 0.18, 'triangle'); whoosh(0.16, false); }
+  function onFirstDown() {
+    if (theme === 'minimalist' || theme === 'modern') whoosh(0.12, true); else beep(660, 0.06);
+  }
   return { setEnabled, setVolume, setThemeName, onTouchdown, onFieldGoal, onPAT, onSack, onTurnover, onFirstDown };
 })();
 
