@@ -775,6 +775,38 @@ const aiIntentElement = document.getElementById('ai-intent');
 const deckSelect = document.getElementById('deck-select');
 // Dropdown for selecting the AI coach persona. Determines the AI's offensive deck.
 const opponentSelect = document.getElementById('opponent-select');
+// Coach personas and aggressiveness profiles
+const COACH_PROFILES = {
+  'Andy Reid': {
+    name: 'Andy Reid',
+    aggression: 0.9, // very aggressive
+    fourthDownBoost: 0.15,
+    passBias: 0.15,
+    twoPointAggressiveLate: true,
+    onsideAggressive: true
+  },
+  'John Madden': {
+    name: 'John Madden',
+    aggression: 0.6, // balanced-aggressive
+    fourthDownBoost: 0.08,
+    passBias: 0.05,
+    twoPointAggressiveLate: false,
+    onsideAggressive: false
+  },
+  'Bill Belichick': {
+    name: 'Bill Belichick',
+    aggression: 0.35, // conservative
+    fourthDownBoost: 0.0,
+    passBias: -0.05, // slight run bias situationally
+    twoPointAggressiveLate: false,
+    onsideAggressive: false
+  }
+};
+
+function getCoachProfile() {
+  const coach = game.aiCoach || (opponentSelect ? opponentSelect.value : 'John Madden');
+  return COACH_PROFILES[coach] || COACH_PROFILES['John Madden'];
+}
 // Seed input removed from the UI. We no longer expose or use a seed; the RNG
 // now defaults to Math.random for true randomness.  The corresponding
 // HTML element has been removed, so this constant is unused.
@@ -1178,6 +1210,8 @@ function startNewGame() {
     if (opponent === 'Andy Reid') aiDeck = 'Aerial Style';
     else if (opponent === 'Bill Belichick') aiDeck = 'Ball Control';
     else if (opponent === 'John Madden') aiDeck = 'Pro Style';
+    // Save coach persona for AI behavior tuning
+    game.aiCoach = opponent;
   }
   game.offenseDeck = deckName;
   game.aiOffenseDeck = aiDeck;
@@ -1317,6 +1351,7 @@ function shouldAttemptOnside(kicker) {
   const oppScore = kicker === 'player' ? game.score.ai : game.score.player;
   const diff = oppScore - myScore; // positive if trailing
   const t = game.clock;
+  const coach = kicker === 'ai' ? getCoachProfile() : COACH_PROFILES['John Madden'];
   // Must be trailing and within one possession (<= 8)
   if (diff <= 0 || diff > 8) return false;
   // Trailing by 4-8 with <= 3:00: go onside
@@ -1324,10 +1359,12 @@ function shouldAttemptOnside(kicker) {
   // Trailing by 1-3 with <= 2:00: sometimes go onside depending on game pace
   if (diff <= 3 && t <= 120) {
     const highScoring = (game.score.player + game.score.ai) >= 40;
-    return highScoring || Math.random() < 0.35;
+    const baseProb = 0.35 + (coach.onsideAggressive ? 0.25 : 0);
+    return highScoring || Math.random() < baseProb;
   }
   // Default late window (<= 5:00) matches previous heuristic
-  return t <= 300;
+  if (coach.onsideAggressive && t <= 300 && diff >= 4) return true;
+  return t <= 300 && diff >= 6; // otherwise be more selective
 }
 
 function dealHands() {
@@ -1509,6 +1546,7 @@ function aiChooseCard() {
   }
 
   const ctx = getAIContext();
+  const coach = getCoachProfile();
   if (game.possession === 'player') {
     // AI is on defense.
     // Baseline by distance to go
@@ -1525,6 +1563,11 @@ function aiChooseCard() {
       if (playerLeads) preferred = preferred === 'run' ? 'run' : 'balanced';
       else preferred = 'pass';
     }
+    // Coach pass/run bias: Reid leans pass, Belichick leans run when balanced
+    if (preferred === 'balanced') {
+      if (coach.passBias > 0 && Math.random() < coach.passBias) preferred = 'pass';
+      if (coach.passBias < 0 && Math.random() < Math.abs(coach.passBias)) preferred = 'run';
+    }
     let choices = DEFENSE_DECK.filter((card) => card.type === preferred);
     if (choices.length === 0) choices = DEFENSE_DECK;
     return choices[Math.floor(Math.random() * choices.length)];
@@ -1538,13 +1581,17 @@ function aiChooseCard() {
       if (game.toGo > 1) {
         if (inFGRange) return { type: 'field-goal' };
         // Late and trailing: be more aggressive on 4th-and-medium
-        if (ctx.isLate && ctx.scoreDiff > 0 && game.toGo <= 5) {
+        const goBoost = coach.fourthDownBoost || 0;
+        const mediumGo = ctx.isLate && ctx.scoreDiff > 0 && game.toGo <= (5 + Math.round(goBoost * 10));
+        if (mediumGo) {
           const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'pass');
           if (passes.length) return passes[Math.floor(Math.random() * passes.length)];
         }
         // Otherwise, punt if available
         const punts = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'punt');
-        if (punts.length && safePuntTerritory) return punts[0];
+        // Aggressive coaches may still go for it near midfield instead of punting
+        const midfield = fgDistance >= 45 && fgDistance <= 65;
+        if (punts.length && safePuntTerritory && !(coach.aggression > 0.8 && midfield && game.toGo <= 4)) return punts[0];
       } else {
         // Fourth-and-short: go for it. Prefer run unless long yardage situation by down/time
         if (game.toGo <= 1) {
@@ -1572,6 +1619,11 @@ function aiChooseCard() {
     if (ctx.isLate) {
       if (ctx.scoreDiff > 0) prefer = 'pass';
       else if (ctx.scoreDiff < 0) prefer = prefer === 'pass' ? 'pass' : 'run';
+    }
+    // Coach pass/run bias for balanced/close calls
+    if (prefer === 'balanced') {
+      if (coach.passBias > 0 && Math.random() < coach.passBias) prefer = 'pass';
+      if (coach.passBias < 0 && Math.random() < Math.abs(coach.passBias)) prefer = 'run';
     }
     // Select by preference
     if (prefer !== 'pass') {
@@ -2584,9 +2636,13 @@ function aiAttemptPAT() {
   const quarter = game.quarter;
   const clock = game.clock;
   const late = quarter === 4 && clock <= 5 * 60;
-  // Go for two when trailing by 1 or 2 (tie or take lead)
-  // If leading by 1 very late, prefer a 2‑point try to go up by 3.
-  const shouldGoForTwo = (diff > 0 && diff <= 2) || (diff < 0 && diff === -1 && late);
+  const coach = getCoachProfile();
+  // Go for two when trailing by 1 or 2 (tie or take lead).
+  // Aggressive coaches may also go for two when leading by 1 very late to go up 3.
+  let shouldGoForTwo = (diff > 0 && diff <= 2);
+  if (coach.twoPointAggressiveLate && diff < 0 && diff === -1 && late) {
+    shouldGoForTwo = true;
+  }
   if (shouldGoForTwo) {
     if (game.rng() < 0.5) {
       game.score.ai += 2;
