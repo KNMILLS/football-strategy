@@ -1,0 +1,13 @@
+{
+  "OnsideKickoff_1d6": {
+    "1": "Kicker's Ball on Kicker's 40",
+    "2": "Kicker's Ball on Kicker's 40",
+    "3": "Receiver's Ball on Kicker's 35",
+    "4": "Receiver's Ball on Kicker's 35",
+    "5": "Receiver's Ball on Kicker's 35",
+    "6": "Receiver's Ball on Kicker's 30",
+    "modifier": "+1 to die roll if the Kicking Team is not trailing"
+  }
+}
+
+
