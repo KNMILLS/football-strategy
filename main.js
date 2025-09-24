@@ -732,6 +732,10 @@ const btnKickPAT = document.getElementById('kick-pat');
 const btnGoTwo = document.getElementById('go-two');
 const btnKickFG = document.getElementById('kick-fg');
 
+// DEV/TEST controls buttons
+const startTestBtn = document.getElementById('start-test-game');
+const runAutoBtn = document.getElementById('run-auto-game');
+
 // Penalty decision modal elements (created dynamically)
 let penaltyModal;
 let penaltyAcceptBtn;
@@ -1029,19 +1033,7 @@ if (newGameButton) {
   });
 }
 
-// DEV MODE toggle wiring
-if (devModeCheckbox && controlsNormal && controlsTest) {
-  devModeCheckbox.addEventListener('change', () => {
-    const enabled = !!devModeCheckbox.checked;
-    if (enabled) {
-      controlsNormal.classList.add('hidden');
-      controlsTest.classList.remove('hidden');
-    } else {
-      controlsTest.classList.add('hidden');
-      controlsNormal.classList.remove('hidden');
-    }
-  });
-}
+// (Removed duplicate DEV MODE toggle wiring; see consolidated wiring near the bottom.)
 
 // Start test game button
 if (startTestBtn) {
