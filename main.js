@@ -1516,6 +1516,7 @@ function playCard(cardId, dropX, dropY) {
   // or when the game has ended. We no longer block plays when a field
   // goal option is visible; the player may choose to go for it on 4th down.
   if (game.awaitingPAT || game.overlayActive || game.gameOver) return;
+  if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'play', cardId, dropX, dropY });
   const playerCard = CARD_MAP[cardId];
   // Validate punt restrictions: only allow 4th down punts when labeled 4th down only
   if (playerCard.type === 'punt') {
@@ -1594,6 +1595,7 @@ function aiChooseCard() {
 
   const ctx = getAIContext();
   const coach = getCoachProfile();
+  if (window.debug && window.debug.enabled) window.debug.event('ai', { action: 'choose_card_ctx', ctx });
   if (game.possession === 'player') {
     // AI is on defense.
     // Baseline by distance to go
@@ -1680,6 +1682,7 @@ function aiChooseCard() {
     const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'pass' && avoidRestricted(c));
     if (passes.length) return passes[Math.floor(Math.random() * passes.length)];
     const fallback = OFFENSE_DECKS[game.aiOffenseDeck].find(avoidRestricted) || OFFENSE_DECKS[game.aiOffenseDeck][0];
+    if (window.debug && window.debug.enabled) window.debug.event('ai', { action: 'choose_card', choice: fallback ? fallback.label : '(none)' });
     return fallback;
   }
 }
@@ -1687,6 +1690,7 @@ function aiChooseCard() {
 function resolvePlay(playerCard, aiCard) {
   // Determine which card is offense and which is defense based on possession
   let offenseCard, defenseCard;
+  if (window.debug && window.debug.enabled) window.debug.event('engine', { action: 'resolve_play', offense: (game.possession==='player'?'HOME':'AWAY'), playerCard: playerCard && playerCard.label, aiCard: aiCard && aiCard.label });
   if (game.possession === 'player') {
     offenseCard = playerCard;
     defenseCard = aiCard;
@@ -3235,6 +3239,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (scoreDisplay) scoreDisplay.textContent = 'HOME 0 — AWAY 0';
   if (hudPossession) hudPossession.textContent = 'HOME';
   updateHUD();
+
+  // Wire UI state capture for dropdowns and inputs
+  const captureSelect = (el, id) => {
+    if (!el) return;
+    const emit = () => { if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'select', id, value: el.value }); };
+    try { emit(); } catch {}
+    el.addEventListener('change', emit);
+  };
+  const captureInput = (el, id) => {
+    if (!el) return;
+    const emit = () => { if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'input', id, value: el.type === 'checkbox' ? !!el.checked : el.value }); };
+    try { emit(); } catch {}
+    el.addEventListener('change', emit);
+    if (el.type !== 'checkbox') el.addEventListener('input', emit);
+  };
+  captureSelect(deckSelect, 'deck-select');
+  captureSelect(opponentSelect, 'opponent-select');
+  captureSelect(document.getElementById('test-player-deck'), 'test-player-deck');
+  captureSelect(document.getElementById('test-ai-deck'), 'test-ai-deck');
+  captureSelect(document.getElementById('test-possession'), 'test-possession');
+  captureInput(document.getElementById('test-ballon'), 'test-ballon');
+  captureSelect(document.getElementById('test-down'), 'test-down');
+  captureInput(document.getElementById('test-togo'), 'test-togo');
+  captureSelect(document.getElementById('test-quarter'), 'test-quarter');
+  captureInput(document.getElementById('test-clock'), 'test-clock');
+  captureSelect(document.getElementById('theme-select'), 'theme-select');
+  captureInput(document.getElementById('sfx-enabled'), 'sfx-enabled');
+  captureInput(document.getElementById('sfx-volume'), 'sfx-volume');
+  captureInput(document.getElementById('dev-mode-checkbox'), 'dev-mode-checkbox');
 });
 
 // -----------------------------------------------------------------------------
@@ -3950,7 +3983,8 @@ if (devCheckbox) {
         'choosePlayerCardForSimulation','simulateTick','simulateOneGame','kickoff','resolvePunt',
         'handlePenaltyDecision','applyPenaltyDecision','decidePenaltyAI','handleSafety',
         'handleClockAndQuarter','maybePenalty','getFormationDescription','describePlayAction',
-        'updateHUD','changePossession'
+        'updateHUD','changePossession','calculateTimeOff','formatYardForLog','updateFGOptions',
+        'renderHand','playCard','renderPlayArt'
       ];
       const getGameSummary = () => ({
         q: game.quarter, clk: game.clock, d: game.down, toGo: game.toGo, ballOn: game.ballOn,
@@ -4011,11 +4045,13 @@ if (devCheckbox) {
   const dlBtn = document.getElementById('download-debug');
   if (startBtn) {
     startBtn.addEventListener('click', () => {
+      if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'click', id: 'start-test-game' });
       startNewGameWithTestSetup();
     });
   }
   if (autoBtn) {
     autoBtn.addEventListener('click', () => {
+      if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'click', id: 'run-auto-game' });
       logClear();
       const saved = { showCardOverlay };
       try {
@@ -4029,11 +4065,13 @@ if (devCheckbox) {
   }
   if (copyBtn) {
     copyBtn.addEventListener('click', async () => {
+      if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'click', id: 'copy-log' });
       try { await navigator.clipboard.writeText(logElement.textContent || ''); alert('Log copied'); } catch {}
     });
   }
   if (dlBtn) {
     dlBtn.addEventListener('click', () => {
+      if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'click', id: 'download-debug' });
       const meta = [
         `Timestamp: ${new Date().toISOString()}`,
         `Quarter: ${game.quarter}`,
