@@ -249,58 +249,6 @@ footer#footer {
   z-index: 1;
 }
 
-/* Play art SVG overlay */
-.field-display .play-art {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 120; /* above lines and labels, below overlay cards */
-}
-
-/* Offense player: circle */
-.playart-offense {
-  fill: rgba(255,255,255,0.95);
-  stroke: #00e5ff;
-  stroke-width: 2;
-  filter: drop-shadow(0 0 6px rgba(0,229,255,0.5));
-}
-
-/* Defense player: X */
-.playart-defense {
-  stroke: #ff4d4d;
-  stroke-width: 3;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 6px rgba(255,77,77,0.5));
-}
-
-/* Route/path lines */
-.playart-route {
-  fill: none;
-  stroke: #ffd54f;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 6 6;
-  opacity: 0.95;
-}
-
-/* Ball indicator */
-.playart-ball {
-  fill: #ffeb3b;
-  stroke: #bfa100;
-  stroke-width: 2;
-  filter: drop-shadow(0 0 8px rgba(255,235,59,0.7));
-}
-
-/* Faint motion trail for the ball */
-.playart-ball-trail {
-  stroke: rgba(255,235,59,0.6);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-dasharray: 10 10;
-}
 
 /* Generic yard lines across the field (vertical lines marking every 10 yards) */
 .field-display .yard-line {
@@ -692,28 +640,7 @@ footer#footer {
   z-index: 10000;
 }
 
-/* Tiny toast for animation debug */
-.vfx-toast {
-  position: absolute;
-  left: 50%;
-  bottom: 14%;
-  transform: translateX(-50%);
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: rgba(0, 229, 255, 0.12);
-  color: #e6f0ff;
-  border: 1px solid rgba(0, 229, 255, 0.45);
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  opacity: 0;
-  animation: toast-pop 1400ms ease-out forwards;
-}
-@keyframes toast-pop {
-  0% { opacity: 0; transform: translateX(-50%) translateY(6px); }
-  15% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  85% { opacity: 1; }
-  100% { opacity: 0; }
-}
+/* Removed debug toast */
 
 /* Big arcade banner (e.g., TOUCHDOWN!, INTERCEPTION!) */
 .vfx-banner {

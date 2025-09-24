@@ -3235,8 +3235,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadPlayArtDataset();
   // Load animator module and animations data
   try {
-    const mod = await import('./scripts/gs_animator.js');
-    GSAnimator = mod;
+    // Prefer preloaded module (index.html)
+    GSAnimator = window.GSAnimator || GSAnimator;
+    if (!GSAnimator) {
+      const mod = await import('./scripts/gs_animator.js');
+      GSAnimator = mod;
+    }
     try { await GSAnimator.loadPlays('play_art_animations_autogen_min.json'); } catch {}
     try { GSAnimator.initField(fieldDisplay, { showDebug: false }); } catch {}
     // Wire animation events to log

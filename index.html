@@ -176,6 +176,13 @@
       if (location.hash && location.hash.includes('dev')) localStorage.setItem('gs_dev_mode','1');
     } catch {} })();
   </script>
+  <script type="module">
+    // Preload animator as module under file:// to avoid dynamic import CORS issues
+    try {
+      const mod = await import('./scripts/gs_animator.js');
+      window.GSAnimator = mod;
+    } catch (e) { /* non-fatal; main.js will attempt dynamic import */ }
+  </script>
   <script src="main.js"></script>
 </body>
 </html>
