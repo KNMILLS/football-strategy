@@ -3169,6 +3169,31 @@ const SFX = (() => {
   function setEnabled(v) { enabled = !!v; }
   function setVolume(v) { volume = v; if (masterGain) masterGain.gain.value = volume; }
   function setThemeName(t) { theme = t; }
+
+  function createDistortion(amount) {
+    const k = typeof amount === 'number' ? amount : 20;
+    const n = 44100;
+    const curve = new Float32Array(n);
+    const deg = Math.PI / 180;
+    for (let i = 0; i < n; ++i) {
+      const x = (i * 2) / n - 1;
+      curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+    }
+    const ws = audioCtx.createWaveShaper();
+    ws.curve = curve;
+    ws.oversample = '4x';
+    return ws;
+  }
+
+  function createDelay(ms, feedbackGain) {
+    const delay = audioCtx.createDelay(1.0);
+    delay.delayTime.value = Math.min(0.5, Math.max(0, (ms || 90) / 1000));
+    const fb = audioCtx.createGain();
+    fb.gain.value = Math.min(0.6, Math.max(0, feedbackGain == null ? 0.25 : feedbackGain));
+    delay.connect(fb).connect(delay);
+    return { delay, fb };
+  }
+
   function beep(freq, dur, type) {
     if (!enabled) return;
     ensureContext();
@@ -3177,31 +3202,42 @@ const SFX = (() => {
     osc.type = type || (theme === 'board' ? 'sine' : 'square');
     osc.frequency.value = freq;
     gain.gain.value = 0.0001;
-    osc.connect(gain).connect(masterGain);
+    let chain = gain;
+    if (theme === 'arcade') {
+      // Light distortion + slapback delay for punch
+      const dist = createDistortion(35);
+      const { delay } = createDelay(80, 0.18);
+      osc.connect(dist).connect(delay).connect(gain).connect(masterGain);
+    } else {
+      osc.connect(gain).connect(masterGain);
+    }
     const now = audioCtx.currentTime;
     gain.gain.exponentialRampToValueAtTime(volume, now + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
     osc.start(now);
-    osc.stop(now + dur + 0.02);
+    osc.stop(now + dur + 0.03);
   }
-  function whoosh(dur, high) {
+
+  function glide(freqStart, freqEnd, dur, type, gainMul) {
     if (!enabled) return;
     ensureContext();
-    const start = high ? 1500 : 900;
-    const end = high ? 300 : 120;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(start, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(end, audioCtx.currentTime + dur);
-    gain.gain.value = 0.0001;
+    osc.type = type || 'sawtooth';
     const now = audioCtx.currentTime;
-    gain.gain.exponentialRampToValueAtTime(volume * 0.7, now + 0.02);
+    osc.frequency.setValueAtTime(freqStart, now);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(1, freqEnd), now + dur);
+    gain.gain.value = 0.0001;
+    const target = Math.max(0.05, (gainMul || 0.7) * volume);
+    gain.gain.exponentialRampToValueAtTime(target, now + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-    osc.connect(gain).connect(masterGain);
+    let node = osc;
+    if (theme === 'arcade') node = node.connect(createDistortion(25));
+    node.connect(gain).connect(masterGain);
     osc.start(now);
-    osc.stop(now + dur + 0.02);
+    osc.stop(now + dur + 0.03);
   }
+
   function noiseCrowd(dur) {
     if (!enabled) return;
     ensureContext();
@@ -3216,45 +3252,104 @@ const SFX = (() => {
     filter.frequency.value = theme === 'modern' ? 1200 : theme === 'retro' ? 900 : 800;
     const gain = audioCtx.createGain();
     gain.gain.value = 0.0001;
-    noise.connect(filter).connect(gain).connect(masterGain);
+    let chain = noise.connect(filter);
+    if (theme === 'arcade') {
+      const { delay } = createDelay(120, 0.12);
+      chain = chain.connect(delay);
+    }
+    chain.connect(gain).connect(masterGain);
     const now = audioCtx.currentTime;
-    gain.gain.exponentialRampToValueAtTime(volume * 0.7, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(volume * 0.75, now + 0.05);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
     noise.start(now);
     noise.stop(now + dur + 0.05);
   }
+
+  function noiseBurst(dur) {
+    if (!enabled) return;
+    ensureContext();
+    const bufferSize = Math.floor(audioCtx.sampleRate * (dur || 0.12));
+    const buf = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    const hp = audioCtx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 600;
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0.0001;
+    let chain = src.connect(hp);
+    if (theme === 'arcade') chain = chain.connect(createDistortion(45));
+    chain.connect(gain).connect(masterGain);
+    const now = audioCtx.currentTime;
+    gain.gain.exponentialRampToValueAtTime(volume * 0.8, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + (dur || 0.12));
+    src.start(now);
+    src.stop(now + (dur || 0.12) + 0.02);
+  }
+
   // Public event hooks
   function onTouchdown() {
-    switch (theme) {
-      case 'arcade': case 'retro':
-        beep(440, 0.1); beep(660, 0.12); beep(880, 0.14);
-        break;
-      case 'board':
-        beep(523.25, 0.12, 'sine'); beep(659.25, 0.12, 'sine');
-        break;
-      case 'vintage':
-        beep(392, 0.12, 'triangle'); beep(523.25, 0.12, 'triangle');
-        break;
-      case 'modern': case 'minimalist':
-        whoosh(0.25, true);
-        break;
+    if (theme === 'arcade') {
+      // Layered triad with sub punch and short arpeggio
+      beep(440, 0.11, 'square');
+      setTimeout(() => beep(660, 0.12, 'square'), 40);
+      setTimeout(() => beep(880, 0.14, 'square'), 80);
+      // Sub drop and snare-like burst
+      glide(300, 90, 0.22, 'sawtooth', 0.9);
+      setTimeout(() => noiseBurst(0.1), 60);
+    } else if (theme === 'retro') {
+      beep(440, 0.1); beep(660, 0.12); beep(880, 0.14);
+    } else if (theme === 'board') {
+      beep(523.25, 0.12, 'sine'); beep(659.25, 0.12, 'sine');
+    } else if (theme === 'vintage') {
+      beep(392, 0.12, 'triangle'); beep(523.25, 0.12, 'triangle');
+    } else if (theme === 'modern' || theme === 'minimalist') {
+      glide(1500, 300, 0.25, 'sawtooth', 0.8);
     }
-    noiseCrowd(0.9);
+    noiseCrowd(theme === 'arcade' ? 1.0 : 0.9);
   }
+
   function onFieldGoal(good) {
     if (good) {
-      if (theme === 'board') beep(659.25, 0.09, 'sine'); else beep(784, 0.08);
-      noiseCrowd(0.6);
+      if (theme === 'arcade') { beep(784, 0.09, 'square'); setTimeout(() => beep(988, 0.08, 'square'), 60); }
+      else if (theme === 'board') beep(659.25, 0.09, 'sine');
+      else beep(784, 0.08);
+      noiseCrowd(theme === 'arcade' ? 0.7 : 0.6);
     } else {
-      beep(200, 0.2, 'sawtooth');
+      glide(220, 120, 0.22, 'sawtooth', 0.7);
     }
   }
+
   function onPAT(good) { onFieldGoal(good); }
-  function onSack() { whoosh(0.18, false); }
-  function onTurnover() { beep(180, 0.18, 'triangle'); whoosh(0.16, false); }
-  function onFirstDown() {
-    if (theme === 'minimalist' || theme === 'modern') whoosh(0.12, true); else beep(660, 0.06);
+
+  function onSack() {
+    if (theme === 'arcade') {
+      glide(250, 80, 0.18, 'sawtooth', 0.9); noiseBurst(0.09);
+    } else {
+      glide(250, 120, 0.18, 'sawtooth', 0.7);
+    }
   }
+
+  function onTurnover() {
+    if (theme === 'arcade') {
+      glide(300, 90, 0.2, 'triangle', 0.9); setTimeout(() => noiseBurst(0.08), 40);
+    } else {
+      beep(180, 0.18, 'triangle');
+    }
+  }
+
+  function onFirstDown() {
+    if (theme === 'arcade') {
+      // Quick ascending blip blip
+      beep(620, 0.05, 'square'); setTimeout(() => beep(740, 0.05, 'square'), 55);
+    } else if (theme === 'minimalist' || theme === 'modern') {
+      glide(1200, 300, 0.12, 'sawtooth', 0.6);
+    } else {
+      beep(660, 0.06);
+    }
+  }
+
   return { setEnabled, setVolume, setThemeName, onTouchdown, onFieldGoal, onPAT, onSack, onTurnover, onFirstDown };
 })();
 
