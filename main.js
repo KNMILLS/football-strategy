@@ -587,7 +587,7 @@ const CARD_MAP = (() => {
 // -----------------------------------------------------------------------------
 // Goal-line restriction ("white sign") metadata
 // Certain offense cards have a circled-number restriction and cannot be used
-// when the ball is between the defender’s 1 and that number (inclusive).
+// when the ball is between the defender's 1 and that number (inclusive).
 // If metadata is not found in the external JSON, define a minimal mapping
 // here keyed by offensive card id to the restricted distance (yards).
 // Example: { 'Pro_Style_LongBomb': 5 } blocks use inside opponent 5.
@@ -1243,6 +1243,7 @@ function startNewGame() {
 }
 
 function kickoff() {
+  if (game.gameOver) return;
   // Resolve a kickoff according to the special teams table. The receiving
   // team is indicated by game.possession. The kicking team is the other
   // side. Normal kickoffs are used here; onside kicks would pass true.
@@ -1419,7 +1420,7 @@ function playCard(cardId, dropX, dropY) {
     }
   }
   // Enforce goal-line "white sign" restriction: some offense cards cannot be used
-  // when within a circled-number distance of the defender’s goal line.
+  // when within a circled-number distance of the defender's goal line.
   if (game.possession === 'player' && isRestrictedOffenseCard(playerCard, game.ballOn)) {
     log('This play is restricted near the goal line and cannot be used here.');
     return;
@@ -1693,9 +1694,9 @@ function resolvePlay(playerCard, aiCard) {
       log(`Interception return: ${returnYards} yards`);
     }
     // Interception end-zone/limits handling:
-    // - If spot ends inside defender’s own end zone → touchback to own 20
-    // - If spot would be past the back of defender’s end zone → treat pass as incomplete (no turnover)
-    // - If return crosses into offense’s end zone → TD (handled below)
+    // - If spot ends inside defender's own end zone → touchback to own 20
+    // - If spot would be past the back of defender's end zone → treat pass as incomplete (no turnover)
+    // - If return crosses into offense's end zone → TD (handled below)
     if (game.possession === 'player') {
       // Player now on offense after INT: defender was AI; own end zone is at 0, opponent at 100
       if (game.ballOn < 0) {
@@ -1796,11 +1797,14 @@ function resolvePlay(playerCard, aiCard) {
     if (newSpot > 100) newSpot = 100;
     game.ballOn = newSpot;
   }
-  // Provide a descriptive result line instead of a generic numeric statement.
-  // Explicitly call out incomplete passes and differentiate gains, losses
-  // and no gain.  netYards already includes any penalty enforcement.
+  // Provide a descriptive result line with correct gating for pass-only text.
   if (outcome.category === 'incomplete') {
-    log('The pass falls incomplete.');
+    // Only passes can be incomplete
+    if (offenseCard.type === 'pass') {
+      log('The pass falls incomplete.');
+    } else {
+      log('No gain.');
+    }
   } else {
     if (netYards > 0) {
       log(`Gain of ${netYards} yards.`);
@@ -1836,7 +1840,10 @@ function resolvePlay(playerCard, aiCard) {
     if (game.toGo <= 0) {
       game.down = 1;
       game.toGo = 10;
-      log('First down!');
+      // Suppress first down call if a touchdown will be logged below
+      // Touchdown logging occurs later; we can check impending score now
+      const impendingTD = (game.possession === 'player' && game.ballOn >= 100) || (game.possession === 'ai' && game.ballOn <= 0);
+      if (!impendingTD) log('First down!');
     } else {
       game.down += 1;
     }
@@ -2302,6 +2309,7 @@ function handleSafety(scorer) {
     game.score.ai += 2;
     log('Safety! AWAY is awarded 2 points.');
   }
+  if (game.gameOver) return;
   // Free kick by team scored against from its own 20.
   const freeKicker = scorer === 'player' ? 'ai' : 'player';
   // Set ball to 20 for the kicking team perspective before kick
@@ -2348,7 +2356,7 @@ function handleSafety(scorer) {
     const originalBallOn = game.ballOn;
     game.ballOn = freeKicker === 'player' ? 20 : 80;
     log('Free kick punt from the 20 after safety.');
-    resolvePunt();
+    if (!game.gameOver) resolvePunt();
     // resolvePunt handles time and possession; ensure time matches punt category
   };
   const kickerIsAI = freeKicker === 'ai';
@@ -2470,7 +2478,7 @@ function finishPAT() {
   patOptions.classList.add('hidden');
   // After PAT, change possession and kickoff
   game.possession = game.possession === 'player' ? 'ai' : 'player';
-  kickoff();
+  if (!game.gameOver) kickoff();
   handleClockAndQuarter();
   updateHUD();
   dealHands();
@@ -2520,7 +2528,7 @@ function aiAttemptPAT() {
 function attemptFieldGoal() {
   // Determine distance: distance from ball to opponent goal line
   const distance = game.possession === 'player' ? 100 - game.ballOn : game.ballOn;
-  // NFL-style attempt distance adds 17-18 yards (snap + uprights depth). Use 18 per request.
+  // Use attempt distance including placement (hash + end zone): common convention adds 17-18; we use 18
   const attemptYards = distance + 18;
   // Determine the column for the place kicking table
   let col;
@@ -2557,7 +2565,7 @@ function attemptFieldGoal() {
     log(`They line up for a ${attemptYards} yard field goal attempt... and they MISS, ${missSide}.`);
     // Missed FG spotting per rules: flip possession, spot at kick spot if beyond 20, else at 20.
     // Spot of kick is LOS minus 7 yards relative to offense direction.
-    let los = game.possession === 'player' ? game.ballOn : game.ballOn; // LOS as absolute
+    const los = game.ballOn; // absolute
     let spotOfKick;
     if (game.possession === 'player') {
       spotOfKick = Math.max(0, los - 7);
@@ -2568,19 +2576,18 @@ function attemptFieldGoal() {
     game.possession = game.possession === 'player' ? 'ai' : 'player';
     // Determine new ball placement for defense
     if (game.possession === 'player') {
-      // Player takes over after AI miss. Distance from player's goal is spotOfKick.
-      const distanceFromPlayerGoal = 100 - spotOfKick; // convert since AI was kicking toward 0
-      if ((spotOfKick >= 20)) {
-        game.ballOn = spotOfKick; // already absolute from HOME goal
+      // Player takes over after AI miss. If spot is outside end zone, take over at max(20, spot) relative to HOME goal.
+      if (spotOfKick >= 20) {
+        game.ballOn = spotOfKick; // absolute from HOME goal
         log(`Missed field goal: HOME takes over at the spot of the kick (${formatYardForLog(spotOfKick)}).`);
       } else {
         game.ballOn = 20;
         log('Missed field goal: HOME takes over at the 20.');
       }
     } else {
-      // AI takes over after player miss. AI direction toward 0; spotOfKick computed toward 100-> subtract handled above
+      // AI takes over after player miss. If spot (absolute) is <= 80 (i.e., at least 20 yards from AI goal), take at spot; else at its 20 (absolute 80)
       if (spotOfKick <= 80) {
-        game.ballOn = spotOfKick; // absolute
+        game.ballOn = spotOfKick;
         log(`Missed field goal: AWAY takes over at the spot of the kick (${formatYardForLog(spotOfKick)}).`);
       } else {
         game.ballOn = 80;
@@ -2589,7 +2596,7 @@ function attemptFieldGoal() {
     }
     game.down = 1; game.toGo = 10;
   }
-  // After FG attempt, possession flips and kickoff
+  // After FG attempt, standard timing
   game.awaitingFG = false;
   fgOptions.classList.add('hidden');
   // Deduct time for the field goal itself
@@ -2597,14 +2604,16 @@ function attemptFieldGoal() {
   // Check for two-minute warning after field goal attempt
   checkTwoMinuteWarning();
   // On make: kickoff; on miss: no kickoff
-  if (success) {
+  if (success && !game.gameOver) {
     // Flip possession and kickoff after made FG
     game.possession = game.possession === 'player' ? 'ai' : 'player';
-    kickoff();
+    if (!game.gameOver) kickoff();
   }
   // Update UI and hands
-  updateHUD();
-  dealHands();
+  if (!game.gameOver) {
+    updateHUD();
+    dealHands();
+  }
 }
 
 // HUD and logging helpers
@@ -2805,7 +2814,13 @@ function simulateTick() {
     }
   }
   // Normal snap
-  const playerCard = choosePlayerCardForSimulation();
+  let playerCard = choosePlayerCardForSimulation();
+  // In simulation/dev runs, avoid punting on downs 1-3 unless explicitly testing
+  if (game.down < 4 && playerCard && playerCard.type === 'punt') {
+    const deck = OFFENSE_DECKS[game.offenseDeck] || [];
+    const alternatives = deck.filter((c) => c.type !== 'punt');
+    if (alternatives.length) playerCard = alternatives[Math.floor(Math.random() * alternatives.length)];
+  }
   const aiCard = aiChooseCard();
   if (game.possession === 'ai' && aiCard && aiCard.type === 'field-goal') {
     attemptFieldGoal();
