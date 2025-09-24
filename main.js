@@ -650,6 +650,69 @@ function yardToPercent(absYard) {
   return 5 + (absYard / 100) * 90;
 }
 
+// Convert field pixel coordinates to SVG (1000x500) coordinates
+function fieldPxToSvgCoords(xPx, yPx) {
+  const rect = fieldDisplay.getBoundingClientRect();
+  const sx = (xPx / rect.width) * 1000;
+  const sy = (yPx / rect.height) * 500;
+  return { x: sx, y: sy };
+}
+
+// Convert absolute yard (0..100 from HOME goal) to SVG x (0..1000)
+function yardToSvgX(absYard) {
+  const percent = yardToPercent(absYard) / 100; // 0..1 across whole container
+  return percent * 1000;
+}
+
+// Utilities to manage play art SVG
+function clearPlayArt() {
+  if (playArtSvg) playArtSvg.innerHTML = '';
+}
+
+function createSvgElement(tag, attrs = {}) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    el.setAttribute(k, String(v));
+  }
+  return el;
+}
+
+function drawOffenseCircle(x, y, r = 10) {
+  return createSvgElement('circle', { cx: x, cy: y, r, class: 'playart-offense' });
+}
+
+function drawDefenseX(x, y, size = 14) {
+  const g = createSvgElement('g', { class: 'playart-defense' });
+  const l1 = createSvgElement('line', { x1: x - size, y1: y - size, x2: x + size, y2: y + size });
+  const l2 = createSvgElement('line', { x1: x - size, y1: y + size, x2: x + size, y2: y - size });
+  g.appendChild(l1);
+  g.appendChild(l2);
+  return g;
+}
+
+function drawRoute(points) {
+  const d = points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ');
+  return createSvgElement('path', { d, class: 'playart-route' });
+}
+
+function drawBall(x, y, r = 6) {
+  return createSvgElement('circle', { cx: x, cy: y, r, class: 'playart-ball' });
+}
+
+function animateAlongPath(element, path, durationMs) {
+  const m = createSvgElement('animateMotion', { dur: `${durationMs}ms`, fill: 'freeze', rotate: 'auto' });
+  const mp = createSvgElement('mpath', { href: `#${path.id}` });
+  m.appendChild(mp);
+  element.appendChild(m);
+  // Trigger
+  void element.getBBox();
+}
+
+function scheduleCleanup(ms = 2000) {
+  setTimeout(() => clearPlayArt(), ms);
+}
+
 // Check and announce the two-minute warning. According to the updated rules,
 // the 2:00 mark in the 2nd and 4th quarters triggers an automatic time out.
 // Any play that starts before the warning but would run past it stops with
@@ -785,6 +848,8 @@ let firstDownLineEl;
 let redZoneEl;
 // Chain marker element that indicates the first down target along the sideline.
 let chainMarkerEl;
+// SVG overlay for animated play art (offense circles, defense Xs, routes, ball)
+let playArtSvg;
 
 /**
  * Initialise the field graphic by creating vertical yard lines and the
@@ -889,6 +954,16 @@ function initField() {
   chainMarkerEl.style.display = 'none';
   chainMarkerEl.id = 'chain-marker';
   fieldDisplay.appendChild(chainMarkerEl);
+
+  // Create SVG overlay for play art animations
+  if (!playArtSvg) {
+    const NS = 'http://www.w3.org/2000/svg';
+    playArtSvg = document.createElementNS(NS, 'svg');
+    playArtSvg.classList.add('play-art');
+    playArtSvg.setAttribute('viewBox', '0 0 1000 500');
+    playArtSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    fieldDisplay.appendChild(playArtSvg);
+  }
 
   // Create a simple penalty decision modal attached to body
   if (!penaltyModal) {
@@ -1399,7 +1474,10 @@ function playCard(cardId, dropX, dropY) {
     return;
   }
   // Show the player's card and AI's card on the field for three seconds.
-  showCardOverlay(playerCard, aiCard, dropX, dropY);
+  showCardOverlay(playerCard, aiCard, dropX, dropY, () => {
+    // After overlay fades, ensure play art (ball path, players) remains briefly
+    // The actual animation is triggered within resolvePlay
+  });
   // Resolve the play between the player and AI cards. We no longer remove
   // cards from the hands; the player and AI always have access to their
   // full decks each play. After resolution, a new hand will be dealt.
@@ -1552,6 +1630,12 @@ function resolvePlay(playerCard, aiCard) {
     return;
   }
   const outcome = determineOutcome(offenseCard, defenseCard);
+  try {
+    // Attempt to render a brief play art animation based on card types
+    renderPlayArt(offenseCard, defenseCard, outcome);
+  } catch (e) {
+    // Non-fatal if play art fails
+  }
   if (outcome.category === 'loss' && /Sack/i.test(outcome.raw || '')) {
     vfxShake(fieldDisplay);
     vfxBanner('SACK!', '');
@@ -2766,6 +2850,97 @@ function showCardOverlay(playerCard, aiCard, x, y, done) {
     game.overlayActive = false;
     if (typeof done === 'function') done();
   }, 3000);
+}
+
+// Basic play art renderer: shows offense circles, defense Xs, and a simple route/ball motion.
+function renderPlayArt(offenseCard, defenseCard, outcome) {
+  if (!playArtSvg || !fieldDisplay) return;
+  clearPlayArt();
+  const rect = fieldDisplay.getBoundingClientRect();
+  const fieldW = rect.width;
+  const fieldH = rect.height;
+
+  // Compute LOS and first down x in SVG units
+  const losX = yardToSvgX(game.ballOn);
+  const firstDownAbs = game.possession === 'player' ? Math.min(100, game.ballOn + game.toGo) : Math.max(0, game.ballOn - game.toGo);
+  const firstX = yardToSvgX(firstDownAbs);
+
+  // Vertical lanes (offense bottom -> top, defense top -> bottom)
+  const lanes = [150, 220, 290, 360, 430];
+
+  // Place 5 offense players slightly below center (toward bottom)
+  const offenseY = 380;
+  const defenseY = 120;
+
+  // Draw players
+  for (let i = 0; i < 5; i++) {
+    const ox = losX - 80 + i * 40;
+    const dx = losX - 80 + i * 40;
+    playArtSvg.appendChild(drawOffenseCircle(ox, offenseY, 10));
+    playArtSvg.appendChild(drawDefenseX(dx, defenseY, 10));
+  }
+
+  // Ball start near center offense
+  const qbX = losX;
+  const qbY = offenseY;
+  const ball = drawBall(qbX, qbY, 6);
+  playArtSvg.appendChild(ball);
+
+  // Simple routes based on offenseCard.type
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function addPath(points) {
+    const path = drawRoute(points);
+    // Ensure path has id for motion path reference
+    path.id = `route-${Math.floor(Math.random() * 1e9)}`;
+    playArtSvg.appendChild(path);
+    return path;
+  }
+
+  if (offenseCard && offenseCard.type === 'run') {
+    // Run: route forward 8-12 yards based on outcome yards
+    const yards = Math.max(-5, Math.min(20, Number(outcome.yards || 0)));
+    const advance = (yards / 100) * 1000 * 0.9; // scale to SVG width but reduce slightly
+    const dir = game.possession === 'player' ? 1 : -1;
+    const endX = qbX + dir * advance;
+    const path = addPath([{ x: qbX, y: qbY }, { x: endX, y: qbY - 20 }]);
+    // Animate ball along path
+    const animate = document.createElementNS(NS, 'animateMotion');
+    animate.setAttribute('dur', '900ms');
+    animate.setAttribute('fill', 'freeze');
+    const mpath = document.createElementNS(NS, 'mpath');
+    mpath.setAttribute('href', `#${path.id}`);
+    animate.appendChild(mpath);
+    ball.appendChild(animate);
+  } else if (offenseCard && offenseCard.type === 'pass') {
+    // Pass: draw a curved route to first-down or completion depth
+    const yards = Math.max(-10, Math.min(40, Number(outcome.yards || 0)));
+    const targetAbs = game.possession === 'player' ? Math.min(100, game.ballOn + Math.max(5, yards)) : Math.max(0, game.ballOn - Math.max(5, yards));
+    const tx = yardToSvgX(targetAbs);
+    const ty = defenseY + 80; // mid-field catch height
+    const path = createSvgElement('path', { d: `M ${qbX} ${qbY} Q ${(qbX + tx) / 2} ${qbY - 120} ${tx} ${ty}`, class: 'playart-route' });
+    path.id = `route-${Math.floor(Math.random() * 1e9)}`;
+    playArtSvg.appendChild(path);
+    const animate = document.createElementNS(NS, 'animateMotion');
+    animate.setAttribute('dur', '1000ms');
+    animate.setAttribute('fill', 'freeze');
+    const mpath = document.createElementNS(NS, 'mpath');
+    mpath.setAttribute('href', `#${path.id}`);
+    animate.appendChild(mpath);
+    ball.appendChild(animate);
+  } else {
+    // Default: small motion and return
+    const path = addPath([{ x: qbX, y: qbY }, { x: qbX + 20, y: qbY - 10 }]);
+    const animate = document.createElementNS(NS, 'animateMotion');
+    animate.setAttribute('dur', '600ms');
+    animate.setAttribute('fill', 'freeze');
+    const mpath = document.createElementNS(NS, 'mpath');
+    mpath.setAttribute('href', `#${path.id}`);
+    animate.appendChild(mpath);
+    ball.appendChild(animate);
+  }
+
+  scheduleCleanup(1600);
 }
 
 function log(msg) {
