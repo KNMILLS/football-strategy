@@ -1679,6 +1679,7 @@ function resolvePlay(playerCard, aiCard) {
     if (GSAnimator) {
       const offensePlayId = mapCardIdToAnimId(offenseCard && offenseCard.id);
       const defenseName = defenseCard && (defenseCard.label || defenseCard.id || defenseCard.type);
+      try { log(`[anim] Play ${offensePlayId} vs ${defenseName} @${game.ballOn} yd, ${game.down}&${game.toGo}`); } catch {}
       GSAnimator.animatePlay({
         offensePlayId,
         defenseCard: defenseName,
@@ -1688,6 +1689,8 @@ function resolvePlay(playerCard, aiCard) {
         seed: Math.floor(Math.random() * 1e9),
         speed: 1
       });
+    } else {
+      try { log('[anim] Animator module not ready.'); } catch {}
     }
   } catch (e) {
     // Non-fatal if play art fails
@@ -3241,8 +3244,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       const mod = await import('./scripts/gs_animator.js');
       GSAnimator = mod;
     }
-    try { await GSAnimator.loadPlays('play_art_animations_autogen_min.json'); } catch {}
+    let __gsPlaysLoaded = 0;
+    try { __gsPlaysLoaded = await GSAnimator.loadPlays('play_art_animations_autogen_min.json'); } catch (e) { __gsPlaysLoaded = -1; }
     try { GSAnimator.initField(fieldDisplay, { showDebug: false }); } catch {}
+    try { log(`[anim] Ready ${__gsPlaysLoaded >= 0 ? `(${__gsPlaysLoaded} plays)` : '(plays load failed)'}.`); } catch {}
     // Wire animation events to log
     GSAnimator.on('snap', () => log('[anim] Snap.'));
     GSAnimator.on('handoff', () => log('[anim] Handoff.'));
@@ -3256,6 +3261,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!r) return;
       const y = Math.round(r.gainedYards || 0);
       log(`[anim] Result: ${y >= 0 ? 'Gain' : 'Loss'} of ${Math.abs(y)}.`);
+      try { updateHUD(); } catch {}
     });
     // Test hook
     window.animateTest = function(offensePlayId, defenseCard, ballOnYard, yardsToGo, down, seed) {
