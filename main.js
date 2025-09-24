@@ -722,19 +722,6 @@ const opponentSelect = document.getElementById('opponent-select');
 // which id is present. Without this, the New Game button may appear
 // unresponsive if the id in the markup does not match the script.
 const newGameButton = document.getElementById('new-game') || document.getElementById('newgame');
-const devModeCheckbox = document.getElementById('dev-mode-checkbox');
-const controlsNormal = document.getElementById('controls-normal');
-const controlsTest = document.getElementById('controls-test');
-const startTestBtn = document.getElementById('start-test-game');
-const runAutoBtn = document.getElementById('run-auto-game');
-const testPlayerDeck = document.getElementById('test-player-deck');
-const testAiDeck = document.getElementById('test-ai-deck');
-const testPossession = document.getElementById('test-possession');
-const testBallOn = document.getElementById('test-ballon');
-const testDown = document.getElementById('test-down');
-const testToGo = document.getElementById('test-togo');
-const testQuarter = document.getElementById('test-quarter');
-const testClock = document.getElementById('test-clock');
 // The play zone element has been removed from the UI. We still keep a
 // reference for legacy message display, but it may be null if the DOM
 // does not include it.
@@ -749,21 +736,6 @@ const btnKickFG = document.getElementById('kick-fg');
 let penaltyModal;
 let penaltyAcceptBtn;
 let penaltyDeclineBtn;
-
-// Coin toss / opening choice modal
-let tossModal;
-let tossReceiveBtn;
-let tossKickBtn;
-
-// Punt-in-end-zone choice modal
-let puntEZModal;
-let puntEZReturnBtn;
-let puntEZDownBtn;
-
-// Safety free-kick choice modal
-let safetyModal;
-let safetyKickoffBtn;
-let safetyFreePuntBtn;
 
 // Create an onside-kick toggle in the controls panel so the player can choose
 // to attempt an onside on their next kickoff without modifying the HTML file.
@@ -3152,3 +3124,179 @@ function vfxShake(element) {
   void element.offsetWidth;
   element.classList.add('shake');
 }
+
+// DEV MODE wiring and Theme/SFX managers
+const devCheckbox = document.getElementById('dev-mode-checkbox');
+const controlsNormal = document.getElementById('controls-normal');
+const controlsTest = document.getElementById('controls-test');
+const themeSelect = document.getElementById('theme-select');
+const sfxEnabledInput = document.getElementById('sfx-enabled');
+const sfxVolumeInput = document.getElementById('sfx-volume');
+
+const ThemeManager = (() => {
+  const STORAGE_KEY = 'gs_theme_v1';
+  function applyTheme(theme) {
+    const t = theme || 'arcade';
+    document.body.setAttribute('data-theme', t);
+  }
+  function setTheme(theme) {
+    applyTheme(theme);
+    try { localStorage.setItem(STORAGE_KEY, theme); } catch {}
+  }
+  function init() {
+    let t = 'arcade';
+    try { t = localStorage.getItem(STORAGE_KEY) || t; } catch {}
+    applyTheme(t);
+    if (themeSelect) themeSelect.value = t;
+  }
+  return { setTheme, init };
+})();
+
+const SFX = (() => {
+  let audioCtx;
+  let masterGain;
+  let enabled = true;
+  let volume = 0.6;
+  let theme = 'arcade';
+  function ensureContext() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = volume;
+      masterGain.connect(audioCtx.destination);
+    }
+  }
+  function setEnabled(v) { enabled = !!v; }
+  function setVolume(v) { volume = v; if (masterGain) masterGain.gain.value = volume; }
+  function setThemeName(t) { theme = t; }
+  function beep(freq, dur, type) {
+    if (!enabled) return;
+    ensureContext();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+    gain.gain.value = 0.0001;
+    osc.connect(gain).connect(masterGain);
+    const now = audioCtx.currentTime;
+    gain.gain.exponentialRampToValueAtTime(volume, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    osc.start(now);
+    osc.stop(now + dur + 0.02);
+  }
+  function noiseCrowd(dur) {
+    if (!enabled) return;
+    ensureContext();
+    const bufferSize = 2 * audioCtx.sampleRate * dur;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = theme === 'modern' ? 1200 : 800;
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0.0001;
+    noise.connect(filter).connect(gain).connect(masterGain);
+    const now = audioCtx.currentTime;
+    gain.gain.exponentialRampToValueAtTime(volume * 0.7, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    noise.start(now);
+    noise.stop(now + dur + 0.05);
+  }
+  // Public event hooks
+  function onTouchdown() {
+    if (theme === 'arcade' || theme === 'retro') {
+      beep(440, 0.1, 'square'); beep(660, 0.12, 'square'); beep(880, 0.14, 'square');
+    } else if (theme === 'board') {
+      beep(523.25, 0.12, 'sine'); beep(659.25, 0.12, 'sine');
+    } else if (theme === 'vintage') {
+      beep(392, 0.12, 'triangle'); beep(523.25, 0.12, 'triangle');
+    } else if (theme === 'modern' || theme === 'minimalist') {
+      beep(880, 0.08, 'sawtooth');
+    }
+    noiseCrowd(0.8);
+  }
+  function onFieldGoal(good) {
+    if (good) { beep(784, 0.08, 'square'); noiseCrowd(0.5); } else { beep(200, 0.2, 'sawtooth'); }
+  }
+  function onPAT(good) { onFieldGoal(good); }
+  function onSack() { beep(150, 0.12, 'sawtooth'); }
+  function onTurnover() { beep(180, 0.18, 'triangle'); }
+  function onFirstDown() { beep(660, 0.06, 'square'); }
+  return { setEnabled, setVolume, setThemeName, onTouchdown, onFieldGoal, onPAT, onSack, onTurnover, onFirstDown };
+})();
+
+// Wire DEV MODE toggle and controls
+if (devCheckbox) {
+  const savedDev = (() => { try { return localStorage.getItem('gs_dev_mode') === '1'; } catch { return false; } })();
+  devCheckbox.checked = savedDev;
+  const applyDev = (on) => {
+    if (controlsNormal) controlsNormal.classList.toggle('hidden', !!on);
+    if (controlsTest) controlsTest.classList.toggle('hidden', !on);
+    try { localStorage.setItem('gs_dev_mode', on ? '1' : '0'); } catch {}
+  };
+  applyDev(savedDev);
+  devCheckbox.addEventListener('change', () => applyDev(!!devCheckbox.checked));
+}
+
+if (themeSelect) {
+  themeSelect.addEventListener('change', () => {
+    ThemeManager.setTheme(themeSelect.value);
+    SFX.setThemeName(themeSelect.value);
+  });
+}
+if (sfxEnabledInput) {
+  sfxEnabledInput.addEventListener('change', () => SFX.setEnabled(!!sfxEnabledInput.checked));
+}
+if (sfxVolumeInput) {
+  sfxVolumeInput.addEventListener('input', () => SFX.setVolume(parseFloat(sfxVolumeInput.value || '0.6')));
+}
+
+// Init theme from storage and sync SFX theme
+ThemeManager.init();
+SFX.setThemeName((() => { try { return localStorage.getItem('gs_theme_v1') || 'arcade'; } catch { return 'arcade'; } })());
+
+// Hook SFX into existing VFX triggers
+(function hookSFX() {
+  // Patch touchdown handling by wrapping log triggers via monkey hooks where we already call VFX
+  const _attemptFieldGoal = attemptFieldGoal;
+  attemptFieldGoal = function() {
+    const beforePlayer = game.score.player;
+    const beforeAi = game.score.ai;
+    _attemptFieldGoal.apply(this, arguments);
+    const afterPlayer = game.score.player;
+    const afterAi = game.score.ai;
+    if (afterPlayer !== beforePlayer || afterAi !== beforeAi) {
+      SFX.onFieldGoal(true);
+    } else {
+      SFX.onFieldGoal(false);
+    }
+  };
+  const _attemptExtraPoint = attemptExtraPoint;
+  attemptExtraPoint = function() {
+    const beforePlayer = game.score.player;
+    const beforeAi = game.score.ai;
+    _attemptExtraPoint.apply(this, arguments);
+    const afterPlayer = game.score.player;
+    const afterAi = game.score.ai;
+    SFX.onPAT(afterPlayer !== beforePlayer || afterAi !== beforeAi);
+  };
+})();
+
+// Fire SFX inside resolvePlay flow: find our earlier insert points
+const _resolvePlay = resolvePlay;
+resolvePlay = function(playerCard, aiCard) {
+  // We rely on existing VFX hooks already added; call and additionally watch score change & categories
+  const before = { p: game.score.player, a: game.score.ai };
+  _resolvePlay.call(this, playerCard, aiCard);
+  const after = { p: game.score.player, a: game.score.ai };
+  if (after.p > before.p || after.a > before.a) {
+    // Score was added; touchdown detected somewhere in flow
+    SFX.onTouchdown();
+  }
+};
+
+// Expose quick test hooks in dev
+window.__GS_SET_THEME = (t) => { ThemeManager.setTheme(t); SFX.setThemeName(t); };

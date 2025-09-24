@@ -715,3 +715,70 @@ footer#footer {
   40% { transform: scale(1.08); text-shadow: 0 0 16px rgba(255,255,255,0.6); }
   100% { transform: scale(1); text-shadow: 0 0 0 rgba(255,255,255,0); }
 }
+
+/* Theme classes applied to <body data-theme="..."> */
+body[data-theme="arcade"] {
+}
+
+body[data-theme="minimalist"] {
+  --accent: #ffffff;
+  --bg: #0b0b0b;
+  --panel: #141414;
+  --line-blue: rgba(220, 220, 220, 0.9);
+  --line-yellow: rgba(220, 220, 0, 0.9);
+  background: var(--bg);
+}
+body[data-theme="minimalist"] header#scoreboard { background: #111; color: #fff; border-bottom-color: #222; box-shadow: none; }
+body[data-theme="minimalist"] .hud span { background: #1a1a1a; border-color: #222; box-shadow: none; }
+body[data-theme="minimalist"] .sidebar { background: #121212; border-right-color: #1f1f1f; }
+body[data-theme="minimalist"] .log { background: #121212; border-color: #1f1f1f; color: #e5e5e5; text-shadow: none; }
+body[data-theme="minimalist"] .btn { background: #1f1f1f; color: #fafafa; }
+body[data-theme="minimalist"] .field-display { border-color: #2a2a2a; box-shadow: none; }
+body[data-theme="minimalist"] .field-display .scrimmage-line { background: var(--line-blue); box-shadow: none; }
+body[data-theme="minimalist"] .field-display .firstdown-line { background: var(--line-yellow); box-shadow: none; }
+
+body[data-theme="retro"] {
+  /* CRT scanline effect + magenta/cyan palette */
+  background: radial-gradient(1000px 500px at 50% -10%, #1b0034 0%, #0b0018 60%, #05000c 100%);
+}
+body[data-theme="retro"] header#scoreboard { background: linear-gradient(180deg,#2a004f,#1a0031); color: #ff66ff; border-bottom-color: #5a00a3; }
+body[data-theme="retro"] .hud span { background: rgba(26,0,49,0.6); border-color: rgba(255,102,255,0.3); }
+body[data-theme="retro"] .field-display { border-color: #a300cf; box-shadow: 0 0 32px rgba(163,0,207,0.2), inset 0 0 42px rgba(0,255,255,0.06); }
+body[data-theme="retro"] .field-display .scrimmage-line { background: #00ffff; box-shadow: 0 0 10px rgba(0,255,255,0.7); }
+body[data-theme="retro"] .field-display .firstdown-line { background: #ff66ff; box-shadow: 0 0 10px rgba(255,102,255,0.6); }
+
+body[data-theme="board"] {
+  /* Classy board game: parchment + wood */
+  background: #e6dfcf url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="4" height="4" fill="%23e6dfcf"/><circle cx="2" cy="2" r="0.5" fill="%23d8d0bd"/></svg>') repeat;
+  color: #2e2214;
+}
+body[data-theme="board"] header#scoreboard { background: #6b4f2a; color: #f5e8c7; border-bottom-color: #5a4324; box-shadow: inset 0 -6px 0 rgba(0,0,0,0.1); }
+body[data-theme="board"] .sidebar { background: #f3ebdb; border-right-color: #d9cfb9; }
+body[data-theme="board"] .log { background: #f6f0e2; border-color: #d9cfb9; color: #3a2d1b; text-shadow: none; }
+body[data-theme="board"] .btn { background: #7c5a30; color: #f5e8c7; }
+body[data-theme="board"] .field-display { border-color: #7c5a30; box-shadow: none; background-image: repeating-linear-gradient(to right, #7f9d77 0%, #7f9d77 5%, #6a8a64 5%, #6a8a64 10%); background-color: #6a8a64; }
+body[data-theme="board"] .field-display .scrimmage-line { background: #caa15b; }
+body[data-theme="board"] .field-display .firstdown-line { background: #a77a2d; }
+
+body[data-theme="vintage"] {
+  /* 70s/80s broadcast */
+  background: linear-gradient(180deg, #0a0a0a, #1b1b1b);
+  color: #f0f0f0;
+}
+body[data-theme="vintage"] header#scoreboard { background: #2d2d2d; color: #ffe680; border-bottom-color: #3a3a3a; }
+body[data-theme="vintage"] .hud span { background: #333; border-color: #444; }
+body[data-theme="vintage"] .field-display { border-color: #3a3a3a; box-shadow: inset 0 0 24px rgba(255,230,128,0.08); }
+body[data-theme="vintage"] .field-display .scrimmage-line { background: #2e86c1; }
+body[data-theme="vintage"] .field-display .firstdown-line { background: #f1c40f; }
+
+body[data-theme="modern"] {
+  /* Clean modern NFL broadcast */
+  background: linear-gradient(180deg, #0b1a2e, #081422);
+}
+body[data-theme="modern"] header#scoreboard { background: #0b1a2e; color: #e8f1ff; border-bottom-color: #103154; box-shadow: 0 6px 22px rgba(0,0,0,0.35); }
+body[data-theme="modern"] .hud span { background: #0f2744; border-color: #173a61; }
+body[data-theme="modern"] .sidebar { background: #0f2744; }
+body[data-theme="modern"] .log { background: #0e2340; border-color: #173a61; color: #d7e7ff; }
+body[data-theme="modern"] .field-display { border-color: #173a61; box-shadow: inset 0 0 36px rgba(0,0,0,0.25); }
+body[data-theme="modern"] .field-display .scrimmage-line { background: rgba(0, 160, 255, 0.9); box-shadow: none; }
+body[data-theme="modern"] .field-display .firstdown-line { background: rgba(255, 220, 0, 0.9); box-shadow: none; }

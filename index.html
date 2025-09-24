@@ -111,6 +111,26 @@
               <label for="test-clock">Clock (mm:ss):</label>
               <input id="test-clock" type="text" value="15:00"/>
             </div>
+            <hr/>
+            <div class="control-row">
+              <label for="theme-select">Visual Theme:</label>
+              <select id="theme-select">
+                <option value="arcade">Arcade</option>
+                <option value="minimalist">Minimalist</option>
+                <option value="retro">Retro Arcade</option>
+                <option value="board">Classy Board Game</option>
+                <option value="vintage">Vintage NFL</option>
+                <option value="modern">Modern NFL</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="sfx-enabled">SFX:</label>
+              <input id="sfx-enabled" type="checkbox" checked />
+            </div>
+            <div class="control-row">
+              <label for="sfx-volume">Volume:</label>
+              <input id="sfx-volume" type="range" min="0" max="1" step="0.01" value="0.6" />
+            </div>
             <button id="start-test-game" class="btn">Start Test Game</button>
             <button id="run-auto-game" class="btn">Run Full Auto Game</button>
           </div>
