@@ -665,78 +665,18 @@ function yardToSvgX(absYard) {
 }
 
 // Utilities to manage play art SVG
-function clearPlayArt() {
-  if (playArtSvg) playArtSvg.innerHTML = '';
-}
-
-function createSvgElement(tag, attrs = {}) {
-  const NS = 'http://www.w3.org/2000/svg';
-  const el = document.createElementNS(NS, tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    el.setAttribute(k, String(v));
-  }
-  return el;
-}
-
-function drawOffenseCircle(x, y, r = 10) {
-  return createSvgElement('circle', { cx: x, cy: y, r, class: 'playart-offense' });
-}
-
-function drawDefenseX(x, y, size = 14) {
-  const g = createSvgElement('g', { class: 'playart-defense' });
-  const l1 = createSvgElement('line', { x1: x - size, y1: y - size, x2: x + size, y2: y + size });
-  const l2 = createSvgElement('line', { x1: x - size, y1: y + size, x2: x + size, y2: y - size });
-  g.appendChild(l1);
-  g.appendChild(l2);
-  return g;
-}
-
-function drawRoute(points) {
-  const d = points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ');
-  return createSvgElement('path', { d, class: 'playart-route' });
-}
-
-function drawBall(x, y, r = 6) {
-  return createSvgElement('circle', { cx: x, cy: y, r, class: 'playart-ball' });
-}
-
-function animateAlongPath(element, path, durationMs) {
-  const m = createSvgElement('animateMotion', { dur: `${durationMs}ms`, fill: 'freeze', rotate: 'auto' });
-  const mp = createSvgElement('mpath', { href: `#${path.id}` });
-  m.appendChild(mp);
-  element.appendChild(m);
-  // Trigger
-  void element.getBBox();
-}
-
-function scheduleCleanup(ms = 2000) {
-  setTimeout(() => clearPlayArt(), ms);
-}
+// Removed play-art SVG helpers and cleanup
 
 // ---------------- Play Art JSON Loader ----------------
-let PLAY_ART_DEFS = {};
+// Optional external tables (declared to avoid ReferenceError when undefined)
+let PLACE_KICK_TABLE_DATA;
+let KICKOFF_NORMAL_DATA;
+let KICKOFF_ONSIDE_DATA;
+let LONG_GAIN_DATA;
+let TIME_KEEPING_DATA;
+// Removed play-art dataset/index
 
-async function loadPlayArtData() {
-  // If running from file:// skip fetch to avoid noisy CORS errors and use fallback.
-  if (typeof location !== 'undefined' && location.protocol === 'file:') {
-    try { PLAY_ART_DEFS['O_PRO_POWER_UP_MIDDLE'] = buildPowerUpMiddleFallback(); } catch {}
-    return;
-  }
-  try {
-    const res = await fetch('data/plays/O_PRO_POWER_UP_MIDDLE.json');
-    if (res.ok) {
-      const obj = await res.json();
-      PLAY_ART_DEFS[obj.id] = obj;
-      return;
-    }
-  } catch (e) {
-    // ignore network errors in offline contexts
-  }
-  // Inline fallback if fetch failed (e.g., file://)
-  try {
-    PLAY_ART_DEFS['O_PRO_POWER_UP_MIDDLE'] = buildPowerUpMiddleFallback();
-  } catch {}
-}
+// Removed play-art loaders
 
 function buildPowerUpMiddleFallback() {
   return {
@@ -744,9 +684,17 @@ function buildPowerUpMiddleFallback() {
     play_art: {
       animation_blueprint: {
         entities: [
-          { id: 'QB', role: 'quarterback', start: { x: 0.50, y: -0.03 } },
-          { id: 'FB', role: 'fullback', start: { x: 0.50, y: -0.07 } },
-          { id: 'HB', role: 'halfback', start: { x: 0.50, y: -0.12 } }
+          { id: 'LT',  role: 'left_tackle',       start: { x: 0.35, y:  0.00 } },
+          { id: 'LG',  role: 'left_guard',        start: { x: 0.43, y:  0.00 } },
+          { id: 'C',   role: 'center',            start: { x: 0.50, y:  0.00 } },
+          { id: 'RG',  role: 'right_guard',       start: { x: 0.57, y:  0.00 } },
+          { id: 'RT',  role: 'right_tackle',      start: { x: 0.65, y:  0.00 } },
+          { id: 'TE',  role: 'tight_end_right',   start: { x: 0.73, y:  0.00 } },
+          { id: 'WRL', role: 'wide_receiver_left',  start: { x: 0.20, y:  0.00 } },
+          { id: 'WRR', role: 'wide_receiver_right', start: { x: 0.85, y:  0.00 } },
+          { id: 'QB',  role: 'quarterback',       start: { x: 0.50, y: -0.03 } },
+          { id: 'FB',  role: 'fullback',          start: { x: 0.50, y: -0.07 } },
+          { id: 'HB',  role: 'halfback',          start: { x: 0.50, y: -0.12 } }
         ],
         timeline: [
           { t: 0.28, actions: [ { type: 'handoff', from: 'QB', to: 'HB', handoff_point: { x: 0.50, y: -0.01 } } ] },
@@ -760,14 +708,7 @@ function buildPowerUpMiddleFallback() {
   };
 }
 
-function getPlayArtForCard(card) {
-  if (!card) return null;
-  // Map our card ids to play art ids
-  if (card.label === 'Power Up Middle' && card.type === 'run') {
-    return PLAY_ART_DEFS['O_PRO_POWER_UP_MIDDLE'] || null;
-  }
-  return null;
-}
+// Removed play-art mapping helpers
 
 // Minimal no-op data loader to satisfy startup call. Charts are embedded;
 // external JSONs are optional and safely ignored if unavailable.
@@ -960,8 +901,8 @@ let firstDownLineEl;
 let redZoneEl;
 // Chain marker element that indicates the first down target along the sideline.
 let chainMarkerEl;
-// SVG overlay for animated play art (offense circles, defense Xs, routes, ball)
-let playArtSvg;
+// SVG overlay for animated play art (legacy was removed). New animator module will attach its own SVG.
+let GSAnimator = null;
 
 /**
  * Initialise the field graphic by creating vertical yard lines and the
@@ -1067,15 +1008,7 @@ function initField() {
   chainMarkerEl.id = 'chain-marker';
   fieldDisplay.appendChild(chainMarkerEl);
 
-  // Create SVG overlay for play art animations
-  if (!playArtSvg) {
-    const NS = 'http://www.w3.org/2000/svg';
-    playArtSvg = document.createElementNS(NS, 'svg');
-    playArtSvg.classList.add('play-art');
-    playArtSvg.setAttribute('viewBox', '0 0 1000 500');
-    playArtSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-    fieldDisplay.appendChild(playArtSvg);
-  }
+  // Removed play-art overlay creation
 
   // Create a simple penalty decision modal attached to body
   if (!penaltyModal) {
@@ -1742,8 +1675,20 @@ function resolvePlay(playerCard, aiCard) {
   }
   const outcome = determineOutcome(offenseCard, defenseCard);
   try {
-    // Attempt to render a brief play art animation based on card types
-    renderPlayArt(offenseCard, defenseCard, outcome);
+    // Start visual animation (non-blocking)
+    if (GSAnimator) {
+      const offensePlayId = mapCardIdToAnimId(offenseCard && offenseCard.id);
+      const defenseName = defenseCard && (defenseCard.label || defenseCard.id || defenseCard.type);
+      GSAnimator.animatePlay({
+        offensePlayId,
+        defenseCard: defenseName,
+        ballOnYard: game.ballOn,
+        yardsToGo: game.toGo,
+        down: game.down,
+        seed: Math.floor(Math.random() * 1e9),
+        speed: 1
+      });
+    }
   } catch (e) {
     // Non-fatal if play art fails
   }
@@ -2983,22 +2928,17 @@ function showCardOverlay(playerCard, aiCard, x, y, done) {
 }
 
 // Basic play art renderer: shows offense circles, defense Xs, and a simple route/ball motion.
-function renderPlayArt(offenseCard, defenseCard, outcome) {
-  if (!playArtSvg || !fieldDisplay) return;
-  let def = getPlayArtForCard(offenseCard);
-  if (!def && typeof location !== 'undefined' && location.protocol === 'file:') {
-    try { def = buildPowerUpMiddleFallback(); } catch {}
-  }
-  if (!def) return; // Only run JSON-driven animations
-  try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'choose_def', id: def && def.id, label: offenseCard && offenseCard.label, from: (typeof location!=='undefined'?location.protocol:''), fallback: !getPlayArtForCard(offenseCard) }); } catch {}
-  // Start immediately; overlay is skipped when JSON is present.
-  renderJsonPlayArt(def, outcome, 0);
+// removed
+
+// Render from JSON definition (offense only). Direction: player drives L→R, AI R→L.
+function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
+  return; // animations removed
 }
 
 // Render from JSON definition (offense only). Direction: player drives L→R, AI R→L.
-function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
+function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
   if (!def || !def.play_art || !def.play_art.animation_blueprint) return;
-  if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'start', id: def && def.id, play: (def && (def.play_name||def.label)) || 'unknown', startDelayMs, outcome });
+  if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'start', id: def && def.id, play: (def && (def.play_name||def.label)) || 'unknown', startDelayMs, outcome, defenseId: defDefense && defDefense.id });
   clearPlayArt();
   const bp = def.play_art.animation_blueprint;
   const entities = bp.entities || [];
@@ -3009,32 +2949,91 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
   // Helpers to convert normalized blueprint coords to SVG coords
   function normToSvg(point) {
     // Map blueprint downfield (y) to field X (yards), and blueprint lateral (x) to SVG Y (screen rows)
-    const yardsPerUnitDownfield = 100; // 0.10 -> 10 yards
+    // Use a tighter downfield scaling so short steps don't look like giant leaps.
+    const yardsPerUnitDownfield = 40; // 0.10 -> 4 yards
     const absX = originAbs + dir * (point.y * yardsPerUnitDownfield);
     const svgX = yardToSvgX(Math.max(0, Math.min(100, absX)));
     // Vertical stacking: map x in [0,1] to rows around center
-    const baseY = 250; // centerline
-    const lateralScalePx = 220; // spread formation vertically
+    const baseY = 300; // tilt offense a bit lower on screen
+    const lateralScalePx = 260; // spread formation vertically a bit more
     const svgY = baseY + (point.x - 0.5) * lateralScalePx;
     return { x: svgX, y: svgY };
   }
 
-  // Draw all offense players at start positions
-  const offenseRoles = new Set(['left_tackle','left_guard','center','right_guard','right_tackle','tight_end_right','wide_receiver_left','wide_receiver_right','quarterback','fullback','halfback']);
+  // Draw all offense and defense players at start positions
+  const offenseRoles = new Set(['left_tackle','left_guard','center','right_guard','right_tackle','tight_end_right','tight_end_left','wide_receiver_left','wide_receiver_right','slot_left','slot_right','quarterback','fullback','halfback']);
+  const defenseRoles = new Set(['defensive_tackle','defensive_end','nose_tackle','linebacker','mike','sam','will','cornerback_left','cornerback_right','nickel','safety_free','safety_strong']);
   const nodes = {};
-  for (const ent of entities) {
-    if (!offenseRoles.has(ent.role)) continue;
+  function placeEntity(ent, isDefenseGroup) {
+    const isOffense = offenseRoles.has(ent.role);
+    const isDefense = defenseRoles.has(ent.role) || String(ent.role||'').startsWith('defense_') || String(ent.role||'').startsWith('cb_') || String(ent.role||'').startsWith('safety_') || isDefenseGroup;
     const p = normToSvg(ent.start);
     let node;
-    if (ent.role === 'quarterback' || ent.role === 'fullback' || ent.role === 'halfback' || ent.role.startsWith('wide_') || ent.role.startsWith('tight_') || ent.role.includes('guard') || ent.role.includes('tackle') || ent.role === 'center') {
-      node = drawOffenseCircle(p.x, p.y, ent.role === 'quarterback' ? 10 : 9);
-    }
+    if (isOffense) node = drawOffenseCircle(p.x, p.y, ent.role === 'quarterback' ? 10 : 9);
+    if (!node && isDefense) node = drawDefenseX(p.x, p.y, 10);
     if (node) {
       node.setAttribute('data-id', ent.id);
+      if (ent.role) node.setAttribute('data-role', ent.role);
       nodes[ent.id] = node;
       playArtSvg.appendChild(node);
       try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'node', id: ent.id, role: ent.role, startNorm: ent.start, startSvg: p }); } catch {}
     }
+  }
+  let qbNode = null;
+  for (const ent of entities) {
+    placeEntity(ent, false);
+    if (ent.id === 'QB' && nodes['QB']) qbNode = nodes['QB'];
+  }
+  // Optionally place defense from separate defense definition
+  if (defDefense && defDefense.play_art && defDefense.play_art.animation_blueprint) {
+    const defEntities = defDefense.play_art.animation_blueprint.entities || [];
+    for (const ent of defEntities) placeEntity(ent, true);
+    // Simple defense heuristic motion based on defense label
+    try {
+      const label = (defDefense.label || '').toLowerCase();
+      const moveDefs = [];
+      const pushYards = (labs) => {
+        const delta = (labs.includes('blitz')) ? 5 : (labs.includes('goal line') || labs.includes('short yard')) ? 2 : 0;
+        return delta;
+      };
+      const backYards = (labs) => {
+        const delta = (labs.includes('prevent') || labs.includes('passing')) ? 3 : 0;
+        return delta;
+      };
+      const rush = pushYards(label);
+      const back = backYards(label);
+      if (rush > 0 || back > 0) {
+        const NS = 'http://www.w3.org/2000/svg';
+        for (const [id, node] of Object.entries(nodes)) {
+          const role = (node.getAttribute && node.getAttribute('data-role')) || '';
+          const isDB = /corner|nickel|safety/i.test(role);
+          const isFront = /defensive_|tackle|end|nose|linebacker|mike|sam|will/i.test(role);
+          let yards = 0;
+          if (back > 0 && isDB) yards = back;
+          if (rush > 0 && isFront) yards = rush;
+          if (!yards) continue;
+          // Build a tiny path along field X
+          const bbox = node.getBBox();
+          const currX = bbox.x + bbox.width / 2;
+          const currY = bbox.y + bbox.height / 2;
+          const deltaAbs = (-dir) * yards; // DBs backpedal away from LOS; rushers push toward LOS
+          const endAbs = originAbs + deltaAbs;
+          const endX = yardToSvgX(Math.max(0, Math.min(100, endAbs)));
+          const path = createSvgElement('path', { d: `M ${currX} ${currY} L ${endX} ${currY}`, class: 'playart-route' });
+          const pathId = `def-${Math.floor(Math.random()*1e9)}`;
+          path.id = pathId;
+          playArtSvg.appendChild(path);
+          const anim = document.createElementNS(NS, 'animateMotion');
+          anim.setAttribute('dur', '400ms');
+          anim.setAttribute('fill', 'freeze');
+          const mp = document.createElementNS(NS, 'mpath');
+          try { mp.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${pathId}`); } catch {}
+          try { mp.setAttribute('href', `#${pathId}`); } catch {}
+          anim.appendChild(mp);
+          node.appendChild(anim);
+        }
+      }
+    } catch {}
   }
 
   // Ball at QB initially
@@ -3066,7 +3065,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
         playArtSvg.appendChild(fbPathEl);
         try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'path', actor: 'FB', id: fbPathEl.id, d: fbPathEl.getAttribute('d'), points: act.path }); } catch {}
       }
-      if ((act.type === 'follow' || act.type === 'handoff') && act.actor === 'HB' && Array.isArray(act.path)) {
+      if ((act.type === 'follow' || act.type === 'handoff' || act.type === 'run') && act.actor === 'HB' && Array.isArray(act.path)) {
         // If we already have a handoff point, ensure HB path starts there to avoid a jump
         let hbPoints = act.path.slice();
         if (lastHandoffSvg) {
@@ -3076,6 +3075,13 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
         hbPathEl.id = `hb-${Math.floor(Math.random()*1e9)}`;
         playArtSvg.appendChild(hbPathEl);
         try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'path', actor: 'HB', id: hbPathEl.id, d: hbPathEl.getAttribute('d'), points: act.path }); } catch {}
+      }
+      // Generic route rendering for receivers/DBs if present: route_points on action
+      if (Array.isArray(act.route) && act.actor) {
+        const routePath = pathFromNormPoints(act.route);
+        routePath.id = `${act.actor.toLowerCase()}-route-${Math.floor(Math.random()*1e9)}`;
+        playArtSvg.appendChild(routePath);
+        try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'route', actor: act.actor, id: routePath.id, d: routePath.getAttribute('d') }); } catch {}
       }
       if (act.type === 'handoff' && act.from === 'QB' && act.to === 'HB' && act.handoff_point) {
         // Move ball from QB to handoff point then along HB path
@@ -3109,6 +3115,45 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
           ball.appendChild(anim2);
           try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'anim_ball_follow_hb', beginSec: begin, durMs: 800, pathId: hbPathEl.id }); } catch {}
         }
+      }
+      // QB drop steps -> short backward path if dataset calls drop
+      if (act.type === 'drop' && act.actor === 'QB') {
+        const qbStart = qb ? normToSvg(qb.start) : { x: yardToSvgX(originAbs), y: 300 };
+        const dropDepthYards = 5; // 5-yard drop
+        const endAbs = originAbs - dropDepthYards * (game.possession === 'player' ? 1 : -1);
+        const qbEnd = { x: yardToSvgX(Math.max(0, Math.min(100, endAbs))), y: qbStart.y };
+        const qbPath = createSvgElement('path', { d: `M ${qbStart.x} ${qbStart.y} L ${qbEnd.x} ${qbEnd.y}`, class: 'playart-route' });
+        qbPath.id = `qb-route-${Math.floor(Math.random()*1e9)}`;
+        playArtSvg.appendChild(qbPath);
+        if (qbNode) {
+          const anim = document.createElementNS(NS, 'animateMotion');
+          anim.setAttribute('dur', '300ms');
+          anim.setAttribute('fill', 'freeze');
+          const mp = document.createElementNS(NS, 'mpath');
+          try { mp.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${qbPath.id}`); } catch {}
+          try { mp.setAttribute('href', `#${qbPath.id}`); } catch {}
+          anim.appendChild(mp);
+          qbNode.appendChild(anim);
+        }
+        try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'qb_drop', pathId: qbPath.id }); } catch {}
+      }
+      // Throw: animate ball along an arc to target_point if present
+      if (act.type === 'throw' && act.from === 'QB' && act.target_point) {
+        const qbs = qb ? normToSvg(qb.start) : { x: yardToSvgX(originAbs), y: 300 };
+        const tgt = normToSvg(act.target_point);
+        const arc = createSvgElement('path', { d: `M ${qbs.x} ${qbs.y} Q ${(qbs.x + tgt.x) / 2} ${qbs.y - 120} ${tgt.x} ${tgt.y}`, class: 'playart-route' });
+        arc.id = `ball-arc-${Math.floor(Math.random()*1e9)}`;
+        playArtSvg.appendChild(arc);
+        const anim = document.createElementNS(NS, 'animateMotion');
+        anim.setAttribute('begin', `${(startDelayMs + 350) / 1000}s`);
+        anim.setAttribute('dur', '500ms');
+        anim.setAttribute('fill', 'freeze');
+        const mp = document.createElementNS(NS, 'mpath');
+        try { mp.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${arc.id}`); } catch {}
+        try { mp.setAttribute('href', `#${arc.id}`); } catch {}
+        anim.appendChild(mp);
+        ball.appendChild(anim);
+        try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'throw', arcId: arc.id, beginMs: startDelayMs + 350 }); } catch {}
       }
     }
   }
@@ -3171,6 +3216,15 @@ function logClear() {
   logElement.textContent = '';
 }
 
+function mapCardIdToAnimId(cardId) {
+  if (!cardId) return '';
+  // Convert camel segments to underscores, then uppercase
+  return String(cardId)
+    .replace(/\s+/g, '_')
+    .replace(/([a-z])([A-Z])/g, '$1_$2')
+    .toUpperCase();
+}
+
 // Initialise UI on first load
 document.addEventListener('DOMContentLoaded', async () => {
   // Build the field graphic once the DOM is ready.
@@ -3178,6 +3232,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load JSON data tables (non-fatal if missing)
   await loadDataTables();
   await loadPlayArtData();
+  await loadPlayArtDataset();
+  // Load animator module and animations data
+  try {
+    const mod = await import('./scripts/gs_animator.js');
+    GSAnimator = mod;
+    try { await GSAnimator.loadPlays('play_art_animations_autogen_min.json'); } catch {}
+    try { GSAnimator.initField(fieldDisplay, { showDebug: false }); } catch {}
+    // Wire animation events to log
+    GSAnimator.on('snap', () => log('[anim] Snap.'));
+    GSAnimator.on('handoff', () => log('[anim] Handoff.'));
+    GSAnimator.on('throw', () => log('[anim] Throw.'));
+    GSAnimator.on('catch', () => log('[anim] Catch.'));
+    GSAnimator.on('drop', () => log('[anim] Drop.'));
+    GSAnimator.on('intercept', () => log('[anim] Interception!'));
+    GSAnimator.on('tackle', () => log('[anim] Tackle.'));
+    GSAnimator.on('whistle', () => log('[anim] Whistle.'));
+    GSAnimator.on('result', (r) => {
+      if (!r) return;
+      const y = Math.round(r.gainedYards || 0);
+      log(`[anim] Result: ${y >= 0 ? 'Gain' : 'Loss'} of ${Math.abs(y)}.`);
+    });
+    // Test hook
+    window.animateTest = function(offensePlayId, defenseCard, ballOnYard, yardsToGo, down, seed) {
+      if (!GSAnimator) return;
+      return GSAnimator.animatePlay({ offensePlayId, defenseCard, ballOnYard, yardsToGo, down, seed });
+    };
+  } catch (e) {
+    try { console.warn('Animator module failed to load:', e); } catch {}
+  }
   // Normalise initial scoreboard labels to HOME/AWAY to match HUD updates.
   if (scoreDisplay) scoreDisplay.textContent = 'HOME 0 — AWAY 0';
   if (hudPossession) hudPossession.textContent = 'HOME';
@@ -3257,6 +3340,56 @@ function simulateTick() {
           resolvePlay(playerCard, aiCard);
           return;
         }
+      }
+      // Fallback run path if no HB path defined and we have outcome yards
+      if (!hbPathEl && (act.type === 'handoff' || act.type === 'run') && outcome && typeof outcome.yards === 'number') {
+        const start = lastHandoffSvg || (hb ? normToSvg(hb.start) : { x: yardToSvgX(originAbs), y: 300 });
+        const endAbs = originAbs + dir * outcome.yards;
+        const end = { x: yardToSvgX(Math.max(0, Math.min(100, endAbs))), y: start.y };
+        const path = createSvgElement('path', { d: `M ${start.x} ${start.y} L ${end.x} ${end.y}`, class: 'playart-route' });
+        path.id = `hb-fallback-${Math.floor(Math.random()*1e9)}`;
+        playArtSvg.appendChild(path);
+        hbPathEl = path;
+        try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'path_fallback_hb', id: path.id, d: path.getAttribute('d'), yards: outcome.yards }); } catch {}
+      }
+      // QB drop steps -> short backward path if dataset calls drop
+      if (act.type === 'drop' && act.actor === 'QB') {
+        const qbStart = qb ? normToSvg(qb.start) : { x: yardToSvgX(originAbs), y: 300 };
+        const dropDepthYards = 5; // 5-yard drop
+        const endAbs = originAbs - dropDepthYards * (game.possession === 'player' ? 1 : -1);
+        const qbEnd = { x: yardToSvgX(Math.max(0, Math.min(100, endAbs))), y: qbStart.y };
+        const qbPath = createSvgElement('path', { d: `M ${qbStart.x} ${qbStart.y} L ${qbEnd.x} ${qbEnd.y}`, class: 'playart-route' });
+        qbPath.id = `qb-route-${Math.floor(Math.random()*1e9)}`;
+        playArtSvg.appendChild(qbPath);
+        if (qbNode) {
+          const anim = document.createElementNS(NS, 'animateMotion');
+          anim.setAttribute('dur', '300ms');
+          anim.setAttribute('fill', 'freeze');
+          const mp = document.createElementNS(NS, 'mpath');
+          try { mp.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${qbPath.id}`); } catch {}
+          try { mp.setAttribute('href', `#${qbPath.id}`); } catch {}
+          anim.appendChild(mp);
+          qbNode.appendChild(anim);
+        }
+        try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'qb_drop', pathId: qbPath.id }); } catch {}
+      }
+      // Throw: animate ball along an arc to target_point if present
+      if (act.type === 'throw' && act.from === 'QB' && act.target_point) {
+        const qbs = qb ? normToSvg(qb.start) : { x: yardToSvgX(originAbs), y: 300 };
+        const tgt = normToSvg(act.target_point);
+        const arc = createSvgElement('path', { d: `M ${qbs.x} ${qbs.y} Q ${(qbs.x + tgt.x) / 2} ${qbs.y - 120} ${tgt.x} ${tgt.y}`, class: 'playart-route' });
+        arc.id = `ball-arc-${Math.floor(Math.random()*1e9)}`;
+        playArtSvg.appendChild(arc);
+        const anim = document.createElementNS(NS, 'animateMotion');
+        anim.setAttribute('begin', `${(startDelayMs + 350) / 1000}s`);
+        anim.setAttribute('dur', '500ms');
+        anim.setAttribute('fill', 'freeze');
+        const mp = document.createElementNS(NS, 'mpath');
+        try { mp.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${arc.id}`); } catch {}
+        try { mp.setAttribute('href', `#${arc.id}`); } catch {}
+        anim.appendChild(mp);
+        ball.appendChild(anim);
+        try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'throw', arcId: arc.id, beginMs: startDelayMs + 350 }); } catch {}
       }
     }
   }
