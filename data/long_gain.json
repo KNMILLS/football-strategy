@@ -1,0 +1,14 @@
+{
+  "name": "Long Gain (LG) Table",
+  "dice": "1d6",
+  "results": {
+    "1": { "baseYards": 50, "extra": { "die": "1d6", "multiplier": 10 } },
+    "2": { "baseYards": 50 },
+    "3": { "baseYards": 45 },
+    "4": { "baseYards": 40 },
+    "5": { "baseYards": 35 },
+    "6": { "baseYards": 30 }
+  }
+}
+
+

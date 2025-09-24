@@ -1,0 +1,705 @@
+/*
+ * Styling for the Gridiron Strategy full game.
+ * Defines a three column layout with a fixed header and footer. Cards scale
+ * responsively and include hover effects. Play areas and log utilise subtle
+ * backgrounds to differentiate sections. Buttons adopt a consistent style.
+ */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  /* Switch to arcade fonts with fallback */
+  font-family: 'Oxanium', 'Bangers', 'Courier New', monospace;
+  background: radial-gradient(1200px 600px at 50% -10%, #0f2a4a 0%, #071426 40%, #040b16 100%);
+  color: #e6f0ff;
+  height: 100%;
+}
+
+#game {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+header#scoreboard {
+  background: linear-gradient(180deg, #02142b 0%, #001a33 100%);
+  color: #00e5ff;
+  padding: 0.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  border-bottom: 4px solid #003e7a;
+  box-shadow: 0 4px 18px rgba(0, 229, 255, 0.15);
+}
+
+header#scoreboard .score {
+  font-family: 'Bangers', 'Oxanium', sans-serif;
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 3px;
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.6), 0 0 20px rgba(0, 229, 255, 0.25);
+}
+
+header#scoreboard .hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 1rem;
+}
+
+header#scoreboard .hud span {
+  padding: 2px 8px;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  border-radius: 6px;
+  background: rgba(0, 26, 51, 0.6);
+  box-shadow: inset 0 0 12px rgba(0,229,255,0.12);
+}
+
+main#main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.sidebar {
+  flex: 0 0 22%;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #0a1f38 0%, #0a1b2f 100%);
+  border-right: 1px solid #06335f;
+}
+
+#sidebar-right {
+  border-left: 1px solid #d0dae5;
+  border-right: none;
+}
+
+#sidebar-right h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.controls {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.controls .control-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.controls label {
+  font-weight: bold;
+  color: #00e5ff;
+}
+
+.controls select,
+.controls input {
+  flex: 1;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #004080;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: #00122a;
+  color: #7ae9ff;
+  border-color: #06335f;
+}
+
+.btn {
+  padding: 0.4rem 0.7rem;
+  background: linear-gradient(180deg, #0b4d8a, #083e6f);
+  color: #e6faff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s ease;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+
+.btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #0e61b1, #0a4e8f);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.log {
+  flex: 1;
+  background: #00122a;
+  border: 1px solid #004080;
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  overflow-y: auto;
+  white-space: pre-line;
+  color: #b7efff;
+  text-shadow: 0 0 6px rgba(0, 229, 255, 0.2);
+}
+
+#play-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.5rem;
+}
+
+/* The play zone has been removed from the UI. Cards can now be dropped
+   directly onto the field-display. The play-zone styles are retained
+   here for legacy reference but are no longer applied to any element. */
+.play-zone {
+  display: none;
+}
+
+.pat-options,
+.fg-options {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.ai-intent {
+  flex: 1;
+  background: #ffffff;
+  border: 1px solid #cdd6e0;
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.95rem;
+  min-height: 6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+footer#footer {
+  background: linear-gradient(180deg, #0a1f38, #081a2e);
+  padding: 0.5rem;
+  border-top: 1px solid #d0dae5;
+  overflow-x: auto;
+  /* Raise the footer above the field so the hand and hovered cards appear
+     in front of the playing surface */
+  position: relative;
+  z-index: 5;
+  border-top-color: #06335f;
+}
+
+.hand {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  /* Position relative so z-index applies; cards sit above the field */
+  position: relative;
+  z-index: 5;
+}
+
+
+/* Field display occupies the majority of the play area and shows a stylised
+   football field. The background uses alternating dark greens to suggest
+   yard markers. Vertical yard lines and overlay lines are added via JS. */
+.field-display {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  margin-bottom: 0.5rem;
+  border: 2px solid #0a7abf;
+  border-radius: 8px;
+  /* Create subtle stripes for every 10 yards. Adjust colours slightly lighter
+     to improve contrast and legibility. */
+  background-image: repeating-linear-gradient(
+    to right,
+    #005d26 0%,
+    #005d26 5%,
+    #00451b 5%,
+    #00451b 10%
+  );
+  background-size: 10% 100%;
+  background-color: #00451b;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6), inset 0 0 40px rgba(0,229,255,0.06);
+
+  /* Place the field underneath the hand/cards. The footer and hand have
+     higher z-indices so that hovered cards never go behind the field. */
+  z-index: 1;
+}
+
+/* Generic yard lines across the field (vertical lines marking every 10 yards) */
+.field-display .yard-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Blue line for the current line of scrimmage */
+.field-display .scrimmage-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: rgba(0, 200, 255, 0.95);
+  box-shadow: 0 0 10px rgba(0,200,255,0.7);
+}
+
+/* Yellow line for the line to gain */
+.field-display .firstdown-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: rgba(255, 230, 0, 0.95);
+  box-shadow: 0 0 10px rgba(255,230,0,0.6);
+}
+
+/* Play controls container: houses the drop zone and special teams options */
+#play-controls {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding: 0.4rem;
+  background: #0f2744;
+  border-top: 2px solid #004080;
+}
+
+/* Removed drop zone styling; cards can be dropped anywhere on the field. */
+#play-zone {
+  display: none;
+}
+
+/* PAT and field goal options sit to the right of the drop zone */
+#pat-options, #fg-options {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+/* Style the buttons within play controls for better contrast */
+#play-controls .btn {
+  background: linear-gradient(180deg, #0b4d8a, #083e6f);
+  color: #e6faff;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.5rem;
+}
+
+/* Update footer styling to accommodate drop zone and cards */
+footer#footer {
+  background: #0f2744;
+  padding: 0.4rem;
+  border-top: 2px solid #004080;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* Hand remains flex row but allow overflow */
+#hand {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  overflow-x: auto;
+}
+
+.card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* If a card image fails to load, JS will add the .no-image class to the
+ * .card element. Use a subtle placeholder background so that the card
+ * area remains visible and the play can still be selected.
+ */
+.card.no-image {
+  background: #e6e6e6 url('assets/placeholder_light_gray_block.png') center/cover no-repeat;
+}
+
+.card .label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  font-size: 0.7rem;
+  text-align: center;
+  padding: 0.2rem 0.1rem;
+}
+
+/* Yard number labels: added dynamically for every 10 yards. There are two
+   variants: one for the top of the field (upright) and one for the bottom
+   (rotated 180 degrees). Each label will be positioned horizontally via
+   inline styles. */
+.field-display .yard-label-top,
+.field-display .yard-label-bottom {
+  position: absolute;
+  /* Increase the font size for yard numbers to improve readability */
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.95);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.field-display .yard-label-top {
+  top: 6%;
+  transform: translateX(-50%);
+}
+.field-display .yard-label-bottom {
+  bottom: 6%;
+  transform: translateX(-50%) rotate(180deg);
+}
+
+/* Hash marks: short tick marks at every yard along the bottom of the field.
+   Added via JS; thickened every 5 yards. */
+.field-display .hash-mark {
+  position: absolute;
+  bottom: 0;
+  height: 8px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+.field-display .hash-mark.five {
+  height: 12px;
+  width: 3px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Top hash marks inherit base styling but align to top instead of bottom */
+.field-display .hash-mark.top {
+  top: 0;
+  bottom: auto;
+}
+
+/* End zones: painted areas at both ends of the field. These are added
+   dynamically via JS with classes 'home' and 'visitor'. */
+.field-display .end-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 5%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: #ffeb3b;
+  font-weight: bold;
+  font-size: 1.4rem;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
+}
+.field-display .end-zone.home {
+  left: 0;
+  background: #001f3f;
+}
+.field-display .end-zone.visitor {
+  right: 0;
+  background: #5d1a1a;
+}
+
+/* End zone text styling. The text is wrapped in a span (.end-zone-text) so
+   we can rotate it and centre it within each end zone. Both HOME and
+   VISITORS run across the width of the end zone. The HOME text is
+   rotated 90° and the VISITORS text is rotated -90° (180° flip) so
+   the letters face into the field. */
+.field-display .end-zone .end-zone-text {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: center;
+  white-space: nowrap;
+  display: block;
+}
+
+/* Rotate end‑zone text by 180° from prior orientation for both sides.
+   "HOME" (left end zone) now uses 270°; "VISITORS" (right end zone) uses 90°. */
+.field-display .end-zone.home .end-zone-text {
+  transform: translate(-50%, -50%) rotate(270deg);
+}
+
+.field-display .end-zone.visitor .end-zone-text {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+/* Midfield logo: centred element representing a logo at midfield. This
+   element may contain text or an image background set via JS. */
+.field-display .mid-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12%;
+  height: 24%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #004080 0%, #001f3f 70%);
+  color: #ffeb3b;
+  font-size: 1.2rem;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+/* Red zone overlay: highlights the last 20 yards near each end zone. It is
+   positioned absolutely within the field-display and sized dynamically
+   via inline styles. The subtle red tint evokes urgency without
+   overpowering the base field colours. */
+.field-display .red-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(255, 0, 0, 0.08);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Chain marker: small vertical indicator along the sideline showing the
+   current first down target. It sits above the field and below the
+   overlay cards. */
+.field-display .chain-marker {
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 4px;
+  background: #ffeb3b;
+  box-shadow: 0 0 6px rgba(255, 235, 59, 0.8);
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* Overlay cards: displayed temporarily on the field when a play is made.
+   These cards mirror the style of the hand but float above the field. */
+.overlay-card {
+  position: absolute;
+  /* Base size of overlay cards (before scaling). The cards are visually
+     scaled up for readability using transform. */
+  width: 90px;
+  height: 140px;
+  background-size: cover;
+  background-position: center;
+  border: 2px solid #ffeb3b;
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+  pointer-events: none;
+  /* Elevate overlay cards well above the field and other UI elements. A high
+     z-index ensures the temporary play cards appear on top of the field,
+     scoreboard and hand. */
+  z-index: 200;
+  /* Double the visible size of overlay cards for readability */
+  transform: scale(2);
+  transform-origin: center;
+}
+
+/* Card styling to evoke a Slay the Spire vibe: slightly larger, with
+   ornate borders and deeper shadows. */
+.card {
+  width: 100px;
+  height: 150px;
+  background: linear-gradient(#2f3b55, #1d2639);
+  border: 2px solid #805b2f;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+  position: relative;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  /* Base z-index so cards sit above the field by default */
+  position: relative;
+  z-index: 10;
+  /* Smooth scaling and shadow transitions when hovering */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transform-origin: bottom center;
+}
+.card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.9;
+}
+.card .label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.65);
+  color: #ffeb3b;
+  font-size: 0.7rem;
+  text-align: center;
+  padding: 0.25rem 0.1rem;
+}
+.card.no-image {
+  background: #2f3b55 url('assets/placeholder_light_gray_block.png') center/cover no-repeat;
+}
+
+/* Card preview overlay: appears when hovering over a card in the hand. This provides
+   a larger view of the play card so that its details are fully readable.
+   The preview is hidden by default and positioned near the centre bottom of the
+   viewport. It uses fixed positioning so it is not clipped by any container. */
+.card-preview {
+  position: fixed;
+  bottom: 16%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 450px;
+  border: 3px solid #ffeb3b;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+  display: none;
+  z-index: 500;
+  pointer-events: none;
+}
+
+/* Optional: preview label overlay for card name (if inserted in JS). */
+.card-preview .label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  color: #ffeb3b;
+  text-align: center;
+  font-size: 1rem;
+  padding: 0.3rem 0.2rem;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+/* Card hover: enlarge and lift slightly with highlight */
+.card:hover {
+  /* Do not scale cards themselves on hover. Instead, a separate preview
+     overlay will display a larger version of the card. Keeping the card
+     at its normal size prevents clipping or overlap issues. */
+  transform: none;
+  /* Keep the bottom of the card anchored when hovering */
+  box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+  /* Elevate hovered card well above field */
+  z-index: 300;
+  border-color: #ffeb3b;
+}
+
+/* Card being dragged: mirror the hover styling. We add a class via JS
+   when the user begins dragging a card so it enlarges and sits above
+   the field while the drag occurs. Without this, the card may appear
+   behind the field during a drag operation. */
+.card.dragging {
+  /* Do not scale the card while dragging; the preview overlay provides
+     a larger view of the card. Only shadow and z-index are adjusted. */
+  transform: none;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+  z-index: 300;
+  border-color: #ffeb3b;
+}
+
+@media (max-width: 800px) {
+  .sidebar {
+    flex: 0 0 30%;
+  }
+  .card {
+    width: 80px;
+    height: 120px;
+  }
+}
+
+/* VFX overlay area */
+.vfx-overlay {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 10000;
+}
+
+/* Big arcade banner (e.g., TOUCHDOWN!, INTERCEPTION!) */
+.vfx-banner {
+  position: absolute;
+  left: 50%; top: 20%; transform: translate(-50%, -50%) scale(0.8);
+  font-family: 'Bangers', 'Oxanium', sans-serif;
+  font-size: 64px;
+  color: #fff;
+  letter-spacing: 4px;
+  padding: 8px 18px;
+  background: linear-gradient(180deg, rgba(0, 229, 255, 0.25), rgba(0, 229, 255, 0.05));
+  border: 2px solid rgba(0, 229, 255, 0.7);
+  border-radius: 10px;
+  text-shadow: 0 0 14px rgba(0, 229, 255, 0.9), 0 0 28px rgba(0, 229, 255, 0.5);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  opacity: 0;
+  animation: banner-pop 1200ms ease-out forwards;
+}
+.vfx-banner--gold {
+  border-color: rgba(255, 225, 0, 0.9);
+  text-shadow: 0 0 14px rgba(255, 225, 0, 0.95), 0 0 28px rgba(255, 225, 0, 0.55);
+  background: linear-gradient(180deg, rgba(255,225,0,0.25), rgba(255,225,0,0.06));
+}
+
+@keyframes banner-pop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); filter: blur(2px); }
+  40% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); filter: blur(0); }
+  100% { opacity: 0.95; transform: translate(-50%, -50%) scale(1.0); }
+}
+
+/* Screen flash */
+.vfx-flash {
+  position: absolute; inset: 0;
+  background: radial-gradient(800px 400px at 50% 40%, rgba(255,255,255,0.25), rgba(255,255,255,0) 60%);
+  animation: flash-fade 420ms ease-out forwards;
+}
+@keyframes flash-fade {
+  from { opacity: 0.9; } to { opacity: 0; }
+}
+
+/* Particles (simple confetti/energy dots) */
+.vfx-particle {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #00e5ff;
+  box-shadow: 0 0 8px rgba(0,229,255,0.8);
+  animation: particle-fall 900ms ease-out forwards;
+}
+.vfx-particle.gold { background: #ffe100; box-shadow: 0 0 8px rgba(255,225,0,0.9); }
+@keyframes particle-fall {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(80px) scale(0.6); opacity: 0; }
+}
+
+/* Shake for hits/sacks/turnovers */
+.shake {
+  animation: shake-arcade 300ms ease-in-out 0s 1;
+}
+@keyframes shake-arcade {
+  0% { transform: translate3d(0,0,0); }
+  20% { transform: translate3d(-6px, 2px, 0); }
+  40% { transform: translate3d(6px, -2px, 0); }
+  60% { transform: translate3d(-4px, 2px, 0); }
+  80% { transform: translate3d(4px, -1px, 0); }
+  100% { transform: translate3d(0,0,0); }
+}
+
+/* Score pop on change */
+.score-pop {
+  animation: score-pop 450ms ease-out;
+}
+@keyframes score-pop {
+  0% { transform: scale(1); text-shadow: 0 0 0 rgba(255,255,255,0); }
+  40% { transform: scale(1.08); text-shadow: 0 0 16px rgba(255,255,255,0.6); }
+  100% { transform: scale(1); text-shadow: 0 0 0 rgba(255,255,255,0); }
+}

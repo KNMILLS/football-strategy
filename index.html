@@ -1,0 +1,86 @@
+<!doctype html>
+<!--
+  Gridiron Strategy full game prototype
+  This file defines the basic layout for a single‑player football strategy card game.
+  The player selects an offensive deck and plays against an AI opponent. Cards are
+  dragged onto the central play zone to run plays. The HUD across the top shows
+  the current score, quarter, clock, down & distance, ball position and possession.
+  A running log on the left documents each play result. The right sidebar
+  reveals the AI's defensive call after each play. A footer displays the
+  player's current hand of cards.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Gridiron Strategy</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Oxanium:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="game">
+    <header id="scoreboard">
+      <div id="score" class="score">You 0 — AI 0</div>
+      <div id="hud" class="hud">
+        <span id="quarter">Q1</span>
+        <span id="clock">15:00</span>
+        <span id="downDistance">1st &amp; 10</span>
+        <span id="ballSpot">Ball on 25</span>
+        <span id="possession">You</span>
+      </div>
+    </header>
+    <main id="main">
+      <aside id="sidebar-left" class="sidebar">
+        <div id="controls" class="controls">
+          <div class="control-row">
+            <label for="deck-select">Offense Deck:</label>
+            <select id="deck-select">
+              <option value="Pro Style">Pro Style</option>
+              <option value="Ball Control">Ball Control</option>
+              <option value="Aerial Style">Aerial Style</option>
+            </select>
+          </div>
+          <!-- Opponent selection: choose an AI coach persona. This determines which
+               offensive deck the AI will use. -->
+          <div class="control-row">
+            <label for="opponent-select">Select Opponent:</label>
+            <select id="opponent-select">
+              <option value="Andy Reid">Andy Reid</option>
+              <option value="Bill Belichick">Bill Belichick</option>
+              <option value="John Madden">John Madden</option>
+            </select>
+          </div>
+        <button id="new-game" class="btn">New Game</button>
+        </div>
+        <div id="log" class="log" tabindex="0" aria-label="Play log" role="log"></div>
+      </aside>
+      <section id="play-area" class="play-area">
+        <!-- Field display shows a stylised football field. Yard lines are drawn
+             horizontally with the current line of scrimmage (blue) and the
+             line to gain a first down (yellow) overlaid. -->
+        <div id="field-display" class="field-display"></div>
+      </section>
+      <!-- Right sidebar removed: we no longer display the AI's chosen play. -->
+    </main>
+    <footer id="footer">
+      <div id="play-controls" class="play-controls">
+        <!-- The play zone has been removed; cards can now be dropped anywhere on the field. -->
+        <div id="pat-options" class="pat-options hidden">
+          <button id="kick-pat" class="btn">Kick Extra Point (1)</button>
+          <button id="go-two" class="btn">Go for Two (2)</button>
+        </div>
+        <div id="fg-options" class="fg-options hidden">
+          <button id="kick-fg" class="btn">Kick Field Goal (3)</button>
+        </div>
+      </div>
+      <div id="hand" class="hand" aria-label="Player hand"></div>
+    </footer>
+    <!-- Card preview overlay: shows an enlarged view of the card when hovering in the hand. Placed after the footer to layer above other elements. -->
+    <div id="card-preview" class="card-preview"></div>
+  </div>
+  <div id="vfx-overlay" class="vfx-overlay" aria-hidden="true"></div>
+  <script src="main.js"></script>
+</body>
+</html>
