@@ -1233,12 +1233,26 @@ function kickoff() {
 
 // Simple onside heuristic for AI: attempt in Q4 when trailing by <= 8 with <= 5:00 remaining
 function shouldAttemptOnside(kicker) {
+  // Expanded heuristic:
+  // - Only in Q4
+  // - Strongly consider onside at <= 3:00 when trailing by 4-8
+  // - Consider at <= 5:00 when trailing by 1-3 if defense is weak to burns (approximate by high scoring game)
   if (game.quarter !== 4) return false;
-  if (game.clock > 5 * 60) return false;
   const myScore = kicker === 'player' ? game.score.player : game.score.ai;
   const oppScore = kicker === 'player' ? game.score.ai : game.score.player;
-  const diff = oppScore - myScore;
-  return diff > 0 && diff <= 8;
+  const diff = oppScore - myScore; // positive if trailing
+  const t = game.clock;
+  // Must be trailing and within one possession (<= 8)
+  if (diff <= 0 || diff > 8) return false;
+  // Trailing by 4-8 with <= 3:00: go onside
+  if (diff >= 4 && t <= 180) return true;
+  // Trailing by 1-3 with <= 2:00: sometimes go onside depending on game pace
+  if (diff <= 3 && t <= 120) {
+    const highScoring = (game.score.player + game.score.ai) >= 40;
+    return highScoring || Math.random() < 0.35;
+  }
+  // Default late window (<= 5:00) matches previous heuristic
+  return t <= 300;
 }
 
 function dealHands() {
@@ -1397,99 +1411,97 @@ function playCard(cardId, dropX, dropY) {
 }
 
 function aiChooseCard() {
-  // Simple heuristics for AI play selection. The AI considers the game
-  // situation (down, distance and field position) to choose a defensive or
-  // offensive play. When the AI is on defense it will focus on stopping
-  // short yardage with run cards, deep yardage with pass cards, and
-  // otherwise play a balanced defense. When the AI is on offense it will
-  // decide between running, passing, punting or attempting a field goal.
+  // Enhanced heuristics for AI play selection. Consider down, distance,
+  // field position, score context and clock.
+  // A lightweight context helper for clarity.
+  function getAIContext() {
+    const aiOnOffense = game.possession === 'ai';
+    const aiScore = game.score.ai;
+    const oppScore = game.score.player;
+    const scoreDiff = oppScore - aiScore; // positive: AI trailing
+    const quarter = game.quarter;
+    const clock = game.clock; // seconds remaining in quarter
+    const isLate = quarter === 4 && clock <= 5 * 60;
+    const twoMinute = quarter === 4 && clock <= 120;
+    // Distance to opponent goal for current offense
+    // Player offense drives toward 100; AI offense drives toward 0.
+    const offenseDistanceToGoal = game.possession === 'player' ? (100 - game.ballOn) : game.ballOn;
+    const inRedZone = offenseDistanceToGoal <= 20;
+    return { aiOnOffense, scoreDiff, quarter, clock, isLate, twoMinute, offenseDistanceToGoal, inRedZone };
+  }
+
+  const ctx = getAIContext();
   if (game.possession === 'player') {
     // AI is on defense.
-    let preferred;
-    if (game.toGo <= 2) {
-      preferred = 'run';
-    } else if (game.toGo >= 8) {
-      preferred = 'pass';
-    } else {
-      preferred = 'balanced';
+    // Baseline by distance to go
+    let preferred = 'balanced';
+    if (game.toGo <= 2) preferred = 'run';
+    else if (game.toGo >= 8 || game.down >= 3) preferred = 'pass';
+    // Red zone tendency: expect more runs inside the 5, otherwise more pass 3rd/4th and long
+    const offenseDistToGoal = 100 - game.ballOn; // player drives toward 100
+    if (offenseDistToGoal <= 5 && game.toGo <= 3) preferred = 'run';
+    if (offenseDistToGoal <= 20 && (game.down >= 3 || game.toGo >= 8)) preferred = 'pass';
+    // Clock/score adjustments: trailing opponent late tends to pass; leading opponent late tends to run
+    const playerLeads = game.score.player > game.score.ai;
+    if (ctx.isLate) {
+      if (playerLeads) preferred = preferred === 'run' ? 'run' : 'balanced';
+      else preferred = 'pass';
     }
-    // Filter the defensive deck by the preferred type. If none match,
-    // fallback to the entire defensive deck.
     let choices = DEFENSE_DECK.filter((card) => card.type === preferred);
-    if (choices.length === 0) {
-      choices = DEFENSE_DECK;
-    }
-    // Choose a card at random from the preferred list.
-    const choice = choices[Math.floor(Math.random() * choices.length)];
-    return choice;
+    if (choices.length === 0) choices = DEFENSE_DECK;
+    return choices[Math.floor(Math.random() * choices.length)];
   } else {
     // AI is on offense.
-    // Fourth down special handling. If yardage to go is more than one yard
-    // the AI will punt if far from the goal, or attempt a field goal if
-    // within reasonable kicking range.
+    // Fourth down decision-making
     if (game.down === 4) {
+      const fgDistance = game.ballOn; // distance to player's goal for AI offense
+      const inFGRange = fgDistance <= 45;
+      const safePuntTerritory = fgDistance > 55; // deeper in own territory
       if (game.toGo > 1) {
-        // Determine distance to the player's goal line (ballOn measures from
-        // player's end zone when the AI has possession). If close enough
-        // (<=45 yards) the AI will attempt a field goal, otherwise punt.
-        const distance = game.ballOn;
-        if (distance <= 45) {
-          return { type: 'field-goal' };
-        } else {
-          let punts = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'punt');
-          // Enforce 4th Down Only for AI as well: all punts here are on 4th so allowed; filter out non-4th-only preference not required
-          if (punts.length > 0) {
-            return punts[0];
-          }
+        if (inFGRange) return { type: 'field-goal' };
+        // Late and trailing: be more aggressive on 4th-and-medium
+        if (ctx.isLate && ctx.scoreDiff > 0 && game.toGo <= 5) {
+          const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'pass');
+          if (passes.length) return passes[Math.floor(Math.random() * passes.length)];
         }
+        // Otherwise, punt if available
+        const punts = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'punt');
+        if (punts.length && safePuntTerritory) return punts[0];
       } else {
-        // Fourth and short: go for it. Run on very short yardage, otherwise pass.
+        // Fourth-and-short: go for it. Prefer run unless long yardage situation by down/time
         if (game.toGo <= 1) {
-          const runs = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'run');
-          if (runs.length > 0) {
-            return runs[Math.floor(Math.random() * runs.length)];
-          }
+          const runs = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'run');
+          if (runs.length) return runs[Math.floor(Math.random() * runs.length)];
         }
-        const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'pass');
-        if (passes.length > 0) {
-          return passes[Math.floor(Math.random() * passes.length)];
-        }
+        const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'pass');
+        if (passes.length) return passes[Math.floor(Math.random() * passes.length)];
       }
     }
-    // Non‑fourth down logic. Determine preferred play type based on yardage.
-    // Additionally: never select a 4th Down Only punt before 4th down.
+    // Non‑fourth: choose tendency by distance and context
     const avoidRestricted = (card) => {
       if (card.type === 'punt' && card.label && card.label.includes('4th Down Only') && game.down !== 4) return false;
-      // Avoid white-sign near goal line
       if (isRestrictedOffenseCard(card, 100 - game.ballOn)) return false;
       return true;
     };
-    if (game.toGo <= 3) {
-      // Short yardage: favour running plays
-      const runs = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'run' && avoidRestricted(card));
-      if (runs.length > 0) {
-        return runs[Math.floor(Math.random() * runs.length)];
-      }
+    // Base preference
+    let prefer = 'balanced';
+    if (game.toGo <= 3) prefer = 'run';
+    else if (game.toGo >= 8 || game.down >= 3) prefer = 'pass';
+    // Red zone tweaks
+    if (ctx.inRedZone && game.toGo <= 3) prefer = 'run';
+    if (ctx.inRedZone && (game.down >= 3 || game.toGo >= 8)) prefer = 'pass';
+    // Clock/score: leading late -> bleed clock; trailing late -> push the ball
+    if (ctx.isLate) {
+      if (ctx.scoreDiff > 0) prefer = 'pass';
+      else if (ctx.scoreDiff < 0) prefer = prefer === 'pass' ? 'pass' : 'run';
     }
-    if (game.toGo >= 8 || game.down >= 3) {
-      // Long yardage or late downs: favour passing plays
-      const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'pass' && avoidRestricted(card));
-      if (passes.length > 0) {
-        return passes[Math.floor(Math.random() * passes.length)];
-      }
+    // Select by preference
+    if (prefer !== 'pass') {
+      const runs = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'run' && avoidRestricted(c));
+      if (runs.length && (prefer === 'run' || Math.random() < 0.5)) return runs[Math.floor(Math.random() * runs.length)];
     }
-    // Balanced situation: randomly choose run or pass
-    if (Math.random() < 0.5) {
-      const runs = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'run' && avoidRestricted(card));
-      if (runs.length > 0) {
-        return runs[Math.floor(Math.random() * runs.length)];
-      }
-    }
-    const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((card) => card.type === 'pass' && avoidRestricted(card));
-    if (passes.length > 0) {
-      return passes[Math.floor(Math.random() * passes.length)];
-    }
-    // Fallback to the first card in the deck if no other conditions match
+    const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'pass' && avoidRestricted(c));
+    if (passes.length) return passes[Math.floor(Math.random() * passes.length)];
     const fallback = OFFENSE_DECKS[game.aiOffenseDeck].find(avoidRestricted) || OFFENSE_DECKS[game.aiOffenseDeck][0];
     return fallback;
   }
@@ -2411,7 +2423,7 @@ function attemptExtraPoint() {
   // Resolve PAT using the place kicking table (2D6). A result of 'G'
   // means the kick is good. Otherwise it is no good.
   const roll = rollD6() + rollD6();
-  const row = PLACE_KICK_TABLE[roll] || {};
+  let row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
   const success = row.PAT === 'G';
   if (success) {
     if (game.possession === 'player') {
@@ -2464,24 +2476,26 @@ function finishPAT() {
  */
 function aiAttemptPAT() {
   // Determine the score difference from the AI's perspective after its
-  // touchdown has been counted. A positive diff means the player leads.
+  // touchdown has been counted. Positive diff => player leads.
   const diff = game.score.player - game.score.ai;
-  // Heuristics: if trailing by 1 or 2 points, attempt a two‑point
-  // conversion to tie or take the lead. Otherwise kick the extra point.
-  if (diff > 0 && diff <= 2) {
-    // Two‑point attempt: 50% success. There is no chart for two point.
-    if (Math.random() < 0.5) {
+  const quarter = game.quarter;
+  const clock = game.clock;
+  const late = quarter === 4 && clock <= 5 * 60;
+  // Go for two when trailing by 1 or 2 (tie or take lead)
+  // If leading by 1 very late, prefer a 2‑point try to go up by 3.
+  const shouldGoForTwo = (diff > 0 && diff <= 2) || (diff < 0 && diff === -1 && late);
+  if (shouldGoForTwo) {
+    if (game.rng() < 0.5) {
       game.score.ai += 2;
       log('AI two‑point conversion is good.');
     } else {
       log('AI two‑point conversion fails.');
     }
-    // Two point attempts consume 0 seconds like extra points
     game.clock -= TIME_KEEPING.extraPoint;
   } else {
     // Extra point attempt using the place kicking table
     const roll = rollD6() + rollD6();
-    const row = PLACE_KICK_TABLE[roll] || {};
+    const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
     const success = row.PAT === 'G';
     if (success) {
       game.score.ai += 1;
@@ -2489,7 +2503,6 @@ function aiAttemptPAT() {
     } else {
       log('AI extra point missed.');
     }
-    // Extra points consume no time
     game.clock -= TIME_KEEPING.extraPoint;
   }
   // Finish PAT sequence and kickoff
@@ -2521,8 +2534,13 @@ function attemptFieldGoal() {
   let success = false;
   if (col) {
     const roll = rollD6() + rollD6();
-    const row = PLACE_KICK_TABLE[roll] || {};
-    success = row[col] === 'G';
+    if (PLACE_KICK_TABLE_DATA) {
+      const row = PLACE_KICK_TABLE_DATA[roll] || {};
+      success = row[col] === 'G';
+    } else {
+      const row = PLACE_KICK_TABLE[roll] || {};
+      success = row[col] === 'G';
+    }
   }
   if (success) {
     if (game.possession === 'player') {
@@ -2741,9 +2759,11 @@ function logClear() {
 }
 
 // Initialise UI on first load
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Build the field graphic once the DOM is ready.
   initField();
+  // Load JSON data tables (non-fatal if missing)
+  await loadDataTables();
   // Normalise initial scoreboard labels to HOME/AWAY to match HUD updates.
   if (scoreDisplay) scoreDisplay.textContent = 'HOME 0 — AWAY 0';
   if (hudPossession) hudPossession.textContent = 'HOME';
@@ -3360,6 +3380,9 @@ if (devCheckbox) {
   const applyDev = (on) => {
     if (controlsNormal) controlsNormal.classList.toggle('hidden', !!on);
     if (controlsTest) controlsTest.classList.toggle('hidden', !on);
+    // Init simple debug container
+    if (!window.debug) window.debug = { enabled: false, buffer: [], echoToUi: true, event(){} };
+    window.debug.enabled = !!on;
     try { localStorage.setItem('gs_dev_mode', on ? '1' : '0'); } catch {}
   };
   applyDev(savedDev);
@@ -3370,6 +3393,8 @@ if (devCheckbox) {
 (function wireDevButtons() {
   const startBtn = document.getElementById('start-test-game');
   const autoBtn = document.getElementById('run-auto-game');
+  const copyBtn = document.getElementById('copy-log');
+  const dlBtn = document.getElementById('download-debug');
   if (startBtn) {
     startBtn.addEventListener('click', () => {
       startNewGameWithTestSetup();
@@ -3395,6 +3420,19 @@ if (devCheckbox) {
         showCardOverlay = saved.showCardOverlay;
         game.simulationMode = false;
       }
+    });
+  }
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(logElement.textContent || ''); alert('Log copied'); } catch {}
+    });
+  }
+  if (dlBtn) {
+    dlBtn.addEventListener('click', () => {
+      const payload = { meta: { ts: new Date().toISOString(), q: game.quarter, clock: game.clock, down: game.down, toGo: game.toGo, ballOn: game.ballOn, possession: game.possession, score: { ...game.score } }, events: (window.debug && window.debug.buffer) ? window.debug.buffer : [] };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'gridiron-debug.json'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
     });
   }
 })();

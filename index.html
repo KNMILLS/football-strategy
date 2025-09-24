@@ -133,6 +133,10 @@
             </div>
             <button id="start-test-game" class="btn">Start Test Game</button>
             <button id="run-auto-game" class="btn">Run Full Auto Game</button>
+            <div class="control-row">
+              <button id="copy-log" class="btn">Copy Log</button>
+              <button id="download-debug" class="btn">Download Debug</button>
+            </div>
           </div>
         </div>
         <div id="log" class="log" tabindex="0" aria-label="Play log" role="log"></div>
@@ -162,6 +166,10 @@
     <div id="card-preview" class="card-preview"></div>
   </div>
   <div id="vfx-overlay" class="vfx-overlay" aria-hidden="true"></div>
+  <script>
+    // Preload data tables before main logic runs
+    window.__GRIDIRON_PRELOAD__ = true;
+  </script>
   <script src="main.js"></script>
 </body>
 </html>
