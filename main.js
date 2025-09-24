@@ -1889,6 +1889,16 @@ function resolvePlay(playerCard, aiCard) {
     // for two or kick an extra point based on the score and time.
     if (game.possession === 'player') {
       game.awaitingPAT = true;
+      // In simulation mode, auto-resolve the player's PAT immediately.
+      if (game.simulationMode) {
+        const diff = game.score.ai - game.score.player; // positive means HOME trails
+        if (diff === 1 || diff === 2) {
+          attemptTwoPoint();
+        } else {
+          attemptExtraPoint();
+        }
+        return;
+      }
       patOptions.classList.remove('hidden');
       // Ensure field goal option is hidden during PAT selection
       if (fgOptions) fgOptions.classList.add('hidden');
