@@ -713,6 +713,30 @@ function scheduleCleanup(ms = 2000) {
   setTimeout(() => clearPlayArt(), ms);
 }
 
+// ---------------- Play Art JSON Loader ----------------
+let PLAY_ART_DEFS = {};
+
+async function loadPlayArtData() {
+  try {
+    const res = await fetch('data/plays/O_PRO_POWER_UP_MIDDLE.json');
+    if (res.ok) {
+      const obj = await res.json();
+      PLAY_ART_DEFS[obj.id] = obj;
+    }
+  } catch (e) {
+    // ignore network errors in offline contexts
+  }
+}
+
+function getPlayArtForCard(card) {
+  if (!card) return null;
+  // Map our card ids to play art ids
+  if (card.label === 'Power Up Middle' && card.type === 'run') {
+    return PLAY_ART_DEFS['O_PRO_POWER_UP_MIDDLE'] || null;
+  }
+  return null;
+}
+
 // Check and announce the two-minute warning. According to the updated rules,
 // the 2:00 mark in the 2nd and 4th quarters triggers an automatic time out.
 // Any play that starts before the warning but would run past it stops with
@@ -1771,22 +1795,27 @@ function resolvePlay(playerCard, aiCard) {
     penalty.appliedYards = appliedPenaltyYards;
     penalty.isLongGain = isLongGainResult;
   }
-  // If the result is a turnover, change possession immediately after
+  // If the result is a change of possession, change possession immediately after
   // adjusting ball position with any return yardage from interceptions.
   if (outcome.turnover) {
-    log('Turnover! The ball changes possession.');
+    const newTeamName = game.possession === 'player' ? 'AWAY' : 'HOME';
+    if (outcome.category === 'interception') {
+      log(`Interception! ${newTeamName} takes over.`);
+    } else {
+      log(`Fumble! ${newTeamName} recovers.`);
+    }
     // Flip possession without modifying ballOn yet. changePossession()
     // will flip the ballOn coordinate and reset down/toGo.
     changePossession();
     // Apply interception return if any.
     const returnYards = Math.abs(outcome.interceptReturn);
-    if (returnYards) {
+    if (outcome.category === 'interception' && returnYards) {
       if (game.possession === 'player') {
         game.ballOn += returnYards;
       } else {
         game.ballOn -= returnYards;
       }
-      log(`Interception return: ${returnYards} yards`);
+      log(`Interception return: ${returnYards} ${returnYards === 1 ? 'yard' : 'yards'}`);
     }
     // Interception end-zone/limits handling:
     // - If spot ends inside defender's own end zone → touchback to own 20
@@ -1926,12 +1955,21 @@ function resolvePlay(playerCard, aiCard) {
       log('No gain.');
     }
   } else {
-    if (netYards > 0) {
-      log(`Gain of ${netYards} yards.`);
-    } else if (netYards < 0) {
-      log(`Loss of ${Math.abs(netYards)} yards.`);
-    } else {
-      log('No gain.');
+    // Suppress redundant yardage line when a pass carry goes for a TD
+    const wouldScoreTD = (game.possession === 'player')
+      ? (game.ballOn + netYards >= 100)
+      : (game.ballOn - netYards <= 0);
+    const shouldSuppressForCarryTD = offenseCard.type === 'pass' && wouldScoreTD;
+    if (!shouldSuppressForCarryTD) {
+      if (netYards > 0) {
+        const y = Math.abs(netYards);
+        log(`Gain of ${y} ${y === 1 ? 'yard' : 'yards'}.`);
+      } else if (netYards < 0) {
+        const y = Math.abs(netYards);
+        log(`Loss of ${y} ${y === 1 ? 'yard' : 'yards'}.`);
+      } else {
+        log('No gain.');
+      }
     }
   }
   // Update yards to go and downs with penalty-aware logic.
@@ -2050,9 +2088,10 @@ function resolvePlay(playerCard, aiCard) {
       return;
     }
   }
-  // Check for turnover on downs
+  // Check for change of possession on downs
   if (game.down > 4) {
-    log('Turnover on downs.');
+    const nextTeam = game.possession === 'player' ? 'AWAY' : 'HOME';
+    log(`On downs, ${nextTeam} takes over.`);
     changePossession();
   }
   // Check if ball has crossed midfield to update measurement orientation
@@ -2911,7 +2950,19 @@ function showCardOverlay(playerCard, aiCard, x, y, done) {
 // Basic play art renderer: shows offense circles, defense Xs, and a simple route/ball motion.
 function renderPlayArt(offenseCard, defenseCard, outcome) {
   if (!playArtSvg || !fieldDisplay) return;
-  clearPlayArt();
+  // If we have a JSON-defined animation for this card, prefer it. Delay until
+  // overlay cards are removed so the animation is visible.
+  const def = getPlayArtForCard(offenseCard);
+  if (def) {
+    if (game.overlayActive) {
+      setTimeout(() => {
+        renderJsonPlayArt(def, outcome, /*startDelayMs=*/0);
+      }, 3100);
+    } else {
+      renderJsonPlayArt(def, outcome, /*startDelayMs=*/0);
+    }
+    return;
+  }
   const rect = fieldDisplay.getBoundingClientRect();
   const fieldW = rect.width;
   const fieldH = rect.height;
@@ -2999,6 +3050,135 @@ function renderPlayArt(offenseCard, defenseCard, outcome) {
   scheduleCleanup(1600);
 }
 
+// Render from JSON definition (offense only). Direction: player drives L→R, AI R→L.
+function renderJsonPlayArt(def, outcome, startDelayMs = 0) {
+  if (!def || !def.play_art || !def.play_art.animation_blueprint) return;
+  const bp = def.play_art.animation_blueprint;
+  const entities = bp.entities || [];
+  const originAbs = game.ballOn; // LOS center x reference in absolute yards
+  const dir = game.possession === 'player' ? 1 : -1; // L→R for player, R→L for AI
+
+  // Helpers to convert normalized blueprint coords to SVG coords
+  function normToSvg(point) {
+    // Blueprint x: 0..1. Anchor 0.5 at LOS, extend +/- 25 yards worth of screen width
+    const yardsPerUnit = 25; // visual framing
+    const yardOffset = (point.x - 0.5) * yardsPerUnit * dir;
+    const absX = originAbs + yardOffset;
+    let svgX = yardToSvgX(Math.max(0, Math.min(100, absX)));
+    // Blueprint y: -0.2..0.8 mapped vertically around LOS row. Use 500px height space
+    const baseY = 250; // middle
+    const svgY = baseY + point.y * 300; // scale y window
+    return { x: svgX, y: svgY };
+  }
+
+  // Draw all offense players at start positions
+  const offenseRoles = new Set(['left_tackle','left_guard','center','right_guard','right_tackle','tight_end_right','wide_receiver_left','wide_receiver_right','quarterback','fullback','halfback']);
+  const nodes = {};
+  for (const ent of entities) {
+    if (!offenseRoles.has(ent.role)) continue;
+    const p = normToSvg(ent.start);
+    let node;
+    if (ent.role === 'quarterback' || ent.role === 'fullback' || ent.role === 'halfback' || ent.role.startsWith('wide_') || ent.role.startsWith('tight_') || ent.role.includes('guard') || ent.role.includes('tackle') || ent.role === 'center') {
+      node = drawOffenseCircle(p.x, p.y, ent.role === 'quarterback' ? 10 : 9);
+    }
+    if (node) {
+      node.setAttribute('data-id', ent.id);
+      nodes[ent.id] = node;
+      playArtSvg.appendChild(node);
+    }
+  }
+
+  // Ball at QB initially
+  const qb = entities.find(e => e.id === 'QB');
+  const hb = entities.find(e => e.id === 'HB');
+  let ballStart = qb ? normToSvg(qb.start) : { x: yardToSvgX(originAbs), y: 300 };
+  const ball = drawBall(ballStart.x, ballStart.y, 6);
+  playArtSvg.appendChild(ball);
+
+  // Build paths for FB insert and HB follow if present
+  function pathFromNormPoints(points) {
+    const pts = points.map(normToSvg);
+    return drawRoute(pts);
+  }
+
+  const NS = 'http://www.w3.org/2000/svg';
+  // Find timeline actions
+  const timeline = bp.timeline || [];
+  let fbPathEl = null;
+  let hbPathEl = null;
+  for (const frame of timeline) {
+    const actions = frame.actions || [];
+    for (const act of actions) {
+      if (act.type === 'lead_insert' && act.actor === 'FB' && Array.isArray(act.path)) {
+        fbPathEl = pathFromNormPoints(act.path);
+        fbPathEl.id = `fb-${Math.floor(Math.random()*1e9)}`;
+        playArtSvg.appendChild(fbPathEl);
+      }
+      if ((act.type === 'follow' || act.type === 'handoff') && act.actor === 'HB' && Array.isArray(act.path)) {
+        hbPathEl = pathFromNormPoints(act.path);
+        hbPathEl.id = `hb-${Math.floor(Math.random()*1e9)}`;
+        playArtSvg.appendChild(hbPathEl);
+      }
+      if (act.type === 'handoff' && act.from === 'QB' && act.to === 'HB' && act.handoff_point) {
+        // Move ball from QB to handoff point then along HB path
+        const hp = normToSvg(act.handoff_point);
+        const handoffPath = createSvgElement('path', { d: `M ${ballStart.x} ${ballStart.y} L ${hp.x} ${hp.y}`, class: 'playart-route' });
+        handoffPath.id = `handoff-${Math.floor(Math.random()*1e9)}`;
+        playArtSvg.appendChild(handoffPath);
+        const anim1 = document.createElementNS(NS, 'animateMotion');
+        if (startDelayMs > 0) anim1.setAttribute('begin', `${startDelayMs}ms`);
+        anim1.setAttribute('dur', '220ms');
+        anim1.setAttribute('fill', 'freeze');
+        const mp1 = document.createElementNS(NS, 'mpath');
+        mp1.setAttribute('href', `#${handoffPath.id}`);
+        anim1.appendChild(mp1);
+        ball.appendChild(anim1);
+        // Chain second motion after short delay if hb path exists
+        if (hbPathEl) {
+          const anim2 = document.createElementNS(NS, 'animateMotion');
+          const begin = (startDelayMs / 1000) + 0.22;
+          anim2.setAttribute('begin', `${begin}s`);
+          anim2.setAttribute('dur', '800ms');
+          anim2.setAttribute('fill', 'freeze');
+          const mp2 = document.createElementNS(NS, 'mpath');
+          mp2.setAttribute('href', `#${hbPathEl.id}`);
+          anim2.appendChild(mp2);
+          ball.appendChild(anim2);
+        }
+      }
+    }
+  }
+
+  // Optionally animate FB along insert path
+  const fbNode = nodes['FB'];
+  if (fbNode && fbPathEl) {
+    const anim = document.createElementNS(NS, 'animateMotion');
+    if (startDelayMs > 0) anim.setAttribute('begin', `${startDelayMs}ms`);
+    anim.setAttribute('dur', '800ms');
+    anim.setAttribute('fill', 'freeze');
+    const mp = document.createElementNS(NS, 'mpath');
+    mp.setAttribute('href', `#${fbPathEl.id}`);
+    anim.appendChild(mp);
+    fbNode.appendChild(anim);
+  }
+
+  // Animate HB along his path even if no explicit handoff action created the ball animation
+  const hbNode = nodes['HB'];
+  if (hbNode && hbPathEl) {
+    const anim = document.createElementNS(NS, 'animateMotion');
+    if (startDelayMs > 0) anim.setAttribute('begin', `${startDelayMs}ms`);
+    anim.setAttribute('dur', '800ms');
+    anim.setAttribute('fill', 'freeze');
+    const mp = document.createElementNS(NS, 'mpath');
+    mp.setAttribute('href', `#${hbPathEl.id}`);
+    anim.appendChild(mp);
+    hbNode.appendChild(anim);
+  }
+
+  // Keep only offense; no defense visuals for this JSON render
+  scheduleCleanup(2200 + startDelayMs);
+}
+
 function log(msg) {
   logElement.textContent += msg + '\n';
   logElement.scrollTop = logElement.scrollHeight;
@@ -3014,6 +3194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initField();
   // Load JSON data tables (non-fatal if missing)
   await loadDataTables();
+  await loadPlayArtData();
   // Normalise initial scoreboard labels to HOME/AWAY to match HUD updates.
   if (scoreDisplay) scoreDisplay.textContent = 'HOME 0 — AWAY 0';
   if (hudPossession) hudPossession.textContent = 'HOME';
