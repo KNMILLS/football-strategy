@@ -901,8 +901,7 @@ let firstDownLineEl;
 let redZoneEl;
 // Chain marker element that indicates the first down target along the sideline.
 let chainMarkerEl;
-// SVG overlay for animated play art (legacy was removed). New animator module will attach its own SVG.
-let GSAnimator = null;
+// Animation module removed; no play animations are scheduled.
 
 /**
  * Initialise the field graphic by creating vertical yard lines and the
@@ -1676,22 +1675,7 @@ function resolvePlay(playerCard, aiCard) {
   const outcome = determineOutcome(offenseCard, defenseCard);
   try {
     // Start visual animation (non-blocking)
-    if (GSAnimator) {
-      const offensePlayId = mapCardIdToAnimId(offenseCard && offenseCard.id);
-      const defenseName = defenseCard && (defenseCard.label || defenseCard.id || defenseCard.type);
-      try { log(`[anim] Play ${offensePlayId} vs ${defenseName} @${game.ballOn} yd, ${game.down}&${game.toGo}`); } catch {}
-      GSAnimator.animatePlay({
-        offensePlayId,
-        defenseCard: defenseName,
-        ballOnYard: game.ballOn,
-        yardsToGo: game.toGo,
-        down: game.down,
-        seed: Math.floor(Math.random() * 1e9),
-        speed: 1
-      });
-    } else {
-      try { log('[anim] Animator module not ready.'); } catch {}
-    }
+    // Animation disabled
   } catch (e) {
     // Non-fatal if play art fails
   }
@@ -3228,6 +3212,52 @@ function mapCardIdToAnimId(cardId) {
     .toUpperCase();
 }
 
+// Map resolved engine outcome to animator outcome bucket key
+function mapOutcomeToBucket(offenseCard, outcome) {
+  if (!outcome || !offenseCard) return 'run_gain_3_5';
+  // Penalty accepted: optional special handling; default to no-play
+  if (outcome.category === 'penalty' && outcome.penalty) {
+    return 'penalty_no_play';
+  }
+  // Interception dominates
+  if (outcome.turnover && outcome.category === 'interception') {
+    return 'pass_interception';
+  }
+  // Sacks
+  if (outcome.category === 'loss' && /Sack/i.test(outcome.raw || '')) {
+    return 'pass_sack';
+  }
+  const isPass = offenseCard.type === 'pass';
+  const yards = outcome.yards || 0;
+  const oob = !!outcome.outOfBounds;
+  // TD detection using current state
+  let wouldScore = false;
+  try {
+    if (typeof game !== 'undefined') {
+      if (game.possession === 'player') wouldScore = (game.ballOn + yards) >= 100;
+      else wouldScore = (game.ballOn - yards) <= 0;
+    }
+  } catch {}
+  if (isPass) {
+    if (outcome.category === 'incomplete') return 'pass_incomplete';
+    if (oob) return 'pass_oob';
+    if (wouldScore) return 'pass_td';
+    const ay = Math.abs(yards);
+    if (ay <= 5) return 'pass_complete_short';
+    if (ay <= 15) return 'pass_complete_medium';
+    return 'pass_complete_deep';
+  } else {
+    // Runs and QB keepers
+    if (oob) return 'run_oob';
+    if (yards < 0) return 'run_tfl';
+    if (wouldScore) return 'run_td';
+    if (yards <= 2) return 'run_gain_0_2';
+    if (yards <= 5) return 'run_gain_3_5';
+    if (yards <= 9) return 'run_gain_6_9';
+    return 'run_break_long';
+  }
+}
+
 // Initialise UI on first load
 document.addEventListener('DOMContentLoaded', async () => {
   // Build the field graphic once the DOM is ready.
@@ -3236,41 +3266,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadDataTables();
   try { if (typeof loadPlayArtData === 'function') await loadPlayArtData(); } catch {}
   try { if (typeof loadPlayArtDataset === 'function') await loadPlayArtDataset(); } catch {}
-  // Load animator module and animations data
+  // Load animator module and combo animation JSON (dev/test only, safe if missing)
   try {
-    // Prefer preloaded module (index.html)
-    GSAnimator = window.GSAnimator || GSAnimator;
-    if (!GSAnimator) {
-      const mod = await import('./scripts/gs_animator.js');
-      GSAnimator = mod;
+    const mod = (window.GSAnimator && window.GSAnimator.initField) ? window.GSAnimator : await import('./scripts/gs_animator.js');
+    window.GSAnimator = mod;
+    if (mod && typeof mod.initField === 'function') {
+      mod.initField(document.getElementById('field-display'));
     }
-    let __gsPlaysLoaded = 0;
-    try { __gsPlaysLoaded = await GSAnimator.loadPlays('play_art_animations_autogen_min.json'); } catch (e) { __gsPlaysLoaded = -1; }
-    try { GSAnimator.initField(fieldDisplay, { showDebug: false }); } catch {}
-    try { log(`[anim] Ready ${__gsPlaysLoaded >= 0 ? `(${__gsPlaysLoaded} plays)` : '(plays load failed)'}.`); } catch {}
-    // Wire animation events to log
-    GSAnimator.on('snap', () => log('[anim] Snap.'));
-    GSAnimator.on('handoff', () => log('[anim] Handoff.'));
-    GSAnimator.on('throw', () => log('[anim] Throw.'));
-    GSAnimator.on('catch', () => log('[anim] Catch.'));
-    GSAnimator.on('drop', () => log('[anim] Drop.'));
-    GSAnimator.on('intercept', () => log('[anim] Interception!'));
-    GSAnimator.on('tackle', () => log('[anim] Tackle.'));
-    GSAnimator.on('whistle', () => log('[anim] Whistle.'));
-    GSAnimator.on('result', (r) => {
-      if (!r) return;
-      const y = Math.round(r.gainedYards || 0);
-      log(`[anim] Result: ${y >= 0 ? 'Gain' : 'Loss'} of ${Math.abs(y)}.`);
-      try { updateHUD(); } catch {}
-    });
-    // Test hook
-    window.animateTest = function(offensePlayId, defenseCard, ballOnYard, yardsToGo, down, seed) {
-      if (!GSAnimator) return;
-      return GSAnimator.animatePlay({ offensePlayId, defenseCard, ballOnYard, yardsToGo, down, seed });
-    };
-  } catch (e) {
-    try { console.warn('Animator module failed to load:', e); } catch {}
-  }
+    // Preload the example combo JSON and expose a quick dev runner
+    try {
+      let combo;
+      try {
+        const respExp = await fetch('./data/combo_ProStyle_PowerUpMiddle_InsideBlitz_scripts.expanded.json');
+        if (respExp.ok) combo = await respExp.json();
+      } catch {}
+      if (!combo) {
+        const resp = await fetch('./data/combo_ProStyle_PowerUpMiddle_InsideBlitz_scripts.json');
+        if (resp.ok) combo = await resp.json();
+      }
+      // If granular helper exists, generate 60 FPS granular timeline when hash includes #granular
+      if (combo && window.location.hash.includes('granular60') && typeof mod.makeGranularCombo === 'function') {
+        combo = mod.makeGranularCombo(combo, 1/60);
+      }
+      if (combo && typeof mod.loadCombo === 'function') mod.loadCombo(combo);
+      // Expose a quick test hook to animate a chart (A..J) at current ball spot
+      window.__GS_RUN_COMBO = (key = 'F', speed = 1) => {
+        try {
+          return mod.animate({ chartKey: key, dir: undefined, ballOnYard: game.ballOn, speed });
+        } catch (e) { console.warn('GS combo animate failed:', e); return null; }
+      };
+    } catch {}
+  } catch {}
   // Normalise initial scoreboard labels to HOME/AWAY to match HUD updates.
   if (scoreDisplay) scoreDisplay.textContent = 'HOME 0 — AWAY 0';
   if (hudPossession) hudPossession.textContent = 'HOME';
@@ -4156,6 +4182,9 @@ if (devCheckbox) {
   const autoBtn = document.getElementById('run-auto-game');
   const copyBtn = document.getElementById('copy-log');
   const dlBtn = document.getElementById('download-debug');
+  const runComboBtn = document.getElementById('run-combo-script');
+  const comboSelect = document.getElementById('combo-script-select');
+  const exportGranularBtn = document.getElementById('export-granular-60');
   if (startBtn) {
     startBtn.addEventListener('click', () => {
       if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'click', id: 'start-test-game' });
@@ -4217,6 +4246,50 @@ if (devCheckbox) {
       const blob = new Blob([content], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = 'gridiron-full-debug.log'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+    });
+  }
+  if (runComboBtn && comboSelect) {
+    runComboBtn.addEventListener('click', () => {
+      const key = comboSelect.value || 'F';
+      try {
+        if (window.GSAnimator && typeof window.GSAnimator.animate === 'function') {
+          window.GSAnimator.animate({ chartKey: key, dir: undefined, ballOnYard: game.ballOn, speed: 0.6 });
+        } else if (typeof window.__GS_RUN_COMBO === 'function') {
+          window.__GS_RUN_COMBO(key, 0.6);
+        }
+      } catch (e) {
+        console.warn('Run combo failed', e);
+      }
+    });
+  }
+  if (exportGranularBtn) {
+    exportGranularBtn.addEventListener('click', async () => {
+      try {
+        // Load base combo
+        let combo;
+        try {
+          const respExp = await fetch('./data/combo_ProStyle_PowerUpMiddle_InsideBlitz_scripts.expanded.json');
+          if (respExp.ok) combo = await respExp.json();
+        } catch {}
+        if (!combo) {
+          const resp = await fetch('./data/combo_ProStyle_PowerUpMiddle_InsideBlitz_scripts.json');
+          if (resp.ok) combo = await resp.json();
+        }
+        if (!combo) return alert('Combo JSON not found');
+        if (!window.GSAnimator || typeof window.GSAnimator.makeGranularCombo !== 'function') return alert('Animator helper missing');
+        const granular = window.GSAnimator.makeGranularCombo(combo, 1/60);
+        const blob = new Blob([JSON.stringify(granular, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'combo_ProStyle_PowerUpMiddle_InsideBlitz_scripts.expanded.json';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+      } catch (e) {
+        console.warn('Export granular failed', e);
+        alert('Export failed (see console)');
+      }
     });
   }
 })();

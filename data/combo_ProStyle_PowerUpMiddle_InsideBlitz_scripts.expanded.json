@@ -1,0 +1,635 @@
+{
+  "schema": "gs_combo_anim_v2_simul",
+  "meta": {
+    "generated_at": "2025-09-25T16:31:06Z",
+    "notes": [
+      "All actors move simultaneously at 60 Hz. Defenders pursue; blocks engage; guarantee one tackler unless TD/OOB."
+    ]
+  },
+  "tick_hz": 60,
+  "dir": "R",
+  "units": "yards",
+  "bounds": {
+    "field_width_yd": 53.333,
+    "field_length_yd": 100.0,
+    "sideline_margin_yd": 2.0,
+    "end_margin_yd": 0.5
+  },
+  "combo": {
+    "deck": "Pro Style",
+    "play": "Power Up Middle",
+    "defense": "Inside Blitz"
+  },
+  "result_table": {
+    "A": -2,
+    "B": -1,
+    "C": 10,
+    "D": 1,
+    "E": 1,
+    "F": 2,
+    "G": 3,
+    "H": 7,
+    "I": 9,
+    "J": 10
+  },
+  "actors": {
+    "offense": [
+      {
+        "id": "LT",
+        "role": "left_tackle",
+        "start": {
+          "x": 0.0,
+          "y": -8.0
+        }
+      },
+      {
+        "id": "LG",
+        "role": "left_guard",
+        "start": {
+          "x": 0.0,
+          "y": -4.0
+        }
+      },
+      {
+        "id": "C",
+        "role": "center",
+        "start": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "RG",
+        "role": "right_guard",
+        "start": {
+          "x": 0.0,
+          "y": 4.0
+        }
+      },
+      {
+        "id": "RT",
+        "role": "right_tackle",
+        "start": {
+          "x": 0.0,
+          "y": 8.0
+        }
+      },
+      {
+        "id": "TE",
+        "role": "tight_end",
+        "start": {
+          "x": 0.5,
+          "y": 9.5
+        }
+      },
+      {
+        "id": "WRL",
+        "role": "wr_left",
+        "start": {
+          "x": 0.0,
+          "y": -22.0
+        }
+      },
+      {
+        "id": "WRR",
+        "role": "wr_right",
+        "start": {
+          "x": 0.0,
+          "y": 22.0
+        }
+      },
+      {
+        "id": "QB",
+        "role": "quarterback",
+        "start": {
+          "x": -1.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "FB",
+        "role": "fullback",
+        "start": {
+          "x": -2.5,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "HB",
+        "role": "halfback",
+        "start": {
+          "x": -5.5,
+          "y": 0.0
+        }
+      }
+    ],
+    "defense": [
+      {
+        "id": "LE",
+        "role": "left_end",
+        "start": {
+          "x": 0.0,
+          "y": -8.0
+        }
+      },
+      {
+        "id": "LDT",
+        "role": "left_tackle",
+        "start": {
+          "x": 0.0,
+          "y": -2.0
+        }
+      },
+      {
+        "id": "RDT",
+        "role": "right_tackle",
+        "start": {
+          "x": 0.0,
+          "y": 2.0
+        }
+      },
+      {
+        "id": "RE",
+        "role": "right_end",
+        "start": {
+          "x": 0.0,
+          "y": 8.0
+        }
+      },
+      {
+        "id": "SAM",
+        "role": "olb_strong",
+        "start": {
+          "x": 2.0,
+          "y": 9.0
+        }
+      },
+      {
+        "id": "MIKE",
+        "role": "mlb",
+        "start": {
+          "x": 1.5,
+          "y": 2.0
+        }
+      },
+      {
+        "id": "WILL",
+        "role": "olb_weak",
+        "start": {
+          "x": 1.5,
+          "y": -2.0
+        }
+      },
+      {
+        "id": "CBL",
+        "role": "corner_left",
+        "start": {
+          "x": 2.0,
+          "y": -22.0
+        }
+      },
+      {
+        "id": "CBR",
+        "role": "corner_right",
+        "start": {
+          "x": 2.0,
+          "y": 22.0
+        }
+      },
+      {
+        "id": "FS",
+        "role": "free_safety",
+        "start": {
+          "x": 6.0,
+          "y": -5.0
+        }
+      },
+      {
+        "id": "SS",
+        "role": "strong_safety",
+        "start": {
+          "x": 6.0,
+          "y": 5.0
+        }
+      }
+    ]
+  },
+  "controllers": {
+    "offense": [
+      {
+        "id": "LT",
+        "controller": {
+          "type": "drive_step",
+          "first_step_yd": 0.5,
+          "target_vec": {
+            "x": 1.0,
+            "y": 0.0
+          },
+          "max_speed_yd_s": 4.0,
+          "accel_yd_s2": 10.0
+        }
+      },
+      {
+        "id": "LG",
+        "controller": {
+          "type": "down_block",
+          "landmark": "LDT",
+          "max_speed_yd_s": 4.2,
+          "accel_yd_s2": 10.0
+        }
+      },
+      {
+        "id": "C",
+        "controller": {
+          "type": "double_then_climb",
+          "with": "RG",
+          "primary": "LDT",
+          "secondary": "MIKE",
+          "handoff_s": 0.4,
+          "max_speed_yd_s": 4.5,
+          "accel_yd_s2": 10.0
+        }
+      },
+      {
+        "id": "RG",
+        "controller": {
+          "type": "double_then_climb",
+          "with": "C",
+          "primary": "LDT",
+          "secondary": "WILL",
+          "handoff_s": 0.4,
+          "max_speed_yd_s": 4.6,
+          "accel_yd_s2": 10.0
+        }
+      },
+      {
+        "id": "RT",
+        "controller": {
+          "type": "hinge",
+          "on": "RE",
+          "max_speed_yd_s": 4.0,
+          "accel_yd_s2": 10.0
+        }
+      },
+      {
+        "id": "TE",
+        "controller": {
+          "type": "down_block",
+          "landmark": "RE",
+          "seal": "inside",
+          "max_speed_yd_s": 4.0,
+          "accel_yd_s2": 10.0
+        }
+      },
+      {
+        "id": "WRL",
+        "controller": {
+          "type": "stalk",
+          "target": "CBL",
+          "depth_yd": 2.0,
+          "max_speed_yd_s": 6.0,
+          "accel_yd_s2": 10.0
+        }
+      },
+      {
+        "id": "WRR",
+        "controller": {
+          "type": "stalk",
+          "target": "CBR",
+          "depth_yd": 2.0,
+          "max_speed_yd_s": 6.0,
+          "accel_yd_s2": 10.0
+        }
+      },
+      {
+        "id": "QB",
+        "controller": {
+          "type": "mesh_giver",
+          "handoff_at_s": 0.28,
+          "fake_offset": {
+            "x": -0.8,
+            "y": -0.5
+          },
+          "max_speed_yd_s": 5.0,
+          "accel_yd_s2": 10.0
+        }
+      },
+      {
+        "id": "FB",
+        "controller": {
+          "type": "insert",
+          "gap": "right_A",
+          "path": [
+            {
+              "x": 0.5,
+              "y": 0.0
+            },
+            {
+              "x": 1.8,
+              "y": 0.0
+            },
+            {
+              "x": 3.0,
+              "y": 0.0
+            }
+          ],
+          "max_speed_yd_s": 6.0,
+          "accel_yd_s2": 12.0
+        }
+      },
+      {
+        "id": "HB",
+        "controller": {
+          "type": "spline_follow",
+          "path": [
+            {
+              "x": -0.3,
+              "y": 0.0,
+              "t": 0.28
+            },
+            {
+              "x": 1.6,
+              "y": 0.0
+            },
+            {
+              "x": "RESULT_YARDS",
+              "y": 0.6
+            }
+          ],
+          "arrive": "WHISTLE",
+          "max_speed_yd_s": 7.8,
+          "accel_yd_s2": 14.0
+        }
+      }
+    ],
+    "defense": [
+      {
+        "id": "LE",
+        "controller": {
+          "type": "rush_lane",
+          "lane": "C",
+          "max_speed_yd_s": 6.0,
+          "accel_yd_s2": 12.0
+        }
+      },
+      {
+        "id": "LDT",
+        "controller": {
+          "type": "rush_lane",
+          "lane": "A_left",
+          "max_speed_yd_s": 5.5,
+          "accel_yd_s2": 12.0
+        }
+      },
+      {
+        "id": "RDT",
+        "controller": {
+          "type": "rush_lane",
+          "lane": "A_right",
+          "max_speed_yd_s": 5.5,
+          "accel_yd_s2": 12.0
+        }
+      },
+      {
+        "id": "RE",
+        "controller": {
+          "type": "rush_lane",
+          "lane": "C",
+          "max_speed_yd_s": 6.0,
+          "accel_yd_s2": 12.0
+        }
+      },
+      {
+        "id": "SAM",
+        "controller": {
+          "type": "fit_flow",
+          "fit": "C_gap_right",
+          "pursuit": "lever",
+          "max_speed_yd_s": 7.0,
+          "accel_yd_s2": 12.0
+        }
+      },
+      {
+        "id": "MIKE",
+        "controller": {
+          "type": "insert_then_pursue",
+          "gap": "right_A",
+          "depth_yd": 1.5,
+          "pursuit": "inside_out",
+          "max_speed_yd_s": 7.5,
+          "accel_yd_s2": 12.0
+        }
+      },
+      {
+        "id": "WILL",
+        "controller": {
+          "type": "insert_then_pursue",
+          "gap": "left_A",
+          "depth_yd": 1.2,
+          "pursuit": "inside_out",
+          "max_speed_yd_s": 7.2,
+          "accel_yd_s2": 12.0
+        }
+      },
+      {
+        "id": "CBL",
+        "controller": {
+          "type": "pursuit",
+          "style": "contain",
+          "pursuit": "outside_in",
+          "max_speed_yd_s": 8.0,
+          "accel_yd_s2": 14.0
+        }
+      },
+      {
+        "id": "CBR",
+        "controller": {
+          "type": "pursuit",
+          "style": "contain",
+          "pursuit": "outside_in",
+          "max_speed_yd_s": 8.0,
+          "accel_yd_s2": 14.0
+        }
+      },
+      {
+        "id": "FS",
+        "controller": {
+          "type": "pursuit",
+          "style": "angle_cut",
+          "pursuit": "top_down",
+          "anticipation_s": 0.35,
+          "max_speed_yd_s": 8.2,
+          "accel_yd_s2": 14.0
+        }
+      },
+      {
+        "id": "SS",
+        "controller": {
+          "type": "pursuit",
+          "style": "angle_cut",
+          "pursuit": "alley",
+          "anticipation_s": 0.3,
+          "max_speed_yd_s": 7.8,
+          "accel_yd_s2": 14.0
+        }
+      }
+    ]
+  },
+  "ball": {
+    "icon": "oval",
+    "spin_rps": 4,
+    "trail_ms": 50,
+    "possession": "C",
+    "events": [
+      {
+        "t": 0.15,
+        "action": "snap",
+        "from": "C",
+        "to": "QB"
+      },
+      {
+        "t": 0.28,
+        "action": "handoff",
+        "from": "QB",
+        "to": "HB"
+      }
+    ]
+  },
+  "blocking": {
+    "assignments": [
+      {
+        "blocker": "C",
+        "pref": [
+          "LDT",
+          "MIKE"
+        ],
+        "tech": "double_then_climb"
+      },
+      {
+        "blocker": "RG",
+        "pref": [
+          "LDT",
+          "WILL"
+        ],
+        "tech": "double_then_climb"
+      },
+      {
+        "blocker": "LG",
+        "pref": [
+          "RDT"
+        ],
+        "tech": "down"
+      },
+      {
+        "blocker": "RT",
+        "pref": [
+          "RE"
+        ],
+        "tech": "hinge"
+      },
+      {
+        "blocker": "TE",
+        "pref": [
+          "RE",
+          "SAM"
+        ],
+        "tech": "down"
+      },
+      {
+        "blocker": "WRL",
+        "pref": [
+          "CBL"
+        ],
+        "tech": "stalk"
+      },
+      {
+        "blocker": "WRR",
+        "pref": [
+          "CBR"
+        ],
+        "tech": "stalk"
+      },
+      {
+        "blocker": "FB",
+        "pref": [
+          "MIKE"
+        ],
+        "tech": "insert_A_right"
+      }
+    ],
+    "engagement": {
+      "distance_yd": 0.8,
+      "push_coeff": 2.2,
+      "max_drive_yd_s": 2.0,
+      "shed_after_s": 1.2,
+      "shed_prob": 0.0
+    }
+  },
+  "defense_ai": {
+    "global": {
+      "reaction_s": 0.1,
+      "anticipation_s": 0.25,
+      "max_speed_yd_s": 7.5,
+      "accel_yd_s2": 12.0
+    },
+    "steer": {
+      "kp": 1.3,
+      "kd": 0.2,
+      "sideline_bias": 0.08
+    },
+    "guaranteed_tackle": {
+      "enable": true,
+      "start_check_s": 1.2,
+      "assign_nearest": true,
+      "boost": {
+        "max_speed_mul": 1.15,
+        "shed_after_s": 0.6
+      }
+    }
+  },
+  "termination": {
+    "rules": [
+      {
+        "when": "tackle",
+        "then": "WHISTLE"
+      },
+      {
+        "when": "carrier_oob",
+        "then": "WHISTLE"
+      },
+      {
+        "when": "carrier_crosses_goal",
+        "then": "TD_WHISTLE"
+      }
+    ],
+    "tackle_selection": {
+      "prefer": [
+        "SS",
+        "SAM",
+        "FS",
+        "MIKE",
+        "CBR",
+        "WILL"
+      ],
+      "min_one_defender": true,
+      "tolerance_yd": 0.2
+    }
+  },
+  "outcome": {
+    "chart_key": "H",
+    "yards": "RESULT_YARDS",
+    "whistle": {
+      "type": "tackle",
+      "at": {
+        "x": "RESULT_YARDS",
+        "y": 0.6
+      },
+      "by_candidates": [
+        "SS",
+        "SAM",
+        "FS",
+        "CBR"
+      ]
+    }
+  }
+}
