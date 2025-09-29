@@ -1,4 +1,5 @@
-import { EventBus, HudUpdatePayload } from '../utils/EventBus';
+import type { HudUpdatePayload } from '../utils/EventBus';
+import { EventBus } from '../utils/EventBus';
 
 function $(id: string): HTMLElement | null {
   return typeof document !== 'undefined' ? document.getElementById(id) : null;
@@ -16,23 +17,14 @@ export function registerHUD(bus: EventBus): void {
   const hudBallSpot = $('ballSpot');
   const hudPossession = $('possession');
 
-  // Field overlay elements are created by Field UI; we manipulate positions here on hud updates
-  const scrimmageLineEl = ((): HTMLElement | null => {
-    return typeof document !== 'undefined' ? document.querySelector('.scrimmage-line') as HTMLElement : null;
-  })();
-  const firstDownLineEl = ((): HTMLElement | null => {
-    return typeof document !== 'undefined' ? document.querySelector('.firstdown-line') as HTMLElement : null;
-  })();
-  const redZoneEl = ((): HTMLElement | null => {
-    return typeof document !== 'undefined' ? document.getElementById('red-zone') : null;
-  })();
-  const chainMarkerEl = ((): HTMLElement | null => {
-    return typeof document !== 'undefined' ? document.querySelector('.chain-marker') as HTMLElement : null;
-  })();
-
   const downNames = ['1st', '2nd', '3rd', '4th'];
 
   bus.on('hudUpdate', (p: HudUpdatePayload) => {
+    // Query overlay elements at event time to allow late construction
+    const scrimmageLineEl = typeof document !== 'undefined' ? document.querySelector('.scrimmage-line') as HTMLElement | null : null;
+    const firstDownLineEl = typeof document !== 'undefined' ? document.querySelector('.firstdown-line') as HTMLElement | null : null;
+    const redZoneEl = typeof document !== 'undefined' ? document.getElementById('red-zone') : null;
+    const chainMarkerEl = typeof document !== 'undefined' ? document.querySelector('.chain-marker') as HTMLElement | null : null;
     if (scoreDisplay) {
       const prev = scoreDisplay.textContent || '';
       const next = `HOME ${p.score.player} — AWAY ${p.score.ai}`;

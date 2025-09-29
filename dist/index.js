@@ -14,39 +14,30 @@ import { registerHUD } from './ui/HUD';
 import { registerLog } from './ui/Log';
 import { registerField } from './ui/Field';
 import { registerHand } from './ui/Hand';
-
-export function boot(): void {
-  // Placeholder bootstrap for future DOM wiring
+export function boot() {
+    // Placeholder bootstrap for future DOM wiring
 }
-
-declare global {
-  interface Window { GS?: any }
-}
-
 if (typeof window !== 'undefined') {
-  const bus = new EventBus();
-  // Register UI subscribers
-  registerHUD(bus);
-  registerLog(bus);
-  registerField(bus);
-  registerHand(bus);
-
-  const [offenseCharts, placeKicking, timeKeeping, longGain] = await Promise.all([
-    loadOffenseCharts(),
-    loadPlaceKicking(),
-    loadTimeKeeping(),
-    loadLongGain(),
-  ]);
-
-  (window as any).GS = {
-    rules: { Kickoff, Punt, PlaceKicking, ResultParsing, Timekeeping, Charts, LongGain: (await import('./rules/LongGain')) },
-    ai: { PATDecision, CoachProfiles },
-    sim: { RNG },
-    tables: { offenseCharts, placeKicking, timeKeeping, longGain },
-    bus,
-  };
+    const bus = new EventBus();
+    // Register UI subscribers
+    registerHUD(bus);
+    registerLog(bus);
+    registerField(bus);
+    registerHand(bus);
+    const [offenseCharts, placeKicking, timeKeeping, longGain] = await Promise.all([
+        loadOffenseCharts(),
+        loadPlaceKicking(),
+        loadTimeKeeping(),
+        loadLongGain(),
+    ]);
+    window.GS = {
+        rules: { Kickoff, Punt, PlaceKicking, ResultParsing, Timekeeping, Charts, LongGain: (await import('./rules/LongGain')) },
+        ai: { PATDecision, CoachProfiles },
+        sim: { RNG },
+        tables: { offenseCharts, placeKicking, timeKeeping, longGain },
+        bus,
+    };
 }
-
 // Load legacy DOM/UI logic via bridge (replaces <script src="main.js">)
 await import('./legacy/main-bridge');
-
+//# sourceMappingURL=index.js.map

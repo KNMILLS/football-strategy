@@ -1,4 +1,5 @@
-import { EventBus, HandUpdatePayload } from '../utils/EventBus';
+import type { HandUpdatePayload } from '../utils/EventBus';
+import { EventBus } from '../utils/EventBus';
 
 function $(id: string): HTMLElement | null {
   return typeof document !== 'undefined' ? document.getElementById(id) : null;

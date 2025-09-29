@@ -414,30 +414,31 @@ function resolveKickoff(onside, kickerTeam) {
  * @returns {number} Seconds to subtract from the game clock
  */
 function calculateTimeOff(outcome) {
-  if (!outcome) return TIME_KEEPING.gain0to20;
+  const TK = (typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING;
+  if (!outcome) return TK.gain0to20;
   // Out of bounds always takes precedence
-  if (outcome.outOfBounds) return TIME_KEEPING.outOfBounds;
+  if (outcome.outOfBounds) return TK.outOfBounds;
   switch (outcome.category) {
     case 'incomplete':
-      return TIME_KEEPING.incomplete;
+      return TK.incomplete;
     case 'interception':
-      return TIME_KEEPING.interception;
+      return TK.interception;
     case 'fumble':
-      return TIME_KEEPING.fumble;
+      return TK.fumble;
     case 'penalty':
-      return TIME_KEEPING.penalty;
+      return TK.penalty;
     case 'loss':
-      return TIME_KEEPING.loss;
+      return TK.loss;
     case 'gain':
       // Use absolute yards in case negative yards slip through. Gains of
       // more than 20 yards take 45 seconds; shorter gains take 30.
       if (Math.abs(outcome.yards) > 20) {
-        return TIME_KEEPING.gain20plus;
+        return TK.gain20plus;
       }
-      return TIME_KEEPING.gain0to20;
+      return TK.gain0to20;
     default:
       // Unknown or other categories (including sacks not caught above)
-      return TIME_KEEPING.gain0to20;
+      return TK.gain0to20;
   }
 }
 
@@ -665,16 +666,22 @@ function yardToSvgX(absYard) {
 // Utilities to manage play art SVG
 // Removed play-art SVG helpers and cleanup
 
-// ---------------- Play Art JSON Loader ----------------
-// Optional external tables (declared to avoid ReferenceError when undefined)
+// ---------------- Runtime Table Hooks ----------------
+// Read any prefetched tables from window.GS.tables when available
 let PLACE_KICK_TABLE_DATA;
 let KICKOFF_NORMAL_DATA;
 let KICKOFF_ONSIDE_DATA;
 let LONG_GAIN_DATA;
 let TIME_KEEPING_DATA;
-// Removed play-art dataset/index
-
-// Removed play-art loaders
+try {
+  const gs = (typeof window !== 'undefined' && window.GS) ? window.GS : null;
+  if (gs && gs.tables) {
+    PLACE_KICK_TABLE_DATA = gs.tables.placeKicking;
+    TIME_KEEPING_DATA = gs.tables.timeKeeping;
+    LONG_GAIN_DATA = gs.tables.longGain;
+    // Offense charts are consumed directly in determineOutcome via FULL_OFFENSE_CHARTS fallback.
+  }
+} catch {}
 
 function buildPowerUpMiddleFallback() {
   return {
@@ -710,17 +717,7 @@ function buildPowerUpMiddleFallback() {
 
 // Minimal no-op data loader to satisfy startup call. Charts are embedded;
 // external JSONs are optional and safely ignored if unavailable.
-async function loadDataTables() {
-  try {
-    // Intentionally left minimal. If needed later, we can fetch:
-    // - data/place_kicking.json -> PLACE_KICK_TABLE_DATA
-    // - data/kickoff_normal.json -> KICKOFF_NORMAL_DATA
-    // - data/kickoff_onside.json -> KICKOFF_ONSIDE_DATA
-    // - data/long_gain.json -> LONG_GAIN_DATA
-    // - data/time_keeping.json -> TIME_KEEPING_DATA
-    // Current logic already falls back to embedded tables when *_DATA is undefined.
-  } catch {}
-}
+async function loadDataTables() {}
 
 // Check and announce the two-minute warning. According to the updated rules,
 // the 2:00 mark in the 2nd and 4th quarters triggers an automatic time out.
@@ -1389,7 +1386,7 @@ function kickoff() {
   game.down = 1;
   game.toGo = 10;
   // Deduct time for the kickoff (15 seconds)
-  game.clock -= TIME_KEEPING.kickoff;
+  game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).kickoff;
   // Check for two-minute warning and handle clock/quarter transitions
   checkTwoMinuteWarning();
   handleClockAndQuarter();
@@ -1450,50 +1447,15 @@ function drawCards(deckArray, count) {
 }
 
 function renderHand() {
-  handElement.innerHTML = '';
-  const cardsToRender = game.playerHand;
-  for (const cardId of cardsToRender) {
-    const card = typeof cardId === 'string' ? CARD_MAP[cardId] : CARD_MAP[cardId.id];
-    const div = document.createElement('div');
-    div.className = 'card';
-    // Dragging disabled; click-to-play instead
-    div.draggable = false;
-    div.dataset.id = card.id;
-    div.innerHTML = `<img src="${card.art}" alt="${card.label}"><div class="label">${card.label}</div>`;
-    // Fallback: if the image fails to load (missing or misnamed asset),
-    // remove the <img> element and mark the card so that CSS can display
-    // a placeholder background. Without this, missing images will leave
-    // blank white cards without labels.
-    const imgEl = div.querySelector('img');
-    if (imgEl) {
-      imgEl.onerror = () => {
-        imgEl.remove();
-        div.classList.add('no-image');
-      };
+  try {
+    if (window && window.GS && window.GS.bus) {
+      const cardsToRender = game.playerHand.map((cardId) => {
+        const card = typeof cardId === 'string' ? CARD_MAP[cardId] : CARD_MAP[cardId.id];
+        return { id: card.id, label: card.label, art: card.art, type: card.type };
+      });
+      window.GS.bus.emit('handUpdate', { cards: cardsToRender, isPlayerOffense: game.possession === 'player' });
     }
-    // Click to play the selected card
-    div.addEventListener('click', () => {
-      // Use centre-bottom default for overlay positioning, though overlays are disabled below
-      playCard(card.id);
-    });
-    // Show a large fixed-position preview overlay on hover so it sits
-    // above all UI and is never clipped by container overflow.
-    div.addEventListener('mouseenter', () => {
-      if (!cardPreview || game.overlayActive || game.gameOver) return;
-      cardPreview.style.backgroundImage = `url('${card.art}')`;
-      cardPreview.innerHTML = `<div class='label'>${card.label}</div>`;
-      cardPreview.style.display = 'block';
-      cardPreview.style.zIndex = '9999';
-      cardPreview.style.pointerEvents = 'none';
-    });
-    div.addEventListener('mouseleave', () => {
-      if (cardPreview) {
-        cardPreview.style.display = 'none';
-        cardPreview.innerHTML = '';
-      }
-    });
-    handElement.appendChild(div);
-  }
+  } catch {}
 }
 
 // Update FG option visibility based on current situation
@@ -2360,7 +2322,7 @@ function resolvePunt() {
 function finalizeAfterPunt() {
   updateFGOptions();
   // Deduct time for the punt (15 seconds) and handle clock/quarter
-  game.clock -= TIME_KEEPING.punt;
+  game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).punt;
   checkTwoMinuteWarning();
   handleClockAndQuarter();
   updateHUD();
@@ -2604,7 +2566,7 @@ function handleSafety(scorer) {
       log(`Kickoff fumble on safety kick! ${recoveringTeam} recover at the ${formatYardForLog(yard)}.`);
     }
     game.down = 1; game.toGo = 10;
-    game.clock -= TIME_KEEPING.kickoff;
+    game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).kickoff;
     checkTwoMinuteWarning();
     handleClockAndQuarter();
     updateHUD();
@@ -2733,7 +2695,7 @@ function attemptExtraPoint() {
     log('Extra point missed.');
   }
   // Extra points consume no time
-  game.clock -= TIME_KEEPING.extraPoint;
+  game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).extraPoint;
   finishPAT();
   setCurrentPlayResult(`PAT ${success ? 'good' : 'missed'}`);
   finalizeDebugPlay();
@@ -2818,7 +2780,7 @@ function aiAttemptPAT() {
     } else {
       log('AI two‑point conversion fails.');
     }
-    game.clock -= TIME_KEEPING.extraPoint;
+    game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).extraPoint;
   } else {
     // Extra point attempt using the place kicking table
     let success;
@@ -2940,7 +2902,7 @@ function attemptFieldGoal() {
   game.awaitingFG = false;
   hideFgOptions();
   // Deduct time for the field goal itself
-  game.clock -= TIME_KEEPING.fieldgoal;
+  game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).fieldgoal;
   // Check for two-minute warning after field goal attempt
   checkTwoMinuteWarning();
   // On make: kickoff; on miss: no kickoff
@@ -2960,91 +2922,19 @@ function attemptFieldGoal() {
 
 // HUD and logging helpers
 function updateHUD() {
-  const prevText = scoreDisplay.textContent;
-  const newText = `HOME ${game.score.player} — AWAY ${game.score.ai}`;
-  scoreDisplay.textContent = newText;
-  if (prevText !== newText) {
-    scoreDisplay.classList.remove('score-pop');
-    void scoreDisplay.offsetWidth;
-    scoreDisplay.classList.add('score-pop');
-  }
-  hudQuarter.textContent = `Q${game.quarter}`;
-  hudClock.textContent = formatTime(Math.max(game.clock, 0));
-  // Format down & distance (show Goal-to-Go when line to gain is the goal line)
-  const downNames = ['1st', '2nd', '3rd', '4th'];
-  const downStr = downNames[Math.min(game.down, 4) - 1] || `${game.down}th`;
-  const firstDownAbsForLabel = game.possession === 'player' ? (game.ballOn + game.toGo) : (game.ballOn - game.toGo);
-  const isGoalToGo = game.possession === 'player' ? (firstDownAbsForLabel >= 100) : (firstDownAbsForLabel <= 0);
-  const toGoLabel = isGoalToGo ? 'Goal' : String(game.toGo);
-  hudDownDistance.textContent = `${downStr} & ${toGoLabel}`;
-  // Display the ball spot as a value from 0 to 50 yards regardless of
-  // orientation. Once the ball crosses midfield, we show the distance
-  // from the opposite end zone (e.g. ball on 60 becomes 40).
-  const displaySpot = game.ballOn <= 50 ? game.ballOn : 100 - game.ballOn;
-  hudBallSpot.textContent = `Ball on ${Math.round(displaySpot)}`;
-  hudPossession.textContent = game.possession === 'player' ? 'HOME' : 'AWAY';
-
-  // Update the field overlay lines. The field background represents the
-  // full 100 yards (0 at the left edge and 100 at the right edge). We use
-  // absolute yard values (0–100) directly for positioning so that:
-  // - When HOME has the ball (moving 0→100), the first down line appears to
-  //   the right of the scrimmage line.
-  // - When AWAY has the ball (moving 100→0), the first down line appears to
-  //   the left of the scrimmage line (since firstDownAbsolute < ballOn).
-  // This avoids mirroring which inverted the relative ordering.
-  if (scrimmageLineEl && firstDownLineEl) {
-    // Compute absolute yard line for the first down based on possession.
-    let firstDownAbsolute;
-    if (game.possession === 'player') {
-      firstDownAbsolute = game.ballOn + game.toGo;
-    } else {
-      firstDownAbsolute = game.ballOn - game.toGo;
+  try {
+    if (window && window.GS && window.GS.bus) {
+      window.GS.bus.emit('hudUpdate', {
+        quarter: game.quarter,
+        clock: game.clock,
+        down: game.down,
+        toGo: game.toGo,
+        ballOn: game.ballOn,
+        possession: game.possession,
+        score: { player: game.score.player, ai: game.score.ai }
+      });
     }
-    // Clamp within bounds
-    firstDownAbsolute = Math.max(0, Math.min(100, firstDownAbsolute));
-    // Determine percent positions across the field using absolute yard values.
-    // Each yard corresponds to 1% of the width.
-    let scrimmagePercent = yardToPercent(game.ballOn);
-    let firstDownPercent = yardToPercent(firstDownAbsolute);
-    // Clamp the lines slightly inside the field to ensure they are visible
-    const clamp = (val) => Math.max(5.5, Math.min(94.5, val));
-    scrimmageLineEl.style.left = `${clamp(scrimmagePercent)}%`;
-    firstDownLineEl.style.left = `${clamp(firstDownPercent)}%`;
-
-    // Show red zone shading when the ball is in either 20‑yard zone. For
-    // simplicity we base this on the absolute ball position (0–100). When
-    // ballOn <= 20 the player's end zone is threatened; when ballOn >= 80 the
-    // opponent's end zone is threatened. The overlay covers the full
-    // 20‑yard width and is hidden otherwise.
-    if (redZoneEl) {
-      if (game.ballOn <= 20) {
-        redZoneEl.style.display = 'block';
-        redZoneEl.style.left = '0%';
-        redZoneEl.style.width = '20%';
-      } else if (game.ballOn >= 80) {
-        redZoneEl.style.display = 'block';
-        redZoneEl.style.left = '80%';
-        redZoneEl.style.width = '20%';
-      } else {
-        redZoneEl.style.display = 'none';
-      }
-    }
-    // Position the chain marker along the sideline at the first down
-    // location. If the first down line is off the field (e.g. beyond 0–100)
-    // we still clamp its position inside the field. Always show the
-    // chain marker once a game has started.
-    if (chainMarkerEl) {
-      chainMarkerEl.style.display = 'block';
-      chainMarkerEl.style.left = `${clamp(firstDownPercent)}%`;
-    }
-
-    // Ensure both overlay lines remain visible. In some edge cases (e.g. after
-    // turnovers) CSS rules may hide these elements. Explicitly reset
-    // their display property so that the blue scrimmage line and yellow first
-    // down line always render after updateHUD() is called.
-    scrimmageLineEl.style.display = 'block';
-    firstDownLineEl.style.display = 'block';
-  }
+  } catch {}
 }
 
 /**
@@ -3375,18 +3265,11 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
 }
 
 function showToast(text) {
-  const overlay = document.getElementById('vfx-overlay');
-  if (!overlay) return;
-  const d = document.createElement('div');
-  d.className = 'vfx-toast';
-  d.textContent = text;
-  overlay.appendChild(d);
-  setTimeout(() => { d.remove(); }, 1500);
+  try { if (window && window.GS && window.GS.bus) window.GS.bus.emit('vfx', { type: 'toast', payload: { text } }); } catch {}
 }
 
 function log(msg) {
-  logElement.textContent += msg + '\n';
-  logElement.scrollTop = logElement.scrollHeight;
+  try { if (window && window.GS && window.GS.bus) window.GS.bus.emit('log', { message: String(msg) }); } catch {}
   // Capture commentary for the current debug play
   try {
     if (game && game._currentDebugPlay && typeof msg === 'string') {
@@ -3964,7 +3847,7 @@ function applyPenaltyDecision(choice, st) {
     log('Penalty declined. The play stands.');
   }
   // Time off for a penalty play (accept or decline consumes the play)
-  game.clock -= TIME_KEEPING.penalty;
+  game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).penalty;
   checkTwoMinuteWarning();
   // A half may not end on a penalty: if time expired as a result of this
   // penalty administration, schedule an untimed down.
