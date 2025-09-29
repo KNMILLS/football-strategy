@@ -224,6 +224,21 @@ const LONG_GAIN_TABLE = {1:'+50 and (+10 x 1D6)', 2:'+50', 3:'+45', 4:'+40', 5:'
 // categories of play outcomes to the number of seconds to deduct from the
 // game clock.
 
+// Place kicking table (fallback when TS modules not booted in tests)
+const PLACE_KICK_TABLE = {
+  2: { PAT: 'NG', '1-12': 'NG', '13-22': 'NG', '23-32': 'G', '33-38': 'G', '39-45': 'G' },
+  3: { PAT: 'G',  '1-12': 'NG', '13-22': 'NG', '23-32': 'NG', '33-38': 'G', '39-45': 'NG' },
+  4: { PAT: 'G',  '1-12': 'G',  '13-22': 'NG', '23-32': 'NG', '33-38': 'NG', '39-45': 'NG' },
+  5: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'NG', '33-38': 'NG', '39-45': 'NG' },
+  6: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'G',  '33-38': 'NG', '39-45': 'NG' },
+  7: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'G',  '33-38': 'G',  '39-45': 'NG' },
+  8: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'G',  '33-38': 'NG', '39-45': 'NG' },
+  9: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'NG', '33-38': 'NG', '39-45': 'NG' },
+  10: { PAT: 'G', '1-12': 'G',  '13-22': 'G',  '23-32': 'NG', '33-38': 'NG', '39-45': 'NG' },
+  11: { PAT: 'G', '1-12': 'G',  '13-22': 'NG', '23-32': 'NG', '33-38': 'G',  '39-45': 'NG' },
+  12: { PAT: 'NG','1-12': 'NG', '13-22': 'G',  '23-32': 'G',  '33-38': 'G',  '39-45': 'G' }
+};
+
 // Legacy kickoff resolver (fallback when TS module not initialized in tests)
 function resolveKickoff(rng, opts) {
   // Minimal table compatible with TS version
