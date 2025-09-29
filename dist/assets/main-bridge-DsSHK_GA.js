@@ -1,0 +1,1 @@
+async function t(){if(typeof document>"u")return;const a=new URL("/assets/main-B_0ZSKGv.js?url",import.meta.url).href;await new Promise((n,r)=>{const e=document.createElement("script");e.src=a,e.async=!1,e.onload=()=>n(),e.onerror=()=>r(new Error("Failed to load legacy main.js")),document.head.appendChild(e)})}await t();export{t as loadLegacyClassicScript};

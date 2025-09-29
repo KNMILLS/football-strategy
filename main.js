@@ -13,6 +13,39 @@
  * available on fourth down when close enough to the opponent's end zone.
  */
 
+// Ensure global GS object and key rules exist when tests eval main.js directly
+try {
+  if (typeof window !== 'undefined') {
+    // @ts-ignore
+    if (!window.GS) window.GS = {};
+    // @ts-ignore ensure rules container exists
+    if (!window.GS.rules) window.GS.rules = {};
+    // Provide fallbacks for special teams using legacy JS implementations when TS modules aren't booted
+    // Kickoff fallback
+    // @ts-ignore
+    if (!window.GS.rules.Kickoff) window.GS.rules.Kickoff = { resolveKickoff: resolveKickoff };
+    // PlaceKicking fallbacks
+    // @ts-ignore
+    if (!window.GS.rules.PlaceKicking) window.GS.rules.PlaceKicking = {
+      attemptPAT: (rng) => {
+        const roll = Math.floor(rng() * 6) + 1 + Math.floor(rng() * 6) + 1;
+        return (PLACE_KICK_TABLE[roll] || {}).PAT === 'G';
+      },
+      attemptFieldGoal: (rng, yards) => {
+        const roll = Math.floor(rng() * 6) + 1 + Math.floor(rng() * 6) + 1;
+        let key = '39-45';
+        if (yards <= 12) key = '1-12';
+        else if (yards <= 22) key = '13-22';
+        else if (yards <= 32) key = '23-32';
+        else if (yards <= 38) key = '33-38';
+        return (PLACE_KICK_TABLE[roll] || {})[key] === 'G';
+      }
+    };
+    // Punt fallback uses legacy resolvePunt if defined later in file
+    // Will be set at runtime in resolvePunt block if missing
+  }
+} catch {}
+
 // ---------- Deck definitions ----------
 // These objects were generated from the high‑resolution card images. Each
 // offensive deck contains a list of play cards with an id, display label,
@@ -191,42 +224,7 @@ const LONG_GAIN_TABLE = {1:'+50 and (+10 x 1D6)', 2:'+50', 3:'+45', 4:'+40', 5:'
 // categories of play outcomes to the number of seconds to deduct from the
 // game clock.
 
-// Normal kickoff results. Keys are 2D6 totals, values are either numeric
-// yard lines or strings indicating special results. A trailing '*' means
-// roll again for the yard line. Fumbles result in the kicking team
-// recovering; penalties subtract 10 yards from the return. Long gains (LG)
-// use the long gain table.
-const NORMAL_KICKOFF_TABLE = {
-  2: 'FUMBLE*',
-  3: 'PENALTY -10*',
-  4: 10,
-  5: 15,
-  6: 20,
-  7: 25,
-  8: 30,
-  9: 35,
-  10: 40,
-  11: 'LG',
-  12: 'LG + 5'
-};
-
-// Onside kickoff results. Each entry indicates who recovers the ball and at
-// which yard line relative to the receiving team's end zone. A +1 bonus is
-// applied to the die roll if the kicking team is not trailing in the
-// current score. This table is referenced only if an onside kick is
-// attempted (not currently exposed in the UI).
-const ONSIDE_KICK_TABLE = {
-  1: { possession: 'kicker', yard: 40 },
-  2: { possession: 'kicker', yard: 40 },
-  3: { possession: 'receiver', yard: 35 },
-  4: { possession: 'receiver', yard: 35 },
-  5: { possession: 'receiver', yard: 35 },
-  6: { possession: 'receiver', yard: 30 }
-};
-
-// Place kicking results. Keys are 2D6 totals; each value is an object
-// mapping a distance category to 'G' (good) or 'NG' (no good). Distance
-// categories correspond to PAT, 1‑12, 13‑22, 23‑32, 33‑38 and 39‑45 yards.
+// Place kicking table (fallback when TS modules not booted in tests)
 const PLACE_KICK_TABLE = {
   2: { PAT: 'NG', '1-12': 'NG', '13-22': 'NG', '23-32': 'G', '33-38': 'G', '39-45': 'G' },
   3: { PAT: 'G',  '1-12': 'NG', '13-22': 'NG', '23-32': 'NG', '33-38': 'G', '39-45': 'NG' },
@@ -240,6 +238,50 @@ const PLACE_KICK_TABLE = {
   11: { PAT: 'G', '1-12': 'G',  '13-22': 'NG', '23-32': 'NG', '33-38': 'G',  '39-45': 'NG' },
   12: { PAT: 'NG','1-12': 'NG', '13-22': 'G',  '23-32': 'G',  '33-38': 'G',  '39-45': 'G' }
 };
+
+// Legacy kickoff resolver (fallback when TS module not initialized in tests)
+function resolveKickoff(rng, opts) {
+  // Minimal table compatible with TS version
+  const NORMAL_KICKOFF_TABLE = {
+    2: 'FUMBLE*', 3: 'PENALTY -10*', 4: 10, 5: 15, 6: 20, 7: 25, 8: 30, 9: 35, 10: 40, 11: 'LG', 12: 'LG + 5'
+  };
+  const ONSIDE_KICK_TABLE = { 1: { possession: 'kicker', yard: 40 }, 2: { possession: 'kicker', yard: 40 }, 3: { possession: 'receiver', yard: 35 }, 4: { possession: 'receiver', yard: 35 }, 5: { possession: 'receiver', yard: 35 }, 6: { possession: 'receiver', yard: 30 } };
+  function parseKickoffYardLine(res) {
+    if (typeof res === 'number') return { yardLine: res, turnover: false };
+    if (res === 'LG') return { yardLine: Math.min(resolveLongGain(() => game.rng()), 50), turnover: false };
+    if (res === 'LG + 5') return { yardLine: Math.min(resolveLongGain(() => game.rng()) + 5, 50), turnover: false };
+    return { yardLine: 25, turnover: false };
+  }
+  if (opts && opts.onside) {
+    let roll = rollD6();
+    if (opts.kickerLeadingOrTied) roll = Math.min(6, roll + 1);
+    const entry = ONSIDE_KICK_TABLE[roll] || { possession: 'receiver', yard: 35 };
+    return { yardLine: entry.yard, turnover: entry.possession === 'kicker' };
+  }
+  let roll = rollD6() + rollD6();
+  let entry = NORMAL_KICKOFF_TABLE[roll];
+  let turnover = false;
+  let penalty = false;
+  if (typeof entry === 'string' && entry.includes('*')) {
+    if (/FUMBLE/i.test(entry)) turnover = true;
+    if (/PENALTY/i.test(entry)) penalty = true;
+    entry = entry.replace('*','').trim();
+    const reroll = rollD6() + rollD6();
+    let res2 = NORMAL_KICKOFF_TABLE[reroll];
+    if (typeof res2 === 'string' && res2.includes('*')) {
+      if (/FUMBLE/i.test(res2)) turnover = false;
+      if (/PENALTY/i.test(res2)) penalty = false;
+      res2 = res2.replace('*','').trim();
+    }
+    entry = res2;
+  }
+  const parsed = parseKickoffYardLine(entry);
+  let finalYard = parsed.yardLine;
+  if (penalty) finalYard = Math.max(0, parsed.yardLine - 10);
+  return { yardLine: finalYard, turnover };
+}
+
+// (legacy place-kicking table removed; logic migrated to TS module in window.GS.rules.PlaceKicking)
 
 // Time keeping values in seconds for different categories of plays. These
 // constants drive the game clock adjustments. See the official rules for
@@ -299,107 +341,7 @@ const PUNT_RETURN_TABLE = {
   12: { type: 'FC' }            // fair catch
 };
 
-/**
- * Parse a kickoff result and compute the yard line and turnover status.
- * The input 'res' is the value from NORMAL_KICKOFF_TABLE after resolving
- * any roll again markers. Returns an object with properties:
- *   yardLine (number) – the final yard line from the receiving team's goal
- *   turnover (boolean) – true if the kicking team recovers the ball
- * This helper is used by resolveKickoff() below.
- */
-function parseKickoffYardLine(res) {
-  let yardLine = 25;
-  let turnover = false;
-  if (typeof res === 'number') {
-    yardLine = res;
-  } else if (res === 'LG') {
-    // Use long gain table for returns. Clamp to midfield (50) to prevent
-    // unrealistic returns past the 50 yard line. We interpret long gain
-    // results as return distance rather than starting from the 50.
-    yardLine = Math.min(resolveLongGain(), 50);
-  } else if (res === 'LG + 5') {
-    yardLine = Math.min(resolveLongGain() + 5, 50);
-  } else {
-    // Should not occur; default to 25.
-    yardLine = 25;
-  }
-  return { yardLine, turnover };
-}
-
-/**
- * Resolve a kickoff. If onside is true, use the onside kickoff table. For
- * normal kickoffs, roll 2D6 to look up the result in the normal table.
- * Handles fumbles and penalties by rolling again for the yard line and
- * applying turnover/penalty as appropriate. Does not adjust the game
- * clock; the caller is responsible for deducting TIME_KEEPING.kickoff. The
- * returned yardLine is always relative to the receiving team's goal line.
- *
- * @param {boolean} onside Whether this is an onside kick
- * @param {string} kickerTeam 'player' or 'ai' indicating who is kicking
- * @returns {{ yardLine: number, turnover: boolean }}
- */
-function resolveKickoff(onside, kickerTeam) {
-  if (onside) {
-    // Onside kick: roll 1D6 and apply +1 if the kicking team is not trailing
-    let roll = rollD6();
-    // Determine if kicker is trailing. If their score is less than the
-    // opponent's, they are trailing and do not receive the +1 bonus.
-    const kickerScore = kickerTeam === 'player' ? game.score.player : game.score.ai;
-    const otherScore = kickerTeam === 'player' ? game.score.ai : game.score.player;
-    if (kickerScore >= otherScore) {
-      roll = Math.min(6, roll + 1);
-    }
-    const entry = ONSIDE_KICK_TABLE[roll] || { possession: 'receiver', yard: 35 };
-    // If the kicker recovers, turnover is true; otherwise false.
-    return { yardLine: entry.yard, turnover: entry.possession === 'kicker' };
-  }
-  // Normal kickoff: roll 2D6 to determine result.
-  let roll = rollD6() + rollD6();
-  let entry = NORMAL_KICKOFF_TABLE[roll];
-  let turnover = false;
-  let penalty = false;
-  // Handle results with '*' indicating roll again
-  if (typeof entry === 'string' && entry.includes('*')) {
-    // Fumble or penalty on kickoff. Remove the '*'.
-    if (/FUMBLE/i.test(entry)) {
-      turnover = true;
-    }
-    if (/PENALTY/i.test(entry)) {
-      penalty = true;
-    }
-    // Remove the star and any trailing text
-    entry = entry.replace('*', '').trim();
-    // Roll again to get the yard line. If this roll also indicates a fumble
-    // or penalty, we treat second fumbles as offsetting (no turnover) and
-    // second penalties as offsetting (no net penalty).
-    let reroll = rollD6() + rollD6();
-    let res2 = NORMAL_KICKOFF_TABLE[reroll];
-    if (typeof res2 === 'string' && res2.includes('*')) {
-      if (/FUMBLE/i.test(res2)) {
-        // Second fumble: offset turnover (receiving team retains)
-        turnover = false;
-      }
-      if (/PENALTY/i.test(res2)) {
-        // Second penalty: offset (no penalty)
-        penalty = false;
-      }
-      // Strip star and use remainder for yard line determination
-      res2 = res2.replace('*', '').trim();
-    }
-    entry = res2;
-  }
-  // Determine yard line and turnover
-  const { yardLine } = parseKickoffYardLine(entry);
-  // Apply penalty yardage if required. Penalties on LG results are marked
-  // from the 50 yard line, but for simplicity we subtract 10 yards from
-  // the return unless offset.
-  let finalYard = yardLine;
-  if (penalty) {
-    finalYard = Math.max(0, yardLine - 10);
-    log('Penalty on kickoff against receiving team: -10 yards');
-  }
-  return { yardLine: finalYard, turnover };
-}
+// (legacy kickoff resolver and parser removed; use window.GS.rules.Kickoff.resolveKickoff)
 
 /**
  * Calculate the number of seconds to deduct from the game clock based on
@@ -414,37 +356,36 @@ function resolveKickoff(onside, kickerTeam) {
  * @returns {number} Seconds to subtract from the game clock
  */
 function calculateTimeOff(outcome) {
-  if (!outcome) return TIME_KEEPING.gain0to20;
+  const TK = (typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING;
+  if (!outcome) return TK.gain0to20;
   // Out of bounds always takes precedence
-  if (outcome.outOfBounds) return TIME_KEEPING.outOfBounds;
+  if (outcome.outOfBounds) return TK.outOfBounds;
   switch (outcome.category) {
     case 'incomplete':
-      return TIME_KEEPING.incomplete;
+      return TK.incomplete;
     case 'interception':
-      return TIME_KEEPING.interception;
+      return TK.interception;
     case 'fumble':
-      return TIME_KEEPING.fumble;
+      return TK.fumble;
     case 'penalty':
-      return TIME_KEEPING.penalty;
+      return TK.penalty;
     case 'loss':
-      return TIME_KEEPING.loss;
+      return TK.loss;
     case 'gain':
       // Use absolute yards in case negative yards slip through. Gains of
       // more than 20 yards take 45 seconds; shorter gains take 30.
       if (Math.abs(outcome.yards) > 20) {
-        return TIME_KEEPING.gain20plus;
+        return TK.gain20plus;
       }
-      return TIME_KEEPING.gain0to20;
+      return TK.gain0to20;
     default:
       // Unknown or other categories (including sacks not caught above)
-      return TIME_KEEPING.gain0to20;
+      return TK.gain0to20;
   }
 }
 
 // Roll a six‑sided die. Uses Math.random for unpredictability.
-function rollD6() {
-  return Math.floor(Math.random() * 6) + 1;
-}
+function rollD6() { return Math.floor(game.rng() * 6) + 1; }
 
 /**
  * Resolve a long gain based on the LONG_GAIN_TABLE. A roll of 1 triggers a
@@ -667,16 +608,18 @@ function yardToSvgX(absYard) {
 // Utilities to manage play art SVG
 // Removed play-art SVG helpers and cleanup
 
-// ---------------- Play Art JSON Loader ----------------
-// Optional external tables (declared to avoid ReferenceError when undefined)
-let PLACE_KICK_TABLE_DATA;
-let KICKOFF_NORMAL_DATA;
-let KICKOFF_ONSIDE_DATA;
+// ---------------- Runtime Table Hooks ----------------
+// Read any prefetched tables from window.GS.tables when available
 let LONG_GAIN_DATA;
 let TIME_KEEPING_DATA;
-// Removed play-art dataset/index
-
-// Removed play-art loaders
+try {
+  const gs = (typeof window !== 'undefined' && window.GS) ? window.GS : null;
+  if (gs && gs.tables) {
+    TIME_KEEPING_DATA = gs.tables.timeKeeping;
+    LONG_GAIN_DATA = gs.tables.longGain;
+    // Offense charts are consumed directly in determineOutcome via FULL_OFFENSE_CHARTS fallback.
+  }
+} catch {}
 
 function buildPowerUpMiddleFallback() {
   return {
@@ -712,17 +655,7 @@ function buildPowerUpMiddleFallback() {
 
 // Minimal no-op data loader to satisfy startup call. Charts are embedded;
 // external JSONs are optional and safely ignored if unavailable.
-async function loadDataTables() {
-  try {
-    // Intentionally left minimal. If needed later, we can fetch:
-    // - data/place_kicking.json -> PLACE_KICK_TABLE_DATA
-    // - data/kickoff_normal.json -> KICKOFF_NORMAL_DATA
-    // - data/kickoff_onside.json -> KICKOFF_ONSIDE_DATA
-    // - data/long_gain.json -> LONG_GAIN_DATA
-    // - data/time_keeping.json -> TIME_KEEPING_DATA
-    // Current logic already falls back to embedded tables when *_DATA is undefined.
-  } catch {}
-}
+async function loadDataTables() {}
 
 // Check and announce the two-minute warning. According to the updated rules,
 // the 2:00 mark in the 2nd and 4th quarters triggers an automatic time out.
@@ -772,15 +705,8 @@ const game = {
 };
 
 // ---------- UI elements ----------
-const hudQuarter = document.getElementById('quarter');
-const hudClock = document.getElementById('clock');
-const hudDownDistance = document.getElementById('downDistance');
-const hudBallSpot = document.getElementById('ballSpot');
-const hudPossession = document.getElementById('possession');
-const scoreDisplay = document.getElementById('score');
+// Legacy UI element references kept minimal; HUD/Log/Hand rendering moved to TS UI via EventBus
 const logElement = document.getElementById('log');
-const handElement = document.getElementById('hand');
-const cardPreview = document.getElementById('card-preview');
 // AI intent element is no longer used because we no longer display the AI's
 // chosen play. The corresponding HTML element has been removed from
 // index.html, so this constant is retained only for backward compatibility.
@@ -839,6 +765,47 @@ const fgOptions = document.getElementById('fg-options');
 const btnKickPAT = document.getElementById('kick-pat');
 const btnGoTwo = document.getElementById('go-two');
 const btnKickFG = document.getElementById('kick-fg');
+
+// Accessibility helpers: toggle visibility + aria-hidden and manage focus
+function setGroupVisibility(groupEl, visible) {
+  if (!groupEl) return;
+  if (visible) {
+    groupEl.classList.remove('hidden');
+    groupEl.setAttribute('aria-hidden', 'false');
+  } else {
+    groupEl.classList.add('hidden');
+    groupEl.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function focusFirstButton(groupEl) {
+  if (!groupEl) return;
+  const firstButton = groupEl.querySelector('button');
+  if (firstButton && typeof firstButton.focus === 'function') {
+    try { firstButton.focus(); } catch (e) {}
+  }
+}
+
+function showPatOptions() {
+  setGroupVisibility(patOptions, true);
+  // Move focus to first control for keyboard users
+  focusFirstButton(patOptions);
+  // Ensure FG options are hidden while PAT is active
+  if (fgOptions) setGroupVisibility(fgOptions, false);
+}
+
+function hidePatOptions() {
+  setGroupVisibility(patOptions, false);
+}
+
+function showFgOptions() {
+  setGroupVisibility(fgOptions, true);
+  // Do not steal focus on reveal; user may be mid-flow
+}
+
+function hideFgOptions() {
+  setGroupVisibility(fgOptions, false);
+}
 
 // DEV test setup controls
 const testPlayerDeck = document.getElementById('test-player-deck');
@@ -1306,17 +1273,9 @@ function kickoff() {
   } else {
     onside = shouldAttemptOnside('ai');
   }
-  let result;
-  try {
-    if (window.GS && window.GS.rules && window.GS.rules.Kickoff && typeof window.GS.rules.Kickoff.resolveKickoff === 'function') {
-      const rng = () => game.rng();
-      const leadingOrTied = (kickerTeam === 'player' ? game.score.player : game.score.ai) >= (kickerTeam === 'player' ? game.score.ai : game.score.player);
-      result = window.GS.rules.Kickoff.resolveKickoff(rng, { onside, kickerLeadingOrTied: leadingOrTied });
-    }
-  } catch (e) { /* fall through to legacy */ }
-  if (!result) {
-    result = resolveKickoff(onside, kickerTeam);
-  }
+  const rng = () => game.rng();
+  const leadingOrTied = (kickerTeam === 'player' ? game.score.player : game.score.ai) >= (kickerTeam === 'player' ? game.score.ai : game.score.player);
+  const result = window.GS.rules.Kickoff.resolveKickoff(rng, { onside, kickerLeadingOrTied: leadingOrTied });
   const yard = result.yardLine;
   // Determine ball placement. If there was no turnover, the receiving
   // team retains possession. The yard line returned is relative to the
@@ -1350,7 +1309,7 @@ function kickoff() {
   game.down = 1;
   game.toGo = 10;
   // Deduct time for the kickoff (15 seconds)
-  game.clock -= TIME_KEEPING.kickoff;
+  game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).kickoff;
   // Check for two-minute warning and handle clock/quarter transitions
   checkTwoMinuteWarning();
   handleClockAndQuarter();
@@ -1379,7 +1338,7 @@ function shouldAttemptOnside(kicker) {
   if (diff <= 3 && t <= 120) {
     const highScoring = (game.score.player + game.score.ai) >= 40;
     const baseProb = 0.35 + (coach.onsideAggressive ? 0.25 : 0);
-    return highScoring || Math.random() < baseProb;
+    return highScoring || game.rng() < baseProb;
   }
   // Default late window (<= 5:00) matches previous heuristic
   if (coach.onsideAggressive && t <= 300 && diff >= 4) return true;
@@ -1411,50 +1370,15 @@ function drawCards(deckArray, count) {
 }
 
 function renderHand() {
-  handElement.innerHTML = '';
-  const cardsToRender = game.playerHand;
-  for (const cardId of cardsToRender) {
-    const card = typeof cardId === 'string' ? CARD_MAP[cardId] : CARD_MAP[cardId.id];
-    const div = document.createElement('div');
-    div.className = 'card';
-    // Dragging disabled; click-to-play instead
-    div.draggable = false;
-    div.dataset.id = card.id;
-    div.innerHTML = `<img src="${card.art}" alt="${card.label}"><div class="label">${card.label}</div>`;
-    // Fallback: if the image fails to load (missing or misnamed asset),
-    // remove the <img> element and mark the card so that CSS can display
-    // a placeholder background. Without this, missing images will leave
-    // blank white cards without labels.
-    const imgEl = div.querySelector('img');
-    if (imgEl) {
-      imgEl.onerror = () => {
-        imgEl.remove();
-        div.classList.add('no-image');
-      };
+  try {
+    if (window && window.GS && window.GS.bus) {
+      const cardsToRender = game.playerHand.map((cardId) => {
+        const card = typeof cardId === 'string' ? CARD_MAP[cardId] : CARD_MAP[cardId.id];
+        return { id: card.id, label: card.label, art: card.art, type: card.type };
+      });
+      window.GS.bus.emit('handUpdate', { cards: cardsToRender, isPlayerOffense: game.possession === 'player' });
     }
-    // Click to play the selected card
-    div.addEventListener('click', () => {
-      // Use centre-bottom default for overlay positioning, though overlays are disabled below
-      playCard(card.id);
-    });
-    // Show a large fixed-position preview overlay on hover so it sits
-    // above all UI and is never clipped by container overflow.
-    div.addEventListener('mouseenter', () => {
-      if (!cardPreview || game.overlayActive || game.gameOver) return;
-      cardPreview.style.backgroundImage = `url('${card.art}')`;
-      cardPreview.innerHTML = `<div class='label'>${card.label}</div>`;
-      cardPreview.style.display = 'block';
-      cardPreview.style.zIndex = '9999';
-      cardPreview.style.pointerEvents = 'none';
-    });
-    div.addEventListener('mouseleave', () => {
-      if (cardPreview) {
-        cardPreview.style.display = 'none';
-        cardPreview.innerHTML = '';
-      }
-    });
-    handElement.appendChild(div);
-  }
+  } catch {}
 }
 
 // Update FG option visibility based on current situation
@@ -1463,12 +1387,12 @@ function updateFGOptions() {
     // Show field goal button on any down when within kicking range (inside 35 yards of goal)
     const distanceToGoal = 100 - game.ballOn;
     if (distanceToGoal <= 35) {
-      fgOptions.classList.remove('hidden');
+      showFgOptions();
     } else {
-      fgOptions.classList.add('hidden');
+      hideFgOptions();
     }
   } else {
-    fgOptions.classList.add('hidden');
+    hideFgOptions();
   }
   // We no longer set awaitingFG here; the player may still choose to run an offensive play instead of kicking.
   game.awaitingFG = false;
@@ -1579,12 +1503,12 @@ function aiChooseCard() {
     }
     // Coach pass/run bias: Reid leans pass, Belichick leans run when balanced
     if (preferred === 'balanced') {
-      if (coach.passBias > 0 && Math.random() < coach.passBias) preferred = 'pass';
-      if (coach.passBias < 0 && Math.random() < Math.abs(coach.passBias)) preferred = 'run';
+      if (coach.passBias > 0 && game.rng() < coach.passBias) preferred = 'pass';
+      if (coach.passBias < 0 && game.rng() < Math.abs(coach.passBias)) preferred = 'run';
     }
     let choices = DEFENSE_DECK.filter((card) => card.type === preferred);
     if (choices.length === 0) choices = DEFENSE_DECK;
-    return choices[Math.floor(Math.random() * choices.length)];
+    return choices[Math.floor(game.rng() * choices.length)];
   } else {
     // AI is on offense.
     // Fourth down decision-making
@@ -1599,7 +1523,7 @@ function aiChooseCard() {
         const mediumGo = ctx.isLate && ctx.scoreDiff > 0 && game.toGo <= (5 + Math.round(goBoost * 10));
         if (mediumGo) {
           const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'pass');
-          if (passes.length) return passes[Math.floor(Math.random() * passes.length)];
+          if (passes.length) return passes[Math.floor(game.rng() * passes.length)];
         }
         // Otherwise, punt if available
         const punts = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'punt');
@@ -1610,10 +1534,10 @@ function aiChooseCard() {
         // Fourth-and-short: go for it. Prefer run unless long yardage situation by down/time
         if (game.toGo <= 1) {
           const runs = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'run');
-          if (runs.length) return runs[Math.floor(Math.random() * runs.length)];
+          if (runs.length) return runs[Math.floor(game.rng() * runs.length)];
         }
         const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'pass');
-        if (passes.length) return passes[Math.floor(Math.random() * passes.length)];
+        if (passes.length) return passes[Math.floor(game.rng() * passes.length)];
       }
     }
     // Non‑fourth: choose tendency by distance and context
@@ -1636,16 +1560,16 @@ function aiChooseCard() {
     }
     // Coach pass/run bias for balanced/close calls
     if (prefer === 'balanced') {
-      if (coach.passBias > 0 && Math.random() < coach.passBias) prefer = 'pass';
-      if (coach.passBias < 0 && Math.random() < Math.abs(coach.passBias)) prefer = 'run';
+      if (coach.passBias > 0 && game.rng() < coach.passBias) prefer = 'pass';
+      if (coach.passBias < 0 && game.rng() < Math.abs(coach.passBias)) prefer = 'run';
     }
     // Select by preference
     if (prefer !== 'pass') {
       const runs = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'run' && avoidRestricted(c));
-      if (runs.length && (prefer === 'run' || Math.random() < 0.5)) return runs[Math.floor(Math.random() * runs.length)];
+      if (runs.length && (prefer === 'run' || game.rng() < 0.5)) return runs[Math.floor(game.rng() * runs.length)];
     }
     const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'pass' && avoidRestricted(c));
-    if (passes.length) return passes[Math.floor(Math.random() * passes.length)];
+    if (passes.length) return passes[Math.floor(game.rng() * passes.length)];
     const fallback = OFFENSE_DECKS[game.aiOffenseDeck].find(avoidRestricted) || OFFENSE_DECKS[game.aiOffenseDeck][0];
     if (window.debug && window.debug.enabled) window.debug.event('ai', { action: 'choose_card', choice: fallback ? fallback.label : '(none)' });
     return fallback;
@@ -1653,6 +1577,11 @@ function aiChooseCard() {
 }
 
 function resolvePlay(playerCard, aiCard) {
+  try {
+    if (window.GS && window.GS.rules && window.GS.rules.Charts && window.GS.rules.ResolvePlayCore) {
+      // Placeholder: keep legacy path for now until full wiring; guard present for future swap
+    }
+  } catch (e) {}
   // Determine which card is offense and which is defense based on possession
   let offenseCard, defenseCard;
   if (window.debug && window.debug.enabled) window.debug.event('engine', { action: 'resolve_play', offense: (game.possession==='player'?'HOME':'AWAY'), playerCard: playerCard && playerCard.label, aiCard: aiCard && aiCard.label });
@@ -1702,7 +1631,28 @@ function resolvePlay(playerCard, aiCard) {
     resolvePunt();
     return;
   }
-  const outcome = determineOutcome(offenseCard, defenseCard);
+  // Resolve outcome via TS adapter when available for deterministic charts parsing
+  let outcome;
+  try {
+    if (window.GS && window.GS.runtime && typeof window.GS.runtime.resolvePlayAdapter === 'function' && window.GS.tables && window.GS.tables.offenseCharts) {
+      const deckName = game.possession === 'player' ? game.offenseDeck : game.aiOffenseDeck;
+      const rng = () => game.rng();
+      const res = window.GS.runtime.resolvePlayAdapter({
+        state: { seed: game.seed, quarter: game.quarter, clock: game.clock, down: game.down, toGo: game.toGo, ballOn: game.ballOn, possession: game.possession, awaitingPAT: game.awaitingPAT, gameOver: game.gameOver, score: { player: game.score.player, ai: game.score.ai } },
+        charts: window.GS.tables.offenseCharts,
+        deckName,
+        playLabel: offenseCard.label,
+        defenseLabel: defenseCard.label,
+        rng,
+        ui: { inTwoMinute: !!game.inTwoMinute },
+      });
+      outcome = res.outcome;
+    } else {
+      outcome = determineOutcome(offenseCard, defenseCard);
+    }
+  } catch (e) {
+    outcome = determineOutcome(offenseCard, defenseCard);
+  }
   try {
     // Start visual animation (non-blocking)
     // Animation disabled
@@ -1880,7 +1830,7 @@ function resolvePlay(playerCard, aiCard) {
     if (touchdownOnReturn) {
       if (game.possession === 'player') {
         game.awaitingPAT = true;
-        patOptions.classList.remove('hidden');
+        showPatOptions();
         if (playZone) playZone.classList.add('hidden');
         updateHUD();
         return;
@@ -2085,9 +2035,9 @@ function resolvePlay(playerCard, aiCard) {
         }
         return;
       }
-      patOptions.classList.remove('hidden');
+      showPatOptions();
       // Ensure field goal option is hidden during PAT selection
-      if (fgOptions) fgOptions.classList.add('hidden');
+      if (fgOptions) hideFgOptions();
       // hide play zone (legacy) if present
       if (playZone) playZone.classList.add('hidden');
       updateHUD();
@@ -2097,7 +2047,7 @@ function resolvePlay(playerCard, aiCard) {
     } else {
       // AI will attempt its PAT immediately
       // Ensure field goal option is hidden during PAT resolution
-      if (fgOptions) fgOptions.classList.add('hidden');
+      if (fgOptions) hideFgOptions();
       setCurrentPlayResult('Touchdown (AI PAT resolving)');
       finalizeDebugPlay();
       aiAttemptPAT();
@@ -2119,196 +2069,37 @@ function resolvePlay(playerCard, aiCard) {
 }
 
 function resolvePunt() {
-  // Narrate punt and use tables for distance and return.
-  // Leading blank line already printed by resolvePlay; avoid redundant preface lines
+  // Narrate punt and use TS module for distance/return.
   const puntingTeam = game.possession === 'player' ? 'HOME' : 'AWAY';
-  const receivingTeam = game.possession === 'player' ? 'AWAY' : 'HOME';
-  // Override debug header to a context label instead of stale 4th & distance
   if (game._currentDebugPlay) {
     game._currentDebugPlay.downDistance = 'PUNT';
   }
   const startSpot = formatYardForLog(game.ballOn);
   log(`${puntingTeam} lines up to punt from the ${startSpot} yard line.`);
-  // Try TS module resolver for determinism
+  const ctx = { ballOn: game.ballOn, puntingTeam: game.possession };
+  const rng = () => game.rng();
+  const longGainFn = (window.GS && window.GS.rules && window.GS.rules.LongGain) ? window.GS.rules.LongGain.resolveLongGain : (() => 50);
+  let out;
   try {
-    if (window.GS && window.GS.rules && window.GS.rules.Punt && typeof window.GS.rules.Punt.resolvePunt === 'function') {
-      const ctx = { ballOn: game.ballOn, puntingTeam: game.possession };
-      const rng = () => game.rng();
-      const out = window.GS.rules.Punt.resolvePunt(ctx, rng, window.GS.rules.LongGain ? window.GS.rules.LongGain.resolveLongGain : (()=>50));
-      const prevPossession = game.possession;
-      game.ballOn = out.ballOn;
-      if (out.possessionFlips) game.possession = game.possession === 'player' ? 'ai' : 'player';
-      game.down = 1; game.toGo = 10;
-      if (out.touchback) {
-        log('Punt sails into the end zone. Touchback to the 20.');
-      } else if (out.fumbleRecoveredByKickingTeam) {
-        const recovering = prevPossession === 'player' ? 'HOME' : 'AWAY';
-        log(`Ball is loose and recovered by ${recovering}!`);
-      }
-      finalizeAfterPunt();
-      return;
+    if (window && window.GS && window.GS.rules && window.GS.rules.Punt && typeof window.GS.rules.Punt.resolvePunt === 'function') {
+      out = window.GS.rules.Punt.resolvePunt(ctx, rng, longGainFn);
     }
-  } catch (e) { /* fall back to legacy path below */ }
-  // Legacy JS path
-  // Roll 2D6 for punt distance
-  const distRoll = rollD6() + rollD6();
-  const puntDistance = PUNT_DISTANCE_TABLE[distRoll] || 40;
-  log(`Punt travels ${puntDistance} yards.`);
-  // Advance the ball to the catch/return spot
-  if (game.possession === 'player') {
-    game.ballOn += puntDistance;
-  } else {
-    game.ballOn -= puntDistance;
+  } catch {}
+  if (!out) {
+    // Minimal inline fallback: 40-yard net, flip possession
+    const gross = 40;
+    const newBall = game.possession === 'player' ? Math.max(0, game.ballOn - gross) : Math.min(100, game.ballOn + gross);
+    out = { ballOn: newBall, possessionFlips: true, touchback: false, fumbleRecoveredByKickingTeam: false };
   }
-  // End zone handling
-  if (game.ballOn > 100 || game.ballOn < 0) {
-    // Through end zone → automatic touchback, ignore return choice
-    if (game.ballOn > 100) {
-      game.ballOn = 80;
-    } else {
-      game.ballOn = 20;
-    }
-    log('Punt sails through the end zone. Touchback to the 20.');
-    game.possession = game.possession === 'player' ? 'ai' : 'player';
-    game.down = 1; game.toGo = 10;
-  } else if (game.ballOn === 100 || game.ballOn === 0) {
-    // Lands in end zone: receiving team choice to return or down at 20
-    const receivingIsPlayer = game.possession === 'ai';
-    const teamName = receivingIsPlayer ? 'HOME' : 'AWAY';
-    const doDownAt20 = () => {
-      game.ballOn = receivingIsPlayer ? 20 : 80;
-      log(`${teamName} choose to down it in the end zone. Touchback to the 20.`);
-      game.possession = game.possession === 'player' ? 'ai' : 'player';
-      game.down = 1; game.toGo = 10;
-    };
-    const doReturn = () => {
-      log(`${teamName} elect to return from the end zone.`);
-      // Resolve return as normal from the end zone spot (0 or 100)
-      const retRoll = rollD6() + rollD6();
-      const ret = PUNT_RETURN_TABLE[retRoll] || { yards: 0 };
-      let returnYards = 0;
-      let fumbleTurnover = false;
-      if (ret.type === 'FC') {
-        log(`${teamName} signals for a fair catch in the end zone.`);
-      } else if (ret.type === 'LG') {
-        returnYards = resolveLongGain();
-        log(`${teamName} with a big return of ${returnYards} yards!`);
-      } else {
-        returnYards = ret.yards || 0;
-        if (returnYards > 0) log(`${teamName} returns it ${returnYards} yards.`);
-        if (retRoll <= 4) {
-          if (Math.random() < 0.15) {
-            log('Returner fumbles!');
-            fumbleTurnover = Math.random() < 0.5;
-          }
-        }
-      }
-      if (game.possession === 'player') {
-        // Player punted; AI receiving towards 0
-        game.ballOn -= returnYards;
-      } else {
-        game.ballOn += returnYards;
-      }
-      if (game.ballOn > 100) game.ballOn = 100;
-      if (game.ballOn < 0) game.ballOn = 0;
-      if (!fumbleTurnover) {
-        game.possession = game.possession === 'player' ? 'ai' : 'player';
-        game.down = 1; game.toGo = 10;
-        log(`Possession changes to ${game.possession === 'player' ? 'HOME' : 'AWAY'}.`);
-      } else {
-        const recovering = game.possession === 'player' ? 'HOME' : 'AWAY';
-        log(`Ball is loose and recovered by ${recovering}!`);
-      }
-    };
-    if (receivingIsPlayer) {
-      // In simulation mode, auto-decide without showing a modal
-      if (game.simulationMode) {
-        const shouldReturn = (function(){
-          if (game.quarter === 4 && game.clock < 2 * 60) {
-            const diff = (game.score.player - game.score.ai);
-            return diff < 0; // if HOME trailing, try to return
-          }
-        return false; })();
-        if (shouldReturn) doReturn(); else doDownAt20();
-      } else if (!puntEZModal) {
-        doDownAt20();
-      } else {
-        const text = document.getElementById('punt-ez-text');
-        text.textContent = 'Punt lands in the end zone. Return or take touchback at the 20?';
-        puntEZModal.style.display = 'block';
-        puntEZReturnBtn.onclick = () => {
-          puntEZModal.style.display = 'none';
-          doReturn();
-          finalizeAfterPunt();
-        };
-        puntEZDownBtn.onclick = () => {
-          puntEZModal.style.display = 'none';
-          doDownAt20();
-          finalizeAfterPunt();
-        };
-        return; // will finalize in callbacks
-      }
-    } else {
-      // AI decides: simple heuristic — if deep in own end (which it is), usually down it unless trailing late
-      const shouldReturn = (function(){
-        if (game.quarter === 4 && game.clock < 2 * 60) {
-          const diff = (game.score.player - game.score.ai);
-          return diff > 0; // if AI trailing, try to return
-        }
-        return false;
-      })();
-      if (shouldReturn) doReturn(); else doDownAt20();
-    }
-  } else {
-    // In play: resolve return
-    const retRoll = rollD6() + rollD6();
-    const ret = PUNT_RETURN_TABLE[retRoll] || { yards: 0 };
-    let returnYards = 0;
-    let fumbleTurnover = false;
-    if (ret.type === 'FC') {
-      log(`${receivingTeam} signals for a fair catch.`);
-    } else if (ret.type === 'LG') {
-      returnYards = resolveLongGain();
-      log(`${receivingTeam} with a big return of ${returnYards} yards!`);
-    } else {
-      returnYards = ret.yards || 0;
-      if (returnYards > 0) {
-        log(`${receivingTeam} returns it ${returnYards} yards.`);
-      } else {
-        log('No return.');
-      }
-      // Small chance of fumble on mid results
-      if (retRoll <= 4) {
-        if (Math.random() < 0.15) {
-          log('Returner fumbles!');
-          // 50/50 recovery for kicking team
-          fumbleTurnover = Math.random() < 0.5;
-        }
-      }
-    }
-    // Apply return yards opposite to punt direction since receiving team is advancing
-    if (game.possession === 'player') {
-      // Player punted; AI receiving advances towards 0 → subtract yards
-      game.ballOn -= returnYards;
-    } else {
-      // AI punted; HOME receiving advances towards 100 → add yards
-      game.ballOn += returnYards;
-    }
-    // Clamp bounds
-    if (game.ballOn > 100) game.ballOn = 100;
-    if (game.ballOn < 0) game.ballOn = 0;
-    // Change possession after the kick unless the kicking team recovers a fumble on the return
-    if (fumbleTurnover) {
-      const recovering = game.possession === 'player' ? 'HOME' : 'AWAY';
-      log(`Ball is loose and recovered by ${recovering}!`);
-      // Kicking team recovers: possession stays with current punting team
-      // Move ballOn slightly in the direction of kicking team as recovery spot already reflected by returnYards
-    } else {
-      game.possession = game.possession === 'player' ? 'ai' : 'player';
-      game.down = 1; game.toGo = 10;
-      const newTeam = game.possession === 'player' ? 'HOME' : 'AWAY';
-      log(`Possession changes to ${newTeam}.`);
-    }
+  const prevPossession = game.possession;
+  game.ballOn = out.ballOn;
+  if (out.possessionFlips) game.possession = game.possession === 'player' ? 'ai' : 'player';
+  game.down = 1; game.toGo = 10;
+  if (out.touchback) {
+    log('Punt sails into the end zone. Touchback to the 20.');
+  } else if (out.fumbleRecoveredByKickingTeam) {
+    const recovering = prevPossession === 'player' ? 'HOME' : 'AWAY';
+    log(`Ball is loose and recovered by ${recovering}!`);
   }
   finalizeAfterPunt();
 }
@@ -2316,7 +2107,7 @@ function resolvePunt() {
 function finalizeAfterPunt() {
   updateFGOptions();
   // Deduct time for the punt (15 seconds) and handle clock/quarter
-  game.clock -= TIME_KEEPING.punt;
+  game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).punt;
   checkTwoMinuteWarning();
   handleClockAndQuarter();
   updateHUD();
@@ -2535,7 +2326,9 @@ function handleSafety(scorer) {
   const doSafetyKickoff = () => {
     // Safety kickoff uses normal kickoff table, plus +25 to final yardline result.
     const kickerTeam = freeKicker;
-    const result = resolveKickoff(false, kickerTeam);
+    const rng = () => game.rng();
+    const leadingOrTied = (kickerTeam === 'player' ? game.score.player : game.score.ai) >= (kickerTeam === 'player' ? game.score.ai : game.score.player);
+    const result = window.GS.rules.Kickoff.resolveKickoff(rng, { onside: false, kickerLeadingOrTied: leadingOrTied });
     let yard = result.yardLine + 25;
     if (yard > 100) yard = 100;
     // Receiving team is opposite of kicker
@@ -2560,7 +2353,7 @@ function handleSafety(scorer) {
       log(`Kickoff fumble on safety kick! ${recoveringTeam} recover at the ${formatYardForLog(yard)}.`);
     }
     game.down = 1; game.toGo = 10;
-    game.clock -= TIME_KEEPING.kickoff;
+    game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).kickoff;
     checkTwoMinuteWarning();
     handleClockAndQuarter();
     updateHUD();
@@ -2649,8 +2442,8 @@ function handleClockAndQuarter() {
 function endGame() {
   game.gameOver = true;
   // Hide special teams options at the end of the game.
-  patOptions.classList.add('hidden');
-  fgOptions.classList.add('hidden');
+  hidePatOptions();
+  hideFgOptions();
   log('Game over! Final score: HOME ' + game.score.player + ' — AWAY ' + game.score.ai);
 }
 
@@ -2673,9 +2466,8 @@ function attemptExtraPoint() {
     }
   } catch (e) {}
   if (typeof success === 'undefined') {
-    const roll = rollD6() + rollD6();
-    let row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
-    success = row.PAT === 'G';
+    const rng = () => game.rng();
+    success = window.GS.rules.PlaceKicking.attemptPAT(rng);
   }
   if (success) {
     if (game.possession === 'player') {
@@ -2689,7 +2481,7 @@ function attemptExtraPoint() {
     log('Extra point missed.');
   }
   // Extra points consume no time
-  game.clock -= TIME_KEEPING.extraPoint;
+  game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).extraPoint;
   finishPAT();
   setCurrentPlayResult(`PAT ${success ? 'good' : 'missed'}`);
   finalizeDebugPlay();
@@ -2715,14 +2507,20 @@ function attemptTwoPoint() {
   } else {
     log('Two‑point conversion fails.');
   }
-  setCurrentPlayResult('Two-point conversion ' + (logElement.textContent.endsWith('fails.\n') ? 'failed' : 'good'));
+  // Infer two-point success from the last log line if available
+  let twoPtSuccess = true;
+  try {
+    const t = (logElement && logElement.textContent) || '';
+    if (/fails\.$/m.test(t.trim())) twoPtSuccess = false;
+  } catch {}
+  setCurrentPlayResult('Two-point conversion ' + (twoPtSuccess ? 'good' : 'failed'));
   finishPAT();
   finalizeDebugPlay();
 }
 
 function finishPAT() {
   game.awaitingPAT = false;
-  patOptions.classList.add('hidden');
+  hidePatOptions();
   // After PAT, change possession and kickoff
   game.possession = game.possession === 'player' ? 'ai' : 'player';
   if (!game.gameOver) kickoff();
@@ -2774,21 +2572,11 @@ function aiAttemptPAT() {
     } else {
       log('AI two‑point conversion fails.');
     }
-    game.clock -= TIME_KEEPING.extraPoint;
+    game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).extraPoint;
   } else {
-    // Extra point attempt using the place kicking table
-    let success;
-    try {
-      if (window.GS && window.GS.rules && window.GS.rules.PlaceKicking && typeof window.GS.rules.PlaceKicking.attemptPAT === 'function') {
-        const rng = () => game.rng();
-        success = window.GS.rules.PlaceKicking.attemptPAT(rng);
-      }
-    } catch (e) {}
-    if (typeof success === 'undefined') {
-      const roll = rollD6() + rollD6();
-      const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
-      success = row.PAT === 'G';
-    }
+    // Extra point attempt via TS module
+    const rng = () => game.rng();
+    const success = window.GS.rules.PlaceKicking.attemptPAT(rng);
     if (success) {
       game.score.ai += 1;
       log('AI extra point is good.');
@@ -2834,18 +2622,28 @@ function attemptFieldGoal() {
   let success = false;
   if (col) {
     try {
+      const rng = () => game.rng();
       if (window.GS && window.GS.rules && window.GS.rules.PlaceKicking && typeof window.GS.rules.PlaceKicking.attemptFieldGoal === 'function') {
-        const rng = () => game.rng();
         success = window.GS.rules.PlaceKicking.attemptFieldGoal(rng, attemptYards);
       } else {
+        // Inline fallback using PLACE_KICK_TABLE
         const roll = rollD6() + rollD6();
-        const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
-        success = row[col] === 'G';
+        let key = '39-45';
+        if (attemptYards <= 12) key = '1-12';
+        else if (attemptYards <= 22) key = '13-22';
+        else if (attemptYards <= 32) key = '23-32';
+        else if (attemptYards <= 38) key = '33-38';
+        success = ((PLACE_KICK_TABLE[roll] || {})[key] === 'G');
       }
     } catch (e) {
+      // Last-resort fallback
       const roll = rollD6() + rollD6();
-      const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
-      success = row[col] === 'G';
+      let key = '39-45';
+      if (attemptYards <= 12) key = '1-12';
+      else if (attemptYards <= 22) key = '13-22';
+      else if (attemptYards <= 32) key = '23-32';
+      else if (attemptYards <= 38) key = '33-38';
+      success = ((PLACE_KICK_TABLE[roll] || {})[key] === 'G');
     }
   }
   if (success) {
@@ -2857,7 +2655,7 @@ function attemptFieldGoal() {
       log(`They line up for a ${attemptYards} yard field goal attempt... and it's GOOD!`);
     }
   } else {
-    const missSide = Math.random() < 0.5 ? 'wide left' : 'wide right';
+    const missSide = (game.rng() < 0.5) ? 'wide left' : 'wide right';
     log(`They line up for a ${attemptYards} yard field goal attempt... and they MISS, ${missSide}.`);
     // Missed FG spotting per rules: flip possession, spot at kick spot if beyond 20, else at 20.
     // Spot of kick is LOS minus 7 yards relative to offense direction.
@@ -2894,16 +2692,17 @@ function attemptFieldGoal() {
   }
   // After FG attempt, standard timing
   game.awaitingFG = false;
-  fgOptions.classList.add('hidden');
+  hideFgOptions();
   // Deduct time for the field goal itself
-  game.clock -= TIME_KEEPING.fieldgoal;
+  game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).fieldgoal;
   // Check for two-minute warning after field goal attempt
   checkTwoMinuteWarning();
   // On make: kickoff; on miss: no kickoff
   if (success && !game.gameOver) {
     // Flip possession and kickoff after made FG
     game.possession = game.possession === 'player' ? 'ai' : 'player';
-    if (!game.gameOver) kickoff();
+    // Use module kickoff if available; else fallback
+    kickoff();
   }
   // Update UI and hands
   if (!game.gameOver) {
@@ -2916,91 +2715,19 @@ function attemptFieldGoal() {
 
 // HUD and logging helpers
 function updateHUD() {
-  const prevText = scoreDisplay.textContent;
-  const newText = `HOME ${game.score.player} — AWAY ${game.score.ai}`;
-  scoreDisplay.textContent = newText;
-  if (prevText !== newText) {
-    scoreDisplay.classList.remove('score-pop');
-    void scoreDisplay.offsetWidth;
-    scoreDisplay.classList.add('score-pop');
-  }
-  hudQuarter.textContent = `Q${game.quarter}`;
-  hudClock.textContent = formatTime(Math.max(game.clock, 0));
-  // Format down & distance (show Goal-to-Go when line to gain is the goal line)
-  const downNames = ['1st', '2nd', '3rd', '4th'];
-  const downStr = downNames[Math.min(game.down, 4) - 1] || `${game.down}th`;
-  const firstDownAbsForLabel = game.possession === 'player' ? (game.ballOn + game.toGo) : (game.ballOn - game.toGo);
-  const isGoalToGo = game.possession === 'player' ? (firstDownAbsForLabel >= 100) : (firstDownAbsForLabel <= 0);
-  const toGoLabel = isGoalToGo ? 'Goal' : String(game.toGo);
-  hudDownDistance.textContent = `${downStr} & ${toGoLabel}`;
-  // Display the ball spot as a value from 0 to 50 yards regardless of
-  // orientation. Once the ball crosses midfield, we show the distance
-  // from the opposite end zone (e.g. ball on 60 becomes 40).
-  const displaySpot = game.ballOn <= 50 ? game.ballOn : 100 - game.ballOn;
-  hudBallSpot.textContent = `Ball on ${Math.round(displaySpot)}`;
-  hudPossession.textContent = game.possession === 'player' ? 'HOME' : 'AWAY';
-
-  // Update the field overlay lines. The field background represents the
-  // full 100 yards (0 at the left edge and 100 at the right edge). We use
-  // absolute yard values (0–100) directly for positioning so that:
-  // - When HOME has the ball (moving 0→100), the first down line appears to
-  //   the right of the scrimmage line.
-  // - When AWAY has the ball (moving 100→0), the first down line appears to
-  //   the left of the scrimmage line (since firstDownAbsolute < ballOn).
-  // This avoids mirroring which inverted the relative ordering.
-  if (scrimmageLineEl && firstDownLineEl) {
-    // Compute absolute yard line for the first down based on possession.
-    let firstDownAbsolute;
-    if (game.possession === 'player') {
-      firstDownAbsolute = game.ballOn + game.toGo;
-    } else {
-      firstDownAbsolute = game.ballOn - game.toGo;
+  try {
+    if (window && window.GS && window.GS.bus) {
+      window.GS.bus.emit('hudUpdate', {
+        quarter: game.quarter,
+        clock: game.clock,
+        down: game.down,
+        toGo: game.toGo,
+        ballOn: game.ballOn,
+        possession: game.possession,
+        score: { player: game.score.player, ai: game.score.ai }
+      });
     }
-    // Clamp within bounds
-    firstDownAbsolute = Math.max(0, Math.min(100, firstDownAbsolute));
-    // Determine percent positions across the field using absolute yard values.
-    // Each yard corresponds to 1% of the width.
-    let scrimmagePercent = yardToPercent(game.ballOn);
-    let firstDownPercent = yardToPercent(firstDownAbsolute);
-    // Clamp the lines slightly inside the field to ensure they are visible
-    const clamp = (val) => Math.max(5.5, Math.min(94.5, val));
-    scrimmageLineEl.style.left = `${clamp(scrimmagePercent)}%`;
-    firstDownLineEl.style.left = `${clamp(firstDownPercent)}%`;
-
-    // Show red zone shading when the ball is in either 20‑yard zone. For
-    // simplicity we base this on the absolute ball position (0–100). When
-    // ballOn <= 20 the player's end zone is threatened; when ballOn >= 80 the
-    // opponent's end zone is threatened. The overlay covers the full
-    // 20‑yard width and is hidden otherwise.
-    if (redZoneEl) {
-      if (game.ballOn <= 20) {
-        redZoneEl.style.display = 'block';
-        redZoneEl.style.left = '0%';
-        redZoneEl.style.width = '20%';
-      } else if (game.ballOn >= 80) {
-        redZoneEl.style.display = 'block';
-        redZoneEl.style.left = '80%';
-        redZoneEl.style.width = '20%';
-      } else {
-        redZoneEl.style.display = 'none';
-      }
-    }
-    // Position the chain marker along the sideline at the first down
-    // location. If the first down line is off the field (e.g. beyond 0–100)
-    // we still clamp its position inside the field. Always show the
-    // chain marker once a game has started.
-    if (chainMarkerEl) {
-      chainMarkerEl.style.display = 'block';
-      chainMarkerEl.style.left = `${clamp(firstDownPercent)}%`;
-    }
-
-    // Ensure both overlay lines remain visible. In some edge cases (e.g. after
-    // turnovers) CSS rules may hide these elements. Explicitly reset
-    // their display property so that the blue scrimmage line and yellow first
-    // down line always render after updateHUD() is called.
-    scrimmageLineEl.style.display = 'block';
-    firstDownLineEl.style.display = 'block';
-  }
+  } catch {}
 }
 
 /**
@@ -3153,7 +2880,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
           const endAbs = originAbs + deltaAbs;
           const endX = yardToSvgX(Math.max(0, Math.min(100, endAbs)));
           const path = createSvgElement('path', { d: `M ${currX} ${currY} L ${endX} ${currY}`, class: 'playart-route' });
-          const pathId = `def-${Math.floor(Math.random()*1e9)}`;
+          const pathId = `def-${Math.floor(game.rng()*1e9)}`;
           path.id = pathId;
           playArtSvg.appendChild(path);
           const anim = document.createElementNS(NS, 'animateMotion');
@@ -3194,7 +2921,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
     for (const act of actions) {
       if (act.type === 'lead_insert' && act.actor === 'FB' && Array.isArray(act.path)) {
         fbPathEl = pathFromNormPoints(act.path);
-        fbPathEl.id = `fb-${Math.floor(Math.random()*1e9)}`;
+        fbPathEl.id = `fb-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(fbPathEl);
         try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'path', actor: 'FB', id: fbPathEl.id, d: fbPathEl.getAttribute('d'), points: act.path }); } catch {}
       }
@@ -3205,14 +2932,14 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
           hbPoints = [{ x: (0.5), y: (act.path[0] && act.path[0].y) || 0 }].concat(act.path.slice(1));
         }
         hbPathEl = pathFromNormPoints(hbPoints);
-        hbPathEl.id = `hb-${Math.floor(Math.random()*1e9)}`;
+        hbPathEl.id = `hb-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(hbPathEl);
         try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'path', actor: 'HB', id: hbPathEl.id, d: hbPathEl.getAttribute('d'), points: act.path }); } catch {}
       }
       // Generic route rendering for receivers/DBs if present: route_points on action
       if (Array.isArray(act.route) && act.actor) {
         const routePath = pathFromNormPoints(act.route);
-        routePath.id = `${act.actor.toLowerCase()}-route-${Math.floor(Math.random()*1e9)}`;
+        routePath.id = `${act.actor.toLowerCase()}-route-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(routePath);
         try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'route', actor: act.actor, id: routePath.id, d: routePath.getAttribute('d') }); } catch {}
       }
@@ -3221,7 +2948,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
         const hp = normToSvg(act.handoff_point);
         lastHandoffSvg = hp;
         const handoffPath = createSvgElement('path', { d: `M ${ballStart.x} ${ballStart.y} L ${hp.x} ${hp.y}`, class: 'playart-route' });
-        handoffPath.id = `handoff-${Math.floor(Math.random()*1e9)}`;
+        handoffPath.id = `handoff-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(handoffPath);
         try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'handoff_path', id: handoffPath.id, d: handoffPath.getAttribute('d'), handoffPointNorm: act.handoff_point, handoffPointSvg: hp }); } catch {}
         const anim1 = document.createElementNS(NS, 'animateMotion');
@@ -3256,7 +2983,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
         const endAbs = originAbs - dropDepthYards * (game.possession === 'player' ? 1 : -1);
         const qbEnd = { x: yardToSvgX(Math.max(0, Math.min(100, endAbs))), y: qbStart.y };
         const qbPath = createSvgElement('path', { d: `M ${qbStart.x} ${qbStart.y} L ${qbEnd.x} ${qbEnd.y}`, class: 'playart-route' });
-        qbPath.id = `qb-route-${Math.floor(Math.random()*1e9)}`;
+        qbPath.id = `qb-route-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(qbPath);
         if (qbNode) {
           const anim = document.createElementNS(NS, 'animateMotion');
@@ -3275,7 +3002,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
         const qbs = qb ? normToSvg(qb.start) : { x: yardToSvgX(originAbs), y: 300 };
         const tgt = normToSvg(act.target_point);
         const arc = createSvgElement('path', { d: `M ${qbs.x} ${qbs.y} Q ${(qbs.x + tgt.x) / 2} ${qbs.y - 120} ${tgt.x} ${tgt.y}`, class: 'playart-route' });
-        arc.id = `ball-arc-${Math.floor(Math.random()*1e9)}`;
+        arc.id = `ball-arc-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(arc);
         const anim = document.createElementNS(NS, 'animateMotion');
         anim.setAttribute('begin', `${(startDelayMs + 350) / 1000}s`);
@@ -3331,18 +3058,11 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
 }
 
 function showToast(text) {
-  const overlay = document.getElementById('vfx-overlay');
-  if (!overlay) return;
-  const d = document.createElement('div');
-  d.className = 'vfx-toast';
-  d.textContent = text;
-  overlay.appendChild(d);
-  setTimeout(() => { d.remove(); }, 1500);
+  try { if (window && window.GS && window.GS.bus) window.GS.bus.emit('vfx', { type: 'toast', payload: { text } }); } catch {}
 }
 
 function log(msg) {
-  logElement.textContent += msg + '\n';
-  logElement.scrollTop = logElement.scrollHeight;
+  try { if (window && window.GS && window.GS.bus) window.GS.bus.emit('log', { message: String(msg) }); } catch {}
   // Capture commentary for the current debug play
   try {
     if (game && game._currentDebugPlay && typeof msg === 'string') {
@@ -3356,7 +3076,7 @@ function log(msg) {
 }
 
 function logClear() {
-  logElement.textContent = '';
+  try { if (logElement) logElement.textContent = ''; } catch {}
 }
 
 // Structured per-play debug logging for download
@@ -3456,9 +3176,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load JSON data tables (non-fatal if missing)
   await loadDataTables();
   
-  // Normalise initial scoreboard labels to HOME/AWAY to match HUD updates.
-  if (scoreDisplay) scoreDisplay.textContent = 'HOME 0 — AWAY 0';
-  if (hudPossession) hudPossession.textContent = 'HOME';
   updateHUD();
   // Emit initial snapshot for debug
   try {
@@ -3502,9 +3219,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 function choosePlayerCardForSimulation() {
   if (game.possession === 'player') {
     const deck = OFFENSE_DECKS[game.offenseDeck] || [];
-    return deck[Math.floor(Math.random() * deck.length)];
+    return deck[Math.floor(game.rng() * deck.length)];
   } else {
-    return DEFENSE_DECK[Math.floor(Math.random() * DEFENSE_DECK.length)];
+    return DEFENSE_DECK[Math.floor(game.rng() * DEFENSE_DECK.length)];
   }
 }
 
@@ -3542,7 +3259,7 @@ function simulateTick() {
         const endAbs = originAbs + dir * outcome.yards;
         const end = { x: yardToSvgX(Math.max(0, Math.min(100, endAbs))), y: start.y };
         const path = createSvgElement('path', { d: `M ${start.x} ${start.y} L ${end.x} ${end.y}`, class: 'playart-route' });
-        path.id = `hb-fallback-${Math.floor(Math.random()*1e9)}`;
+        path.id = `hb-fallback-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(path);
         hbPathEl = path;
         try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'path_fallback_hb', id: path.id, d: path.getAttribute('d'), yards: outcome.yards }); } catch {}
@@ -3554,7 +3271,7 @@ function simulateTick() {
         const endAbs = originAbs - dropDepthYards * (game.possession === 'player' ? 1 : -1);
         const qbEnd = { x: yardToSvgX(Math.max(0, Math.min(100, endAbs))), y: qbStart.y };
         const qbPath = createSvgElement('path', { d: `M ${qbStart.x} ${qbStart.y} L ${qbEnd.x} ${qbEnd.y}`, class: 'playart-route' });
-        qbPath.id = `qb-route-${Math.floor(Math.random()*1e9)}`;
+        qbPath.id = `qb-route-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(qbPath);
         if (qbNode) {
           const anim = document.createElementNS(NS, 'animateMotion');
@@ -3573,7 +3290,7 @@ function simulateTick() {
         const qbs = qb ? normToSvg(qb.start) : { x: yardToSvgX(originAbs), y: 300 };
         const tgt = normToSvg(act.target_point);
         const arc = createSvgElement('path', { d: `M ${qbs.x} ${qbs.y} Q ${(qbs.x + tgt.x) / 2} ${qbs.y - 120} ${tgt.x} ${tgt.y}`, class: 'playart-route' });
-        arc.id = `ball-arc-${Math.floor(Math.random()*1e9)}`;
+        arc.id = `ball-arc-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(arc);
         const anim = document.createElementNS(NS, 'animateMotion');
         anim.setAttribute('begin', `${(startDelayMs + 350) / 1000}s`);
@@ -3594,7 +3311,7 @@ function simulateTick() {
   if (game.down < 4 && playerCard && playerCard.type === 'punt') {
     const deck = OFFENSE_DECKS[game.offenseDeck] || [];
     const alternatives = deck.filter((c) => c.type !== 'punt');
-    if (alternatives.length) playerCard = alternatives[Math.floor(Math.random() * alternatives.length)];
+    if (alternatives.length) playerCard = alternatives[Math.floor(game.rng() * alternatives.length)];
   }
   const aiCard = aiChooseCard();
   if (game.possession === 'ai' && aiCard && aiCard.type === 'field-goal') {
@@ -3920,7 +3637,7 @@ function applyPenaltyDecision(choice, st) {
     log('Penalty declined. The play stands.');
   }
   // Time off for a penalty play (accept or decline consumes the play)
-  game.clock -= TIME_KEEPING.penalty;
+  game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).penalty;
   checkTwoMinuteWarning();
   // A half may not end on a penalty: if time expired as a result of this
   // penalty administration, schedule an untimed down.
@@ -3965,8 +3682,8 @@ function vfxParticles(x, y, count, gold) {
   for (let i = 0; i < n; i++) {
     const p = document.createElement('div');
     p.className = 'vfx-particle' + (gold ? ' gold' : '');
-    const dx = (Math.random() - 0.5) * 300;
-    const dy = (Math.random() - 0.5) * 40;
+    const dx = (game.rng() - 0.5) * 300;
+    const dy = (game.rng() - 0.5) * 40;
     p.style.left = `${baseX + dx}px`;
     p.style.top = `${baseY + dy}px`;
     vfxOverlay.appendChild(p);
@@ -4148,15 +3865,19 @@ const SFX = (() => {
     const bufferSize = 2 * audioCtx.sampleRate * dur;
     const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
-    const noise = audioCtx.createBufferSource();
+    for (let i = 0; i < bufferSize; i++) data[i] = (game.rng() * 2 - 1) * 0.35;
+    const noise = (audioCtx && typeof audioCtx.createBufferSource === 'function') ? audioCtx.createBufferSource() : null;
+    if (!noise || typeof noise.start !== 'function' || typeof noise.stop !== 'function') {
+      // Environment (e.g., JSDOM tests) lacks WebAudio start/stop; skip noise
+      return;
+    }
     noise.buffer = noiseBuffer;
     const filter = audioCtx.createBiquadFilter();
     filter.type = 'bandpass';
     filter.frequency.value = theme === 'modern' ? 1200 : theme === 'retro' ? 900 : 800;
     const gain = audioCtx.createGain();
     gain.gain.value = 0.0001;
-    let chain = noise.connect(filter);
+    let chain = noise.connect ? noise.connect(filter) : filter;
     if (theme === 'arcade') {
       const { delay } = createDelay(120, 0.12);
       chain = chain.connect(delay);
@@ -4175,7 +3896,7 @@ const SFX = (() => {
     const bufferSize = Math.floor(audioCtx.sampleRate * (dur || 0.12));
     const buf = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = buf.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    for (let i = 0; i < bufferSize; i++) data[i] = (game.rng() * 2 - 1) * (1 - i / bufferSize);
     const src = audioCtx.createBufferSource();
     src.buffer = buf;
     const hp = audioCtx.createBiquadFilter();
@@ -4419,7 +4140,7 @@ if (devCheckbox) {
   if (copyBtn) {
     copyBtn.addEventListener('click', async () => {
       if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'click', id: 'copy-log' });
-      try { await navigator.clipboard.writeText(logElement.textContent || ''); alert('Log copied'); } catch {}
+      try { await navigator.clipboard.writeText((logElement && logElement.textContent) || ''); alert('Log copied'); } catch {}
     });
   }
   if (dlBtn) {

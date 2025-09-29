@@ -1,4 +1,4 @@
-import { resolveLongGain as resolveLG, RNG } from './LongGain';
+import type { RNG } from '../sim/RNG';
 
 export type OutcomeCategory = 'incomplete' | 'fumble' | 'interception' | 'penalty' | 'loss' | 'gain' | 'other';
 

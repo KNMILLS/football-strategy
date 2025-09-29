@@ -1,4 +1,5 @@
-import { rollD6, resolveLongGain, RNG } from '../LongGain';
+import { rollD6, resolveLongGain } from '../LongGain';
+import type { RNG } from '../../sim/RNG';
 
 export const NORMAL_KICKOFF_TABLE: Record<number, number | string> = {
   2: 'FUMBLE*',

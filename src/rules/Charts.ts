@@ -1,7 +1,6 @@
 import type { RNG } from '../sim/RNG';
 import type { OffenseCharts } from '../data/schemas/OffenseCharts';
 import { parseResultString } from './ResultParsing';
-import { createLCG } from '../sim/RNG';
 import { resolveLongGain as resolveLG } from './LongGain';
 
 export const DEF_NUM_TO_LETTER: Record<number, 'A'|'B'|'C'|'D'|'E'|'F'|'G'|'H'|'I'|'J'> = { 1:'A',2:'B',3:'C',4:'D',5:'E',6:'F',7:'G',8:'H',9:'I',0:'J' };
@@ -43,8 +42,10 @@ export function determineOutcomeFromCharts(params: DetermineOutcomeParams) {
   const chartDeckKey = (DECK_NAME_TO_CHART_KEY as any)[deckName] || (deckName as keyof OffenseCharts);
   const chartPlayKey = LABEL_TO_CHART_KEY[playLabel] || playLabel;
   const defNum = DEF_LABEL_TO_NUM[defenseLabel];
-  const defLetter = DEF_NUM_TO_LETTER[defNum];
-  const resultStr = charts?.[chartDeckKey]?.[chartPlayKey]?.[defLetter] ?? null;
+  const defLetter = (defNum != null ? DEF_NUM_TO_LETTER[defNum] : undefined) as 'A'|'B'|'C'|'D'|'E'|'F'|'G'|'H'|'I'|'J'|undefined;
+  const deck = charts?.[chartDeckKey as keyof OffenseCharts] as any;
+  const play = deck ? deck[chartPlayKey] : undefined;
+  const resultStr = defLetter && play ? play[defLetter] : null;
   return parseResultString(resultStr, resolveLG, rng);
 }
 

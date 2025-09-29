@@ -136,6 +136,17 @@ main#main {
   box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
 
+/* High-visibility focus outline for keyboard users */
+:focus-visible {
+  outline: 3px solid #ffeb3b;
+  outline-offset: 2px;
+}
+
+/* Ensure focus ring is visible on .btn across browsers */
+.btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(255, 235, 59, 0.6), 0 6px 16px rgba(0,0,0,0.4);
+}
+
 .btn:hover:not(:disabled) {
   background: linear-gradient(180deg, #0e61b1, #0a4e8f);
 }

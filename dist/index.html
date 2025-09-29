@@ -1,0 +1,183 @@
+<!doctype html>
+<!--
+  Gridiron Strategy full game prototype
+  This file defines the basic layout for a single‑player football strategy card game.
+  The player selects an offensive deck and plays against an AI opponent. Cards are
+  dragged onto the central play zone to run plays. The HUD across the top shows
+  the current score, quarter, clock, down & distance, ball position and possession.
+  A running log on the left documents each play result. The right sidebar
+  reveals the AI's defensive call after each play. A footer displays the
+  player's current hand of cards.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Gridiron Strategy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Oxanium:wght@400;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/assets/index-CQON-fw-.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/LongGain-B92lIB4o.js">
+  <link rel="stylesheet" crossorigin href="/assets/index-CGf1dMMR.css">
+</head>
+<body>
+  <div id="game">
+    <header id="scoreboard">
+      <div id="dev-toggle" class="dev-toggle">
+        <label><input type="checkbox" id="dev-mode-checkbox"> DEV MODE</label>
+      </div>
+      <div id="score" class="score">You 0 — AI 0</div>
+      <div id="hud" class="hud">
+        <span id="quarter">Q1</span>
+        <span id="clock">15:00</span>
+        <span id="downDistance">1st &amp; 10</span>
+        <span id="ballSpot">Ball on 25</span>
+        <span id="possession">You</span>
+      </div>
+    </header>
+    <main id="main">
+      <aside id="sidebar-left" class="sidebar">
+        <div id="controls" class="controls">
+          <div id="controls-normal">
+            <div class="control-row">
+              <label for="deck-select">Offense Deck:</label>
+              <select id="deck-select">
+                <option value="Pro Style">Pro Style</option>
+                <option value="Ball Control">Ball Control</option>
+                <option value="Aerial Style">Aerial Style</option>
+              </select>
+            </div>
+            <!-- Opponent selection: choose an AI coach persona. Determines AI deck. -->
+            <div class="control-row">
+              <label for="opponent-select">Select Opponent:</label>
+              <select id="opponent-select">
+                <option value="Andy Reid">Andy Reid</option>
+                <option value="Bill Belichick">Bill Belichick</option>
+                <option value="John Madden">John Madden</option>
+              </select>
+            </div>
+            <button id="new-game" class="btn" aria-label="Start a new game">New Game</button>
+          </div>
+          <div id="controls-test" class="hidden">
+            <div class="control-row">
+              <label for="test-player-deck">HOME Deck:</label>
+              <select id="test-player-deck">
+                <option value="Pro Style">Pro Style</option>
+                <option value="Ball Control">Ball Control</option>
+                <option value="Aerial Style">Aerial Style</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="test-ai-deck">AWAY Deck:</label>
+              <select id="test-ai-deck">
+                <option value="Pro Style">Pro Style</option>
+                <option value="Ball Control">Ball Control</option>
+                <option value="Aerial Style">Aerial Style</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="test-possession">Possession:</label>
+              <select id="test-possession">
+                <option value="player">HOME</option>
+                <option value="ai">AWAY</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="test-ballon">Ball on:</label>
+              <input id="test-ballon" type="number" min="1" max="99" value="25"/>
+            </div>
+            <div class="control-row">
+              <label for="test-down">Down:</label>
+              <select id="test-down">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="test-togo">To go:</label>
+              <input id="test-togo" type="number" min="1" max="30" value="10"/>
+            </div>
+            <div class="control-row">
+              <label for="test-quarter">Quarter:</label>
+              <select id="test-quarter">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="test-clock">Clock (mm:ss):</label>
+              <input id="test-clock" type="text" value="15:00"/>
+            </div>
+            <hr/>
+            <div class="control-row">
+              <label for="theme-select">Visual Theme:</label>
+              <select id="theme-select">
+                <option value="arcade">Arcade</option>
+                <option value="minimalist">Minimalist</option>
+                <option value="retro">Retro Arcade</option>
+                <option value="board">Classy Board Game</option>
+                <option value="vintage">Vintage NFL</option>
+                <option value="modern">Modern NFL</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="sfx-enabled">SFX:</label>
+              <input id="sfx-enabled" type="checkbox" checked />
+            </div>
+            <div class="control-row">
+              <label for="sfx-volume">Volume:</label>
+              <input id="sfx-volume" type="range" min="0" max="1" step="0.01" value="0.6" />
+            </div>
+            <button id="start-test-game" class="btn">Start Test Game</button>
+            <button id="run-auto-game" class="btn">Run Full Auto Game</button>
+            <div class="control-row">
+              <button id="copy-log" class="btn">Copy Log</button>
+              <button id="download-debug" class="btn">Download Debug</button>
+            </div>
+          </div>
+        </div>
+        <div id="log" class="log" tabindex="0" aria-label="Play log" role="log" aria-live="polite"></div>
+      </aside>
+      <section id="play-area" class="play-area">
+        <!-- Field display shows a stylised football field. Yard lines are drawn
+             horizontally with the current line of scrimmage (blue) and the
+             line to gain a first down (yellow) overlaid. -->
+        <div id="field-display" class="field-display"></div>
+      </section>
+      <!-- Right sidebar removed: we no longer display the AI's chosen play. -->
+    </main>
+    <footer id="footer">
+      <div id="play-controls" class="play-controls">
+        <!-- The play zone has been removed; cards can now be dropped anywhere on the field. -->
+        <div id="pat-options" class="pat-options hidden" role="group" aria-label="Point after touchdown options" aria-hidden="true">
+          <button id="kick-pat" class="btn" aria-label="Kick extra point, 1 point (keyboard 1)">Kick Extra Point (1)</button>
+          <button id="go-two" class="btn" aria-label="Go for two, 2 points (keyboard 2)">Go for Two (2)</button>
+        </div>
+        <div id="fg-options" class="fg-options hidden" role="group" aria-label="Field goal options" aria-hidden="true">
+          <button id="kick-fg" class="btn" aria-label="Attempt field goal (keyboard 3)">Kick Field Goal (3)</button>
+        </div>
+      </div>
+      <div id="hand" class="hand" aria-label="Player hand"></div>
+    </footer>
+    <!-- Card preview overlay: shows an enlarged view of the card when hovering in the hand. Placed after the footer to layer above other elements. -->
+    <div id="card-preview" class="card-preview"></div>
+  </div>
+  <div id="vfx-overlay" class="vfx-overlay" aria-hidden="true"></div>
+  <script>
+    // Preload data tables before main logic runs
+    window.__GRIDIRON_PRELOAD__ = true;
+  </script>
+  <script>
+    // Force DEV mode on for this session when hash contains dev
+    (function(){ try {
+      if (location.hash && location.hash.includes('dev')) localStorage.setItem('gs_dev_mode','1');
+    } catch {} })();
+  </script>
+  
+</body>
+</html>
