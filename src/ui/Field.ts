@@ -77,18 +77,23 @@ function ensureFieldDecorations(): void {
   }
 
   // Hash marks at every yard along top and bottom (thicker every 5 yards)
-  if (!document.querySelector('.hash-mark')) {
+  // Always regenerate to avoid partial renders; remove any existing first
+  {
+    const existing = Array.from((field as HTMLElement).querySelectorAll('.hash-mark'));
+    for (const el of existing) el.remove();
+    const clamp = (val: number) => Math.max(5.5, Math.min(94.5, val));
     for (let i = 1; i < 100; i++) {
+      const leftPct = clamp(yardToPercent(i));
       const markBottom = document.createElement('div');
       markBottom.className = 'hash-mark';
       if (i % 5 === 0) markBottom.classList.add('five');
-      (markBottom as HTMLElement).style.left = `${yardToPercent(i)}%`;
+      (markBottom as HTMLElement).style.left = `${leftPct}%`;
       (field as HTMLElement).appendChild(markBottom);
 
       const markTop = document.createElement('div');
       markTop.className = 'hash-mark top';
       if (i % 5 === 0) markTop.classList.add('five');
-      (markTop as HTMLElement).style.left = `${yardToPercent(i)}%`;
+      (markTop as HTMLElement).style.left = `${leftPct}%`;
       (field as HTMLElement).appendChild(markTop);
     }
   }
