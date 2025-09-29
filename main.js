@@ -2665,9 +2665,18 @@ function attemptExtraPoint() {
   }
   // Resolve PAT using the place kicking table (2D6). A result of 'G'
   // means the kick is good. Otherwise it is no good.
-  const roll = rollD6() + rollD6();
-  let row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
-  const success = row.PAT === 'G';
+  let success;
+  try {
+    if (window.GS && window.GS.rules && window.GS.rules.PlaceKicking && typeof window.GS.rules.PlaceKicking.attemptPAT === 'function') {
+      const rng = () => game.rng();
+      success = window.GS.rules.PlaceKicking.attemptPAT(rng);
+    }
+  } catch (e) {}
+  if (typeof success === 'undefined') {
+    const roll = rollD6() + rollD6();
+    let row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
+    success = row.PAT === 'G';
+  }
   if (success) {
     if (game.possession === 'player') {
       game.score.player += 1;
@@ -2743,7 +2752,23 @@ function aiAttemptPAT() {
     shouldGoForTwo = true;
   }
   if (shouldGoForTwo) {
-    if (game.rng() < 0.5) {
+    let goodTwo = null;
+    try {
+      if (window.GS && window.GS.ai && window.GS.ai.PATDecision && typeof window.GS.ai.PATDecision.performPAT === 'function') {
+        const ctx = { diff, quarter, clock, coach: getCoachProfile() };
+        const rng = () => game.rng();
+        const res = window.GS.ai.PATDecision.performPAT(ctx, rng);
+        goodTwo = res.aiPoints === 2;
+      }
+    } catch (e) {}
+    if (goodTwo === null) {
+      if (game.rng() < 0.5) {
+        game.score.ai += 2;
+        log('AI two‑point conversion is good.');
+      } else {
+        log('AI two‑point conversion fails.');
+      }
+    } else if (goodTwo) {
       game.score.ai += 2;
       log('AI two‑point conversion is good.');
     } else {
@@ -2752,9 +2777,18 @@ function aiAttemptPAT() {
     game.clock -= TIME_KEEPING.extraPoint;
   } else {
     // Extra point attempt using the place kicking table
-    const roll = rollD6() + rollD6();
-    const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
-    const success = row.PAT === 'G';
+    let success;
+    try {
+      if (window.GS && window.GS.rules && window.GS.rules.PlaceKicking && typeof window.GS.rules.PlaceKicking.attemptPAT === 'function') {
+        const rng = () => game.rng();
+        success = window.GS.rules.PlaceKicking.attemptPAT(rng);
+      }
+    } catch (e) {}
+    if (typeof success === 'undefined') {
+      const roll = rollD6() + rollD6();
+      const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
+      success = row.PAT === 'G';
+    }
     if (success) {
       game.score.ai += 1;
       log('AI extra point is good.');
@@ -2799,12 +2833,18 @@ function attemptFieldGoal() {
   }
   let success = false;
   if (col) {
-    const roll = rollD6() + rollD6();
-    if (PLACE_KICK_TABLE_DATA) {
-      const row = PLACE_KICK_TABLE_DATA[roll] || {};
-      success = row[col] === 'G';
-    } else {
-      const row = PLACE_KICK_TABLE[roll] || {};
+    try {
+      if (window.GS && window.GS.rules && window.GS.rules.PlaceKicking && typeof window.GS.rules.PlaceKicking.attemptFieldGoal === 'function') {
+        const rng = () => game.rng();
+        success = window.GS.rules.PlaceKicking.attemptFieldGoal(rng, attemptYards);
+      } else {
+        const roll = rollD6() + rollD6();
+        const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
+        success = row[col] === 'G';
+      }
+    } catch (e) {
+      const roll = rollD6() + rollD6();
+      const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
       success = row[col] === 'G';
     }
   }
