@@ -1183,9 +1183,9 @@ btnGoTwo.addEventListener('click', () => {
 btnKickFG.addEventListener('click', () => {
   // Allow a field goal attempt whenever the button is visible and the game
   // isn't awaiting a PAT or over. We no longer depend on the awaitingFG
-  // flag because the player may still choose to go for it on fourth down
+  // flag because the player may still choose to run an offensive play
   // instead of kicking. The fgOptions element is shown/hidden by
-  // updateFGOptions() based on down and distance.
+  // updateFGOptions() based on distance.
   if (game.awaitingPAT || game.gameOver) return;
   attemptFieldGoal();
 });
@@ -1435,9 +1435,9 @@ function renderHand() {
 // Update FG option visibility based on current situation
 function updateFGOptions() {
   if (game.possession === 'player' && !game.awaitingPAT && !game.gameOver) {
-    // Show field goal button only on 4th down and when within kicking range (inside 35 yards of goal)
+    // Show field goal button on any down when within kicking range (inside 35 yards of goal)
     const distanceToGoal = 100 - game.ballOn;
-    if (game.down === 4 && distanceToGoal <= 35) {
+    if (distanceToGoal <= 35) {
       fgOptions.classList.remove('hidden');
     } else {
       fgOptions.classList.add('hidden');
@@ -1445,14 +1445,14 @@ function updateFGOptions() {
   } else {
     fgOptions.classList.add('hidden');
   }
-  // We no longer set awaitingFG here; the player may still choose to go for it on 4th down.
+  // We no longer set awaitingFG here; the player may still choose to run an offensive play instead of kicking.
   game.awaitingFG = false;
 }
 
 function playCard(cardId, dropX, dropY) {
   // Do not allow play when awaiting PAT, when overlay cards are visible,
   // or when the game has ended. We no longer block plays when a field
-  // goal option is visible; the player may choose to go for it on 4th down.
+  // goal option is visible; the player may choose to run a play instead of kicking.
   if (game.awaitingPAT || game.overlayActive || game.gameOver) return;
   if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'play', cardId, dropX, dropY });
   const playerCard = CARD_MAP[cardId];
@@ -2245,6 +2245,8 @@ function finalizeAfterPunt() {
   checkTwoMinuteWarning();
   handleClockAndQuarter();
   updateHUD();
+  // Re-evaluate FG option visibility after penalty administration
+  try { updateFGOptions(); } catch {}
   dealHands();
 }
 
@@ -3524,14 +3526,19 @@ function handlePenaltyDecision(ctx) {
   })();
   const declineClamped = Math.max(0, Math.min(100, declineBallOn));
   const declineTarget = offenseIsPlayer ? preBallOn + preToGo : preBallOn - preToGo;
-  const declineDist = Math.round(Math.abs(declineTarget - declineClamped));
+  // Directional check: first down is earned if the new spot passes the target
+  // (>= for HOME offense driving to 100, <= for AWAY offense driving to 0).
+  // Regression scenario: 3rd & 5 at 38 (ballOn 62), gain +20 to 18 (ballOn 82) with
+  // offensive 5-yard penalty declined should be 1st & 10, not 4th & 15.
+  const declineMadeLine = offenseIsPlayer ? (declineClamped >= declineTarget) : (declineClamped <= declineTarget);
   let declineDown = preDown + 1;
   let declineToGo;
-  if (declineDist <= 0) {
-    // Achieved the line to gain on the play; next series starts 1st & 10
+  if (declineMadeLine) {
+    // Achieved or passed the line to gain on the play; next series starts 1st & 10
     declineDown = 1;
     declineToGo = 10;
   } else {
+    const declineDist = Math.max(1, Math.round(Math.abs(declineTarget - declineClamped)));
     declineToGo = declineDist;
   }
 
@@ -3553,14 +3560,15 @@ function handlePenaltyDecision(ctx) {
     acceptDown = 1;
     acceptToGo = 10;
   } else {
-    // Recompute distance to original line to gain
+  // Recompute distance to original line to gain with directional check
     const target = offenseIsPlayer ? preBallOn + preToGo : preBallOn - preToGo;
-    const newDist = Math.round(Math.abs(target - acceptBallOn));
-    if (newDist <= 0) {
+    const madeLine = offenseIsPlayer ? (acceptBallOn >= target) : (acceptBallOn <= target);
+    if (madeLine) {
       acceptDown = 1;
       acceptToGo = 10;
     } else {
-      acceptToGo = Math.max(1, newDist);
+      const newDist = Math.max(1, Math.round(Math.abs(target - acceptBallOn)));
+      acceptToGo = newDist;
     }
   }
 
@@ -3640,29 +3648,67 @@ function handlePenaltyDecision(ctx) {
 
 function decidePenaltyAI({ penalty, acceptBallOn, acceptDown, acceptToGo, declineBallOn, declineDown, declineToGo, preDown, preToGo, aiIsOffense, offenseIsPlayer }) {
   // Heuristic: the deciding team is ALWAYS the non-penalized team.
-  // If AI is on offense, it wants to advance toward its goal (AI toward 0).
-  // If AI is on defense, it wants the opponent farther from 100 (HOME goal at 0).
+  // Expand scoring to consider: score/clock context, FG range, red zone, 4th down risk, and first downs.
+  const quarter = game.quarter;
+  const clock = game.clock; // seconds
+  const twoMinute = quarter === 4 && clock <= 120;
+  const late = quarter === 4 && clock <= 5 * 60;
+  const aiTrailing = (game.score.player - game.score.ai) > 0; // positive means AI trailing
+
+  function offenseDistanceToGoal(ballOn) {
+    return offenseIsPlayer ? (100 - ballOn) : ballOn;
+  }
+  function offenseInFGRange(ballOn, down) {
+    // Mirror existing behavior: player offense UI shows FG inside 35 on 4th; AI offense uses 45 in its logic
+    if (down !== 4) return false;
+    if (offenseIsPlayer) {
+      const dist = 100 - ballOn; // toward 100
+      return dist <= 35;
+    } else {
+      const dist = ballOn; // AI kicks toward 0
+      return dist <= 45;
+    }
+  }
+
   function score(ballOn, down, toGo) {
     let s = 0;
+    const distToGoal = offenseDistanceToGoal(ballOn);
+    const inFG = offenseInFGRange(ballOn, down);
+
     if (aiIsOffense) {
-      // Favor being closer to player's goal line (lower ballOn)
-      s -= ballOn * 0.25;
-      if (down === 1 && toGo === 10 && (preDown !== 1 || preToGo !== 10)) s += 50;
-      s -= Math.max(0, toGo - 3) * 2;
-      s -= (down - 1) * 5;
+      // Field position: closer to goal is better
+      s += (50 - distToGoal) * 0.5; // stronger weight than before
+      // First down bonus (new series vs previous non-1st/10)
+      if (down === 1 && toGo === 10 && (preDown !== 1 || preToGo !== 10)) s += 60;
+      // Avoid long yardage and later downs
+      s -= Math.max(0, toGo - 3) * 3;
+      s -= (down - 1) * 8;
+      // If it's 4th and in FG range, this is valuable, especially when trailing late
+      if (inFG) s += late ? (aiTrailing ? 35 : 20) : 15;
+      // Red zone slight bonus
+      if (distToGoal <= 20) s += 10;
+      // Two-minute trailing favors first downs even more (proxy via down/toGo)
+      if (twoMinute && aiTrailing) {
+        if (down === 1) s += 10;
+        s -= Math.max(0, toGo - 1) * 1;
+      }
     } else {
-      // AI is on defense deciding a penalty on the offense.
-      // Favor worse field position for the opponent (higher ballOn for player offense, lower for AI offense)
-      // Since ballOn is absolute from HOME goal, when the opponent is HOME offense prefer lower ballOn; when opponent is AI offense prefer higher.
-      const opponentIsHomeOffense = offenseIsPlayer; // player is HOME
-      const oppField = opponentIsHomeOffense ? ballOn : 100 - ballOn;
-      s += oppField * 0.25; // larger is better for defense (push them back)
-      // Prefer longer to-go and later downs
-      s += Math.max(0, toGo - 3) * 2;
-      s += (down - 1) * 5;
+      // Defense perspective: increase opponent distance to goal, increase to-go, and push to later downs.
+      s += distToGoal * 0.5;
+      s += Math.max(0, toGo - 3) * 3;
+      s += (down - 1) * 8;
+      // Avoid giving opponent 4th-and-in-range looks
+      if (inFG) s -= late ? 25 : 15;
+      // Two-minute, if AI leading, favor states with worse down/distance for opponent
+      if (twoMinute && !aiTrailing) {
+        s += (down - 1) * 4 + Math.max(0, toGo - 5) * 2;
+      }
+      // Penalize giving up an auto first down implicitly via down/toGo; add extra for new series
+      if (down === 1 && toGo === 10 && (preDown !== 1 || preToGo !== 10)) s -= 60;
     }
     return s;
   }
+
   const acceptScore = score(acceptBallOn, acceptDown, acceptToGo);
   const declineScore = score(declineBallOn, declineDown, declineToGo);
   return acceptScore >= declineScore;
