@@ -191,55 +191,9 @@ const LONG_GAIN_TABLE = {1:'+50 and (+10 x 1D6)', 2:'+50', 3:'+45', 4:'+40', 5:'
 // categories of play outcomes to the number of seconds to deduct from the
 // game clock.
 
-// Normal kickoff results. Keys are 2D6 totals, values are either numeric
-// yard lines or strings indicating special results. A trailing '*' means
-// roll again for the yard line. Fumbles result in the kicking team
-// recovering; penalties subtract 10 yards from the return. Long gains (LG)
-// use the long gain table.
-const NORMAL_KICKOFF_TABLE = {
-  2: 'FUMBLE*',
-  3: 'PENALTY -10*',
-  4: 10,
-  5: 15,
-  6: 20,
-  7: 25,
-  8: 30,
-  9: 35,
-  10: 40,
-  11: 'LG',
-  12: 'LG + 5'
-};
+// (legacy kickoff fallback removed; TS module is authoritative)
 
-// Onside kickoff results. Each entry indicates who recovers the ball and at
-// which yard line relative to the receiving team's end zone. A +1 bonus is
-// applied to the die roll if the kicking team is not trailing in the
-// current score. This table is referenced only if an onside kick is
-// attempted (not currently exposed in the UI).
-const ONSIDE_KICK_TABLE = {
-  1: { possession: 'kicker', yard: 40 },
-  2: { possession: 'kicker', yard: 40 },
-  3: { possession: 'receiver', yard: 35 },
-  4: { possession: 'receiver', yard: 35 },
-  5: { possession: 'receiver', yard: 35 },
-  6: { possession: 'receiver', yard: 30 }
-};
-
-// Place kicking results. Keys are 2D6 totals; each value is an object
-// mapping a distance category to 'G' (good) or 'NG' (no good). Distance
-// categories correspond to PAT, 1‑12, 13‑22, 23‑32, 33‑38 and 39‑45 yards.
-const PLACE_KICK_TABLE = {
-  2: { PAT: 'NG', '1-12': 'NG', '13-22': 'NG', '23-32': 'G', '33-38': 'G', '39-45': 'G' },
-  3: { PAT: 'G',  '1-12': 'NG', '13-22': 'NG', '23-32': 'NG', '33-38': 'G', '39-45': 'NG' },
-  4: { PAT: 'G',  '1-12': 'G',  '13-22': 'NG', '23-32': 'NG', '33-38': 'NG', '39-45': 'NG' },
-  5: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'NG', '33-38': 'NG', '39-45': 'NG' },
-  6: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'G',  '33-38': 'NG', '39-45': 'NG' },
-  7: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'G',  '33-38': 'G',  '39-45': 'NG' },
-  8: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'G',  '33-38': 'NG', '39-45': 'NG' },
-  9: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'NG', '33-38': 'NG', '39-45': 'NG' },
-  10: { PAT: 'G', '1-12': 'G',  '13-22': 'G',  '23-32': 'NG', '33-38': 'NG', '39-45': 'NG' },
-  11: { PAT: 'G', '1-12': 'G',  '13-22': 'NG', '23-32': 'NG', '33-38': 'G',  '39-45': 'NG' },
-  12: { PAT: 'NG','1-12': 'NG', '13-22': 'G',  '23-32': 'G',  '33-38': 'G',  '39-45': 'G' }
-};
+// (legacy place-kicking table removed; logic migrated to TS module in window.GS.rules.PlaceKicking)
 
 // Time keeping values in seconds for different categories of plays. These
 // constants drive the game clock adjustments. See the official rules for
@@ -299,107 +253,7 @@ const PUNT_RETURN_TABLE = {
   12: { type: 'FC' }            // fair catch
 };
 
-/**
- * Parse a kickoff result and compute the yard line and turnover status.
- * The input 'res' is the value from NORMAL_KICKOFF_TABLE after resolving
- * any roll again markers. Returns an object with properties:
- *   yardLine (number) – the final yard line from the receiving team's goal
- *   turnover (boolean) – true if the kicking team recovers the ball
- * This helper is used by resolveKickoff() below.
- */
-function parseKickoffYardLine(res) {
-  let yardLine = 25;
-  let turnover = false;
-  if (typeof res === 'number') {
-    yardLine = res;
-  } else if (res === 'LG') {
-    // Use long gain table for returns. Clamp to midfield (50) to prevent
-    // unrealistic returns past the 50 yard line. We interpret long gain
-    // results as return distance rather than starting from the 50.
-    yardLine = Math.min(resolveLongGain(), 50);
-  } else if (res === 'LG + 5') {
-    yardLine = Math.min(resolveLongGain() + 5, 50);
-  } else {
-    // Should not occur; default to 25.
-    yardLine = 25;
-  }
-  return { yardLine, turnover };
-}
-
-/**
- * Resolve a kickoff. If onside is true, use the onside kickoff table. For
- * normal kickoffs, roll 2D6 to look up the result in the normal table.
- * Handles fumbles and penalties by rolling again for the yard line and
- * applying turnover/penalty as appropriate. Does not adjust the game
- * clock; the caller is responsible for deducting TIME_KEEPING.kickoff. The
- * returned yardLine is always relative to the receiving team's goal line.
- *
- * @param {boolean} onside Whether this is an onside kick
- * @param {string} kickerTeam 'player' or 'ai' indicating who is kicking
- * @returns {{ yardLine: number, turnover: boolean }}
- */
-function resolveKickoff(onside, kickerTeam) {
-  if (onside) {
-    // Onside kick: roll 1D6 and apply +1 if the kicking team is not trailing
-    let roll = rollD6();
-    // Determine if kicker is trailing. If their score is less than the
-    // opponent's, they are trailing and do not receive the +1 bonus.
-    const kickerScore = kickerTeam === 'player' ? game.score.player : game.score.ai;
-    const otherScore = kickerTeam === 'player' ? game.score.ai : game.score.player;
-    if (kickerScore >= otherScore) {
-      roll = Math.min(6, roll + 1);
-    }
-    const entry = ONSIDE_KICK_TABLE[roll] || { possession: 'receiver', yard: 35 };
-    // If the kicker recovers, turnover is true; otherwise false.
-    return { yardLine: entry.yard, turnover: entry.possession === 'kicker' };
-  }
-  // Normal kickoff: roll 2D6 to determine result.
-  let roll = rollD6() + rollD6();
-  let entry = NORMAL_KICKOFF_TABLE[roll];
-  let turnover = false;
-  let penalty = false;
-  // Handle results with '*' indicating roll again
-  if (typeof entry === 'string' && entry.includes('*')) {
-    // Fumble or penalty on kickoff. Remove the '*'.
-    if (/FUMBLE/i.test(entry)) {
-      turnover = true;
-    }
-    if (/PENALTY/i.test(entry)) {
-      penalty = true;
-    }
-    // Remove the star and any trailing text
-    entry = entry.replace('*', '').trim();
-    // Roll again to get the yard line. If this roll also indicates a fumble
-    // or penalty, we treat second fumbles as offsetting (no turnover) and
-    // second penalties as offsetting (no net penalty).
-    let reroll = rollD6() + rollD6();
-    let res2 = NORMAL_KICKOFF_TABLE[reroll];
-    if (typeof res2 === 'string' && res2.includes('*')) {
-      if (/FUMBLE/i.test(res2)) {
-        // Second fumble: offset turnover (receiving team retains)
-        turnover = false;
-      }
-      if (/PENALTY/i.test(res2)) {
-        // Second penalty: offset (no penalty)
-        penalty = false;
-      }
-      // Strip star and use remainder for yard line determination
-      res2 = res2.replace('*', '').trim();
-    }
-    entry = res2;
-  }
-  // Determine yard line and turnover
-  const { yardLine } = parseKickoffYardLine(entry);
-  // Apply penalty yardage if required. Penalties on LG results are marked
-  // from the 50 yard line, but for simplicity we subtract 10 yards from
-  // the return unless offset.
-  let finalYard = yardLine;
-  if (penalty) {
-    finalYard = Math.max(0, yardLine - 10);
-    log('Penalty on kickoff against receiving team: -10 yards');
-  }
-  return { yardLine: finalYard, turnover };
-}
+// (legacy kickoff resolver and parser removed; use window.GS.rules.Kickoff.resolveKickoff)
 
 /**
  * Calculate the number of seconds to deduct from the game clock based on
@@ -1342,17 +1196,9 @@ function kickoff() {
   } else {
     onside = shouldAttemptOnside('ai');
   }
-  let result;
-  try {
-    if (window.GS && window.GS.rules && window.GS.rules.Kickoff && typeof window.GS.rules.Kickoff.resolveKickoff === 'function') {
-      const rng = () => game.rng();
-      const leadingOrTied = (kickerTeam === 'player' ? game.score.player : game.score.ai) >= (kickerTeam === 'player' ? game.score.ai : game.score.player);
-      result = window.GS.rules.Kickoff.resolveKickoff(rng, { onside, kickerLeadingOrTied: leadingOrTied });
-    }
-  } catch (e) { /* fall through to legacy */ }
-  if (!result) {
-    result = resolveKickoff(onside, kickerTeam);
-  }
+  const rng = () => game.rng();
+  const leadingOrTied = (kickerTeam === 'player' ? game.score.player : game.score.ai) >= (kickerTeam === 'player' ? game.score.ai : game.score.player);
+  const result = window.GS.rules.Kickoff.resolveKickoff(rng, { onside, kickerLeadingOrTied: leadingOrTied });
   const yard = result.yardLine;
   // Determine ball placement. If there was no turnover, the receiving
   // team retains possession. The yard line returned is relative to the
@@ -1708,7 +1554,28 @@ function resolvePlay(playerCard, aiCard) {
     resolvePunt();
     return;
   }
-  const outcome = determineOutcome(offenseCard, defenseCard);
+  // Resolve outcome via TS adapter when available for deterministic charts parsing
+  let outcome;
+  try {
+    if (window.GS && window.GS.runtime && typeof window.GS.runtime.resolvePlayAdapter === 'function' && window.GS.tables && window.GS.tables.offenseCharts) {
+      const deckName = game.possession === 'player' ? game.offenseDeck : game.aiOffenseDeck;
+      const rng = () => game.rng();
+      const res = window.GS.runtime.resolvePlayAdapter({
+        state: { seed: game.seed, quarter: game.quarter, clock: game.clock, down: game.down, toGo: game.toGo, ballOn: game.ballOn, possession: game.possession, awaitingPAT: game.awaitingPAT, gameOver: game.gameOver, score: { player: game.score.player, ai: game.score.ai } },
+        charts: window.GS.tables.offenseCharts,
+        deckName,
+        playLabel: offenseCard.label,
+        defenseLabel: defenseCard.label,
+        rng,
+        ui: { inTwoMinute: !!game.inTwoMinute },
+      });
+      outcome = res.outcome;
+    } else {
+      outcome = determineOutcome(offenseCard, defenseCard);
+    }
+  } catch (e) {
+    outcome = determineOutcome(offenseCard, defenseCard);
+  }
   try {
     // Start visual animation (non-blocking)
     // Animation disabled
@@ -2125,196 +1992,37 @@ function resolvePlay(playerCard, aiCard) {
 }
 
 function resolvePunt() {
-  // Narrate punt and use tables for distance and return.
-  // Leading blank line already printed by resolvePlay; avoid redundant preface lines
+  // Narrate punt and use TS module for distance/return.
   const puntingTeam = game.possession === 'player' ? 'HOME' : 'AWAY';
-  const receivingTeam = game.possession === 'player' ? 'AWAY' : 'HOME';
-  // Override debug header to a context label instead of stale 4th & distance
   if (game._currentDebugPlay) {
     game._currentDebugPlay.downDistance = 'PUNT';
   }
   const startSpot = formatYardForLog(game.ballOn);
   log(`${puntingTeam} lines up to punt from the ${startSpot} yard line.`);
-  // Try TS module resolver for determinism
+  const ctx = { ballOn: game.ballOn, puntingTeam: game.possession };
+  const rng = () => game.rng();
+  const longGainFn = (window.GS && window.GS.rules && window.GS.rules.LongGain) ? window.GS.rules.LongGain.resolveLongGain : (() => 50);
+  let out;
   try {
-    if (window.GS && window.GS.rules && window.GS.rules.Punt && typeof window.GS.rules.Punt.resolvePunt === 'function') {
-      const ctx = { ballOn: game.ballOn, puntingTeam: game.possession };
-      const rng = () => game.rng();
-      const out = window.GS.rules.Punt.resolvePunt(ctx, rng, window.GS.rules.LongGain ? window.GS.rules.LongGain.resolveLongGain : (()=>50));
-      const prevPossession = game.possession;
-      game.ballOn = out.ballOn;
-      if (out.possessionFlips) game.possession = game.possession === 'player' ? 'ai' : 'player';
-      game.down = 1; game.toGo = 10;
-      if (out.touchback) {
-        log('Punt sails into the end zone. Touchback to the 20.');
-      } else if (out.fumbleRecoveredByKickingTeam) {
-        const recovering = prevPossession === 'player' ? 'HOME' : 'AWAY';
-        log(`Ball is loose and recovered by ${recovering}!`);
-      }
-      finalizeAfterPunt();
-      return;
+    if (window && window.GS && window.GS.rules && window.GS.rules.Punt && typeof window.GS.rules.Punt.resolvePunt === 'function') {
+      out = window.GS.rules.Punt.resolvePunt(ctx, rng, longGainFn);
     }
-  } catch (e) { /* fall back to legacy path below */ }
-  // Legacy JS path
-  // Roll 2D6 for punt distance
-  const distRoll = rollD6() + rollD6();
-  const puntDistance = PUNT_DISTANCE_TABLE[distRoll] || 40;
-  log(`Punt travels ${puntDistance} yards.`);
-  // Advance the ball to the catch/return spot
-  if (game.possession === 'player') {
-    game.ballOn += puntDistance;
-  } else {
-    game.ballOn -= puntDistance;
+  } catch {}
+  if (!out) {
+    // Minimal inline fallback: 40-yard net, flip possession
+    const gross = 40;
+    const newBall = game.possession === 'player' ? Math.max(0, game.ballOn - gross) : Math.min(100, game.ballOn + gross);
+    out = { ballOn: newBall, possessionFlips: true, touchback: false, fumbleRecoveredByKickingTeam: false };
   }
-  // End zone handling
-  if (game.ballOn > 100 || game.ballOn < 0) {
-    // Through end zone → automatic touchback, ignore return choice
-    if (game.ballOn > 100) {
-      game.ballOn = 80;
-    } else {
-      game.ballOn = 20;
-    }
-    log('Punt sails through the end zone. Touchback to the 20.');
-    game.possession = game.possession === 'player' ? 'ai' : 'player';
-    game.down = 1; game.toGo = 10;
-  } else if (game.ballOn === 100 || game.ballOn === 0) {
-    // Lands in end zone: receiving team choice to return or down at 20
-    const receivingIsPlayer = game.possession === 'ai';
-    const teamName = receivingIsPlayer ? 'HOME' : 'AWAY';
-    const doDownAt20 = () => {
-      game.ballOn = receivingIsPlayer ? 20 : 80;
-      log(`${teamName} choose to down it in the end zone. Touchback to the 20.`);
-      game.possession = game.possession === 'player' ? 'ai' : 'player';
-      game.down = 1; game.toGo = 10;
-    };
-    const doReturn = () => {
-      log(`${teamName} elect to return from the end zone.`);
-      // Resolve return as normal from the end zone spot (0 or 100)
-      const retRoll = rollD6() + rollD6();
-      const ret = PUNT_RETURN_TABLE[retRoll] || { yards: 0 };
-      let returnYards = 0;
-      let fumbleTurnover = false;
-      if (ret.type === 'FC') {
-        log(`${teamName} signals for a fair catch in the end zone.`);
-      } else if (ret.type === 'LG') {
-        returnYards = resolveLongGain();
-        log(`${teamName} with a big return of ${returnYards} yards!`);
-      } else {
-        returnYards = ret.yards || 0;
-        if (returnYards > 0) log(`${teamName} returns it ${returnYards} yards.`);
-        if (retRoll <= 4) {
-          if (game.rng() < 0.15) {
-            log('Returner fumbles!');
-            fumbleTurnover = game.rng() < 0.5;
-          }
-        }
-      }
-      if (game.possession === 'player') {
-        // Player punted; AI receiving towards 0
-        game.ballOn -= returnYards;
-      } else {
-        game.ballOn += returnYards;
-      }
-      if (game.ballOn > 100) game.ballOn = 100;
-      if (game.ballOn < 0) game.ballOn = 0;
-      if (!fumbleTurnover) {
-        game.possession = game.possession === 'player' ? 'ai' : 'player';
-        game.down = 1; game.toGo = 10;
-        log(`Possession changes to ${game.possession === 'player' ? 'HOME' : 'AWAY'}.`);
-      } else {
-        const recovering = game.possession === 'player' ? 'HOME' : 'AWAY';
-        log(`Ball is loose and recovered by ${recovering}!`);
-      }
-    };
-    if (receivingIsPlayer) {
-      // In simulation mode, auto-decide without showing a modal
-      if (game.simulationMode) {
-        const shouldReturn = (function(){
-          if (game.quarter === 4 && game.clock < 2 * 60) {
-            const diff = (game.score.player - game.score.ai);
-            return diff < 0; // if HOME trailing, try to return
-          }
-        return false; })();
-        if (shouldReturn) doReturn(); else doDownAt20();
-      } else if (!puntEZModal) {
-        doDownAt20();
-      } else {
-        const text = document.getElementById('punt-ez-text');
-        text.textContent = 'Punt lands in the end zone. Return or take touchback at the 20?';
-        puntEZModal.style.display = 'block';
-        puntEZReturnBtn.onclick = () => {
-          puntEZModal.style.display = 'none';
-          doReturn();
-          finalizeAfterPunt();
-        };
-        puntEZDownBtn.onclick = () => {
-          puntEZModal.style.display = 'none';
-          doDownAt20();
-          finalizeAfterPunt();
-        };
-        return; // will finalize in callbacks
-      }
-    } else {
-      // AI decides: simple heuristic — if deep in own end (which it is), usually down it unless trailing late
-      const shouldReturn = (function(){
-        if (game.quarter === 4 && game.clock < 2 * 60) {
-          const diff = (game.score.player - game.score.ai);
-          return diff > 0; // if AI trailing, try to return
-        }
-        return false;
-      })();
-      if (shouldReturn) doReturn(); else doDownAt20();
-    }
-  } else {
-    // In play: resolve return
-    const retRoll = rollD6() + rollD6();
-    const ret = PUNT_RETURN_TABLE[retRoll] || { yards: 0 };
-    let returnYards = 0;
-    let fumbleTurnover = false;
-    if (ret.type === 'FC') {
-      log(`${receivingTeam} signals for a fair catch.`);
-    } else if (ret.type === 'LG') {
-      returnYards = resolveLongGain();
-      log(`${receivingTeam} with a big return of ${returnYards} yards!`);
-    } else {
-      returnYards = ret.yards || 0;
-      if (returnYards > 0) {
-        log(`${receivingTeam} returns it ${returnYards} yards.`);
-      } else {
-        log('No return.');
-      }
-      // Small chance of fumble on mid results
-      if (retRoll <= 4) {
-        if (game.rng() < 0.15) {
-          log('Returner fumbles!');
-          // 50/50 recovery for kicking team
-          fumbleTurnover = game.rng() < 0.5;
-        }
-      }
-    }
-    // Apply return yards opposite to punt direction since receiving team is advancing
-    if (game.possession === 'player') {
-      // Player punted; AI receiving advances towards 0 → subtract yards
-      game.ballOn -= returnYards;
-    } else {
-      // AI punted; HOME receiving advances towards 100 → add yards
-      game.ballOn += returnYards;
-    }
-    // Clamp bounds
-    if (game.ballOn > 100) game.ballOn = 100;
-    if (game.ballOn < 0) game.ballOn = 0;
-    // Change possession after the kick unless the kicking team recovers a fumble on the return
-    if (fumbleTurnover) {
-      const recovering = game.possession === 'player' ? 'HOME' : 'AWAY';
-      log(`Ball is loose and recovered by ${recovering}!`);
-      // Kicking team recovers: possession stays with current punting team
-      // Move ballOn slightly in the direction of kicking team as recovery spot already reflected by returnYards
-    } else {
-      game.possession = game.possession === 'player' ? 'ai' : 'player';
-      game.down = 1; game.toGo = 10;
-      const newTeam = game.possession === 'player' ? 'HOME' : 'AWAY';
-      log(`Possession changes to ${newTeam}.`);
-    }
+  const prevPossession = game.possession;
+  game.ballOn = out.ballOn;
+  if (out.possessionFlips) game.possession = game.possession === 'player' ? 'ai' : 'player';
+  game.down = 1; game.toGo = 10;
+  if (out.touchback) {
+    log('Punt sails into the end zone. Touchback to the 20.');
+  } else if (out.fumbleRecoveredByKickingTeam) {
+    const recovering = prevPossession === 'player' ? 'HOME' : 'AWAY';
+    log(`Ball is loose and recovered by ${recovering}!`);
   }
   finalizeAfterPunt();
 }
@@ -2541,7 +2249,10 @@ function handleSafety(scorer) {
   const doSafetyKickoff = () => {
     // Safety kickoff uses normal kickoff table, plus +25 to final yardline result.
     const kickerTeam = freeKicker;
-    const result = resolveKickoff(false, kickerTeam);
+    const rng = () => game.rng();
+    const leadingOrTied = (kickerTeam === 'player' ? game.score.player : game.score.ai) >= (kickerTeam === 'player' ? game.score.ai : game.score.player);
+    let result;
+    const result = window.GS.rules.Kickoff.resolveKickoff(rng, { onside: false, kickerLeadingOrTied: leadingOrTied });
     let yard = result.yardLine + 25;
     if (yard > 100) yard = 100;
     // Receiving team is opposite of kicker
@@ -2845,12 +2556,12 @@ function attemptFieldGoal() {
         success = window.GS.rules.PlaceKicking.attemptFieldGoal(rng, attemptYards);
       } else {
         const roll = rollD6() + rollD6();
-        const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
+        const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (typeof PLACE_KICK_TABLE !== 'undefined' ? (PLACE_KICK_TABLE[roll] || {}) : {});
         success = row[col] === 'G';
       }
     } catch (e) {
       const roll = rollD6() + rollD6();
-      const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
+      const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (typeof PLACE_KICK_TABLE !== 'undefined' ? (PLACE_KICK_TABLE[roll] || {}) : {});
       success = row[col] === 'G';
     }
   }
@@ -2909,7 +2620,8 @@ function attemptFieldGoal() {
   if (success && !game.gameOver) {
     // Flip possession and kickoff after made FG
     game.possession = game.possession === 'player' ? 'ai' : 'player';
-    if (!game.gameOver) kickoff();
+    // Use module kickoff if available; else fallback
+    kickoff();
   }
   // Update UI and hands
   if (!game.gameOver) {
@@ -4076,14 +3788,18 @@ const SFX = (() => {
     const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = noiseBuffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) data[i] = (game.rng() * 2 - 1) * 0.35;
-    const noise = audioCtx.createBufferSource();
+    const noise = (audioCtx && typeof audioCtx.createBufferSource === 'function') ? audioCtx.createBufferSource() : null;
+    if (!noise || typeof noise.start !== 'function' || typeof noise.stop !== 'function') {
+      // Environment (e.g., JSDOM tests) lacks WebAudio start/stop; skip noise
+      return;
+    }
     noise.buffer = noiseBuffer;
     const filter = audioCtx.createBiquadFilter();
     filter.type = 'bandpass';
     filter.frequency.value = theme === 'modern' ? 1200 : theme === 'retro' ? 900 : 800;
     const gain = audioCtx.createGain();
     gain.gain.value = 0.0001;
-    let chain = noise.connect(filter);
+    let chain = noise.connect ? noise.connect(filter) : filter;
     if (theme === 'arcade') {
       const { delay } = createDelay(120, 0.12);
       chain = chain.connect(delay);

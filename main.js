@@ -3788,14 +3788,18 @@ const SFX = (() => {
     const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = noiseBuffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) data[i] = (game.rng() * 2 - 1) * 0.35;
-    const noise = audioCtx.createBufferSource();
+    const noise = (audioCtx && typeof audioCtx.createBufferSource === 'function') ? audioCtx.createBufferSource() : null;
+    if (!noise || typeof noise.start !== 'function' || typeof noise.stop !== 'function') {
+      // Environment (e.g., JSDOM tests) lacks WebAudio start/stop; skip noise
+      return;
+    }
     noise.buffer = noiseBuffer;
     const filter = audioCtx.createBiquadFilter();
     filter.type = 'bandpass';
     filter.frequency.value = theme === 'modern' ? 1200 : theme === 'retro' ? 900 : 800;
     const gain = audioCtx.createGain();
     gain.gain.value = 0.0001;
-    let chain = noise.connect(filter);
+    let chain = noise.connect ? noise.connect(filter) : filter;
     if (theme === 'arcade') {
       const { delay } = createDelay(120, 0.12);
       chain = chain.connect(delay);
