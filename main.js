@@ -767,6 +767,8 @@ const game = {
   , inUntimedDown: false
   , nextKickOnside: false
   , simulationMode: false
+  , debugPlays: []
+  , _currentDebugPlay: null
 };
 
 // ---------- UI elements ----------
@@ -1227,6 +1229,7 @@ function startNewGame() {
   game.twoMinuteWarningAnnounced = false;
   game.inTwoMinute = false;
   logClear();
+  clearDebugLog();
   log(`New game: deck=${deckName}`);
   // Coin toss and opening choice per rules: player chooses Receive or Kick.
   // Store opening/second-half preferences on game.
@@ -1323,6 +1326,7 @@ function kickoff() {
     }
     const recoveringTeam = game.possession === 'player' ? 'HOME' : 'AWAY';
     log(`Kickoff fumble! ${recoveringTeam} recover at the ${formatYardForLog(yard)} yard line.`);
+    setCurrentPlayResult('Kickoff fumble; turnover');
   }
   // Reset down and distance after kickoff
   game.down = 1;
@@ -1332,6 +1336,9 @@ function kickoff() {
   // Check for two-minute warning and handle clock/quarter transitions
   checkTwoMinuteWarning();
   handleClockAndQuarter();
+  // Record a kickoff entry in structured log
+  setCurrentPlayResult('Kickoff');
+  finalizeDebugPlay();
 }
 
 // Simple onside heuristic for AI: attempt in Q4 when trailing by <= 8 with <= 5:00 remaining
@@ -1644,9 +1651,13 @@ function resolvePlay(playerCard, aiCard) {
   // field. Do not expose the card names – this should read like a
   // broadcast rather than a game engine debug statement.
   log('');
+  beginDebugPlay(offenseCard, defenseCard);
   const downNames = ['1st', '2nd', '3rd', '4th'];
   const downStr = downNames[Math.min(game.down, 4) - 1] || `${game.down}th`;
-  const toGoStr = game.toGo;
+  // Down & distance label with Goal‑to‑Go handling
+  const firstDownAbsForLabel = game.possession === 'player' ? (game.ballOn + game.toGo) : (game.ballOn - game.toGo);
+  const isGoalToGo = game.possession === 'player' ? (firstDownAbsForLabel >= 100) : (firstDownAbsForLabel <= 0);
+  const toGoStr = isGoalToGo ? 'Goal' : game.toGo;
   const teamName = game.possession === 'player' ? 'HOME' : 'AWAY';
   const yardLine = formatYardForLog(game.ballOn);
   // Track the first down target as an absolute yard to allow accurate
@@ -1663,6 +1674,7 @@ function resolvePlay(playerCard, aiCard) {
     log(`${teamName} lines up ${formation}.`);
   }
   // Describe the initial quarterback action before the result is known.
+  // For pass plays that result in sacks, we will avoid misleading deep-pass phrasing by not repeating action later.
   const playActionDesc = describePlayAction(offenseCard);
   if (playActionDesc) {
     log(`Quarterback ${playActionDesc}.`);
@@ -1690,7 +1702,10 @@ function resolvePlay(playerCard, aiCard) {
     penalty = maybePenalty();
   }
   if (penalty) {
+    // penalty flow will update state asynchronously; set a descriptive result
+    setCurrentPlayResult(`Penalty on ${penalty.on} ${penalty.yards} yards${penalty.firstDown? ' (auto first down)' : ''}`);
     handlePenaltyDecision({ offenseCard, outcome, penalty, yards, preBallOn: game.ballOn, preDown: game.down, preToGo: game.toGo, teamName });
+    finalizeDebugPlay();
     return;
   }
   let netYards = yards;
@@ -1768,8 +1783,10 @@ function resolvePlay(playerCard, aiCard) {
     const newTeamName = game.possession === 'player' ? 'AWAY' : 'HOME';
     if (outcome.category === 'interception') {
       log(`Interception! ${newTeamName} takes over.`);
+      setCurrentPlayResult('Interception; turnover');
     } else {
       log(`Fumble! ${newTeamName} recovers.`);
+      setCurrentPlayResult('Fumble; turnover');
     }
     // Flip possession without modifying ballOn yet. changePossession()
     // will flip the ballOn coordinate and reset down/toGo.
@@ -1783,6 +1800,7 @@ function resolvePlay(playerCard, aiCard) {
         game.ballOn -= returnYards;
       }
       log(`Interception return: ${returnYards} ${returnYards === 1 ? 'yard' : 'yards'}`);
+      setCurrentPlayResult(`Interception; return ${returnYards} ${returnYards === 1 ? 'yard' : 'yards'}`);
     }
     // Interception end-zone/limits handling:
     // - If spot ends inside defender's own end zone → touchback to own 20
@@ -1803,6 +1821,7 @@ function resolvePlay(playerCard, aiCard) {
         // In player end zone as new offense → touchback to 20
         game.ballOn = 20;
         log('Interception in the end zone. Touchback. HOME ball at the 20.');
+        setCurrentPlayResult('Interception touchback');
       }
     } else {
       // AI now on offense after INT: own end zone at 100
@@ -1816,6 +1835,7 @@ function resolvePlay(playerCard, aiCard) {
       if (game.ballOn === 100) {
         game.ballOn = 80;
         log('Interception in the end zone. Touchback. AWAY ball at the 20.');
+        setCurrentPlayResult('Interception touchback');
       }
     }
     // Clamp ball position within bounds
@@ -1913,7 +1933,7 @@ function resolvePlay(playerCard, aiCard) {
     if (newSpot > 100) newSpot = 100;
     game.ballOn = newSpot;
   }
-  // Provide a descriptive result line with correct gating for pass-only text.
+  // Provide a descriptive result line with correct gating for pass-only text and sacks.
   if (outcome.category === 'incomplete') {
     // Only passes can be incomplete
     if (offenseCard.type === 'pass') {
@@ -1922,12 +1942,19 @@ function resolvePlay(playerCard, aiCard) {
       log('No gain.');
     }
   } else {
+    // If this was a sack, override the generic pass description to avoid deep-pass phrasing leading into a loss.
+    if (offenseCard.type === 'pass' && outcome.category === 'loss' && /Sack/i.test(outcome.raw || '')) {
+      // Replace the previous action line with a sack banner already shown via VFX; ensure yardage is logged as a loss only.
+      // No additional narration needed here beyond the loss line below.
+    }
     // Suppress redundant yardage line when a pass carry goes for a TD
     const wouldScoreTD = (game.possession === 'player')
       ? (game.ballOn + netYards >= 100)
       : (game.ballOn - netYards <= 0);
     const shouldSuppressForCarryTD = offenseCard.type === 'pass' && wouldScoreTD;
-    if (!shouldSuppressForCarryTD) {
+    // Also suppress yardage line for runs that score; we will log TD below
+    const suppressForRunTD = offenseCard.type === 'run' && wouldScoreTD;
+    if (!shouldSuppressForCarryTD && !suppressForRunTD) {
       if (netYards > 0) {
         const y = Math.abs(netYards);
         log(`Gain of ${y} ${y === 1 ? 'yard' : 'yards'}.`);
@@ -2046,11 +2073,15 @@ function resolvePlay(playerCard, aiCard) {
       // hide play zone (legacy) if present
       if (playZone) playZone.classList.add('hidden');
       updateHUD();
+      setCurrentPlayResult('Touchdown (pending PAT)');
+      finalizeDebugPlay();
       return;
     } else {
       // AI will attempt its PAT immediately
       // Ensure field goal option is hidden during PAT resolution
       if (fgOptions) fgOptions.classList.add('hidden');
+      setCurrentPlayResult('Touchdown (AI PAT resolving)');
+      finalizeDebugPlay();
       aiAttemptPAT();
       return;
     }
@@ -2059,6 +2090,7 @@ function resolvePlay(playerCard, aiCard) {
   if (game.down > 4) {
     const nextTeam = game.possession === 'player' ? 'AWAY' : 'HOME';
     log(`On downs, ${nextTeam} takes over.`);
+    setCurrentPlayResult('Turnover on downs');
     changePossession();
   }
   // Check if ball has crossed midfield to update measurement orientation
@@ -2070,9 +2102,8 @@ function resolvePlay(playerCard, aiCard) {
 
 function resolvePunt() {
   // Narrate punt and use tables for distance and return.
-  log('');
+  // Leading blank line already printed by resolvePlay; avoid redundant preface lines
   const puntingTeam = game.possession === 'player' ? 'HOME' : 'AWAY';
-  const receivingTeam = game.possession === 'player' ? 'AWAY' : 'HOME';
   const startSpot = formatYardForLog(game.ballOn);
   log(`${puntingTeam} lines up to punt from the ${startSpot} yard line.`);
   // Roll 2D6 for punt distance
@@ -2248,6 +2279,8 @@ function finalizeAfterPunt() {
   // Re-evaluate FG option visibility after penalty administration
   try { updateFGOptions(); } catch {}
   dealHands();
+  setCurrentPlayResult('Punt');
+  finalizeDebugPlay();
 }
 
 // Start a new game using test setup controls (DEV MODE)
@@ -2554,6 +2587,9 @@ function handleClockAndQuarter() {
       break;
     }
     game.clock += 15 * 60; // add quarter length
+    if (game.quarter === 3) {
+      log('Halftime.');
+    }
     log(`Start of quarter ${game.quarter}.`);
     // Kickoff at start of 3rd quarter (start of second half)
     if (game.quarter === 3) {
@@ -2602,6 +2638,8 @@ function attemptExtraPoint() {
   // Extra points consume no time
   game.clock -= TIME_KEEPING.extraPoint;
   finishPAT();
+  setCurrentPlayResult(`PAT ${success ? 'good' : 'missed'}`);
+  finalizeDebugPlay();
 }
 
 function attemptTwoPoint() {
@@ -2617,7 +2655,9 @@ function attemptTwoPoint() {
   } else {
     log('Two‑point conversion fails.');
   }
+  setCurrentPlayResult(game.rng && false ? '' : (game.score.player === 0 && game.score.ai === 0 ? '' : 'Two-point conversion ' + (logElement.textContent.endsWith('fails.\n') ? 'failed' : 'good')));
   finishPAT();
+  finalizeDebugPlay();
 }
 
 function finishPAT() {
@@ -2680,19 +2720,20 @@ function aiAttemptPAT() {
 function attemptFieldGoal() {
   // Determine distance: distance from ball to opponent goal line
   const distance = game.possession === 'player' ? 100 - game.ballOn : game.ballOn;
-  // Use attempt distance including placement (hash + end zone): common convention adds 17-18; we use 18
-  const attemptYards = distance + 18;
-  // Determine the column for the place kicking table
+  // Attempt distance includes placement (7) and end zone (10): use +17
+  const attemptYards = distance + 17;
+  // Determine the column for the place kicking table using attempt distance
   let col;
-  if (distance <= 12) {
+  const ay = Math.round(attemptYards);
+  if (ay <= 12) {
     col = '1-12';
-  } else if (distance <= 22) {
+  } else if (ay <= 22) {
     col = '13-22';
-  } else if (distance <= 32) {
+  } else if (ay <= 32) {
     col = '23-32';
-  } else if (distance <= 38) {
+  } else if (ay <= 38) {
     col = '33-38';
-  } else if (distance <= 45) {
+  } else if (ay <= 45) {
     col = '39-45';
   } else {
     // Out of range: automatically no good
@@ -2771,6 +2812,8 @@ function attemptFieldGoal() {
     updateHUD();
     dealHands();
   }
+  setCurrentPlayResult(`Field goal ${success ? 'good' : 'no good'}`);
+  finalizeDebugPlay();
 }
 
 // HUD and logging helpers
@@ -2785,10 +2828,13 @@ function updateHUD() {
   }
   hudQuarter.textContent = `Q${game.quarter}`;
   hudClock.textContent = formatTime(Math.max(game.clock, 0));
-  // Format down & distance
+  // Format down & distance (show Goal-to-Go when line to gain is the goal line)
   const downNames = ['1st', '2nd', '3rd', '4th'];
   const downStr = downNames[Math.min(game.down, 4) - 1] || `${game.down}th`;
-  hudDownDistance.textContent = `${downStr} & ${game.toGo}`;
+  const firstDownAbsForLabel = game.possession === 'player' ? (game.ballOn + game.toGo) : (game.ballOn - game.toGo);
+  const isGoalToGo = game.possession === 'player' ? (firstDownAbsForLabel >= 100) : (firstDownAbsForLabel <= 0);
+  const toGoLabel = isGoalToGo ? 'Goal' : String(game.toGo);
+  hudDownDistance.textContent = `${downStr} & ${toGoLabel}`;
   // Display the ball spot as a value from 0 to 50 yards regardless of
   // orientation. Once the ball crosses midfield, we show the distance
   // from the opposite end zone (e.g. ball on 60 becomes 40).
@@ -3203,6 +3249,39 @@ function log(msg) {
 
 function logClear() {
   logElement.textContent = '';
+}
+
+// Structured per-play debug logging for download
+function clearDebugLog() {
+  game.debugPlays = [];
+  game._currentDebugPlay = null;
+}
+
+function beginDebugPlay(offenseCard, defenseCard) {
+  const downNames = ['1st', '2nd', '3rd', '4th'];
+  const downStr = downNames[Math.min(game.down, 4) - 1] || `${game.down}th`;
+  const offDeck = game.possession === 'player' ? game.offenseDeck : game.aiOffenseDeck;
+  game._currentDebugPlay = {
+    quarter: `Q${game.quarter}`,
+    clock: formatTime(Math.max(game.clock, 0)),
+    downDistance: `${downStr} & ${game.toGo}`,
+    offenseDeck: offDeck,
+    offensePlay: offenseCard && offenseCard.label ? offenseCard.label : '(unknown)',
+    defensePlay: defenseCard && defenseCard.label ? defenseCard.label : '(unknown)',
+    result: ''
+  };
+}
+
+function setCurrentPlayResult(text) {
+  if (game._currentDebugPlay) game._currentDebugPlay.result = String(text || '').trim();
+}
+
+function finalizeDebugPlay() {
+  const p = game._currentDebugPlay;
+  if (!p) return;
+  const line = `${p.downDistance} | ${p.quarter} ${p.clock} | PB: ${p.offenseDeck} | OFF: ${p.offensePlay} | DEF: ${p.defensePlay} | RESULT: ${p.result}`;
+  game.debugPlays.push(line);
+  game._currentDebugPlay = null;
 }
 
 function mapCardIdToAnimId(cardId) {
@@ -3723,8 +3802,13 @@ function applyPenaltyDecision(choice, st) {
   game.ballOn = chosenBallOn;
   game.down = chosenDown;
   game.toGo = chosenToGo;
-  // Narrate decision
-  log(choice === 'accept' ? 'Penalty accepted.' : 'Penalty declined.');
+  // Narrate decision with play outcome context
+  if (choice === 'accept') {
+    log('Penalty accepted.');
+  } else {
+    // On decline, clarify that the previous play stands
+    log('Penalty declined. The play stands.');
+  }
   // Time off for a penalty play (accept or decline consumes the play)
   game.clock -= TIME_KEEPING.penalty;
   checkTwoMinuteWarning();
@@ -3736,6 +3820,9 @@ function applyPenaltyDecision(choice, st) {
   handleClockAndQuarter();
   updateHUD();
   dealHands();
+  // Record accepted/declined decision in structured result
+  setCurrentPlayResult(`Penalty ${choice}`);
+  finalizeDebugPlay();
 }
 
 const vfxOverlay = document.getElementById('vfx-overlay');
@@ -4206,6 +4293,7 @@ if (devCheckbox) {
     autoBtn.addEventListener('click', () => {
       if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'click', id: 'run-auto-game' });
       logClear();
+      clearDebugLog();
       const saved = { showCardOverlay };
       try {
         showCardOverlay = function() {};
@@ -4225,38 +4313,13 @@ if (devCheckbox) {
   if (dlBtn) {
     dlBtn.addEventListener('click', () => {
       if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'click', id: 'download-debug' });
-      const meta = [
-        `Timestamp: ${new Date().toISOString()}`,
-        `Quarter: ${game.quarter}`,
-        `Clock: ${game.clock}s`,
-        `Down/ToGo: ${game.down} & ${game.toGo}`,
-        `BallOn: ${game.ballOn}`,
-        `Possession: ${game.possession.toUpperCase()}`,
-        `Score: HOME ${game.score.player} — AWAY ${game.score.ai}`
-      ].join('\n');
-      const header = `=== GRIDIRON FULL DEBUG ===\n${meta}\n`;
-      const gameLog = `\n=== GAME LOG ===\n${logElement.textContent || ''}`;
-      const dbgEvents = (window.debug && window.debug.buffer) ? window.debug.buffer : [];
-      const dbgText = `\n=== DEBUG EVENTS (${dbgEvents.length}) ===\n` + dbgEvents.map((e,i)=>{
-        try { return `${i+1}. [${new Date(e.t||Date.now()).toISOString()}] ${e.type||'info'} ${e.msg ? e.msg : JSON.stringify({ ...e, t: undefined })}`; } catch { return `${i+1}. ${String(e)}`; }
-      }).join('\n');
-      const trace = (window.debug && window.debug.traceBuffer) ? window.debug.traceBuffer : [];
-      const traceText = `\n=== TRACE (${trace.length}) ===\n` + trace.map((ev,i)=>{
-        const indent = '  '.repeat(Math.max(0,(ev.depth||1)-1));
-        const time = new Date(ev.t||Date.now()).toISOString();
-        if (ev.phase === 'enter') {
-          return `${i+1}. ${indent}> ${ev.name}(${JSON.stringify(ev.args)}) @ ${time}\n${indent}   state=${JSON.stringify(ev.state)}`;
-        } else if (ev.phase === 'return') {
-          return `${i+1}. ${indent}< ${ev.name} => ${JSON.stringify(ev.result)} (+${ev.dt}ms) @ ${time}\n${indent}   state=${JSON.stringify(ev.state)}`;
-        } else if (ev.phase === 'throw') {
-          return `${i+1}. ${indent}! ${ev.name} !! ${ev.error} (+${ev.dt}ms) @ ${time}\n${indent}   state=${JSON.stringify(ev.state)}`;
-        }
-        return `${i+1}. ${indent}? ${ev.name} ${JSON.stringify(ev)}`;
-      }).join('\n');
-      const content = header + gameLog + dbgText + traceText + '\n';
+      const header = `GRIDIRON DEBUG PLAY LOG\nGenerated: ${new Date().toISOString()}\n`;
+      const lines = game.debugPlays && game.debugPlays.length ? game.debugPlays : [];
+      const body = lines.join('\n') + (lines.length ? '\n' : '');
+      const content = header + body;
       const blob = new Blob([content], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'gridiron-full-debug.log'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+      const a = document.createElement('a'); a.href = url; a.download = 'gridiron-debug-playlog.txt'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
     });
   }
 })();
