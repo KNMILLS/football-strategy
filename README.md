@@ -11,14 +11,14 @@
   - `Charts.ts`, `ResolvePlayCore.ts`, `ResultParsing.ts`, `Timekeeping.ts`, `Penalties.ts`
   - Special teams: `special/Kickoff.ts`, `special/Punt.ts`, `special/PlaceKicking.ts`
 - Data schemas live under `src/data/schemas/**` and are validated via Zod.
-- Deterministic RNG utilities in `src/sim/RNG.ts` (LCG); tests stub `Math.random`.
-- A lightweight bootstrap in `src/index.ts` exposes modules on `window.GS` to allow
-  the existing `main.js` runtime to gradually adopt the modular rules.
+- Deterministic RNG utilities in `src/sim/RNG.ts` (LCG); never use `Math.random()` in code.
+- TS-only runtime boot: `index.html` loads `src/index.ts` directly. No legacy `main.js` or `src/legacy/main-bridge.ts` is used.
+- The runtime exposes a typed API on `window.GS` for UI, tests, and dev tools.
 
-### Determinism & Golden Tests
-- Do not use `Math.random()` directly in new code. Consume an injected `rng()`.
-- Golden master tests (`tests/golden/simulateOneGame.test.ts`) set `Math.random` to a seeded LCG and evaluate `main.js`, ensuring logs and outcomes remain stable.
-- Preserve all log strings and DOM IDs; tests compare outputs byte-for-byte.
+### Determinism & Tests
+- Do not use `Math.random()` directly. Consume an injected `rng()`.
+- Golden tests remain for legacy parity. New runtime tests boot via `src/index.ts` and assert core UI appears and `window.GS` API shape.
+- Preserve all log strings and DOM IDs for accessibility and tests.
 
 ### Running Locally
 1) Install: `npm i`
@@ -31,9 +31,18 @@
 - You can force Dev Mode on page load by appending `#dev` to the URL (e.g., `http://localhost:5173/#dev`).
 - Dev Mode provides: start test game, run full auto game, theme selection, SFX toggles, and debug log export.
 
+### TS-only Boot
+- `index.html` includes: `<script type="module" src="/src/index.ts"></script>`.
+- At runtime, `window.GS` provides:
+  - `bus`: app `EventBus`
+  - `rules`, `ai`: namespaced modules
+  - `tables`: nullable tables preloaded on `start()`
+  - `start(options)`, `dispose()`, `setTheme(theme)`
+  - `runtime.resolvePlayAdapter(...)` for migration parity
+
 ### Troubleshooting
-- If the New Game button or Dev Mode toggle appears unresponsive, ensure the dev server has compiled without errors and that `main.js` is being loaded. In this refactor, a legacy loader injects `main.js` after the DOM is ready.
-- In tests or jsdom, external CSS (`style.css`) may warn about loading; this is harmless and does not affect logic.
+- If UI appears blank, check console for table load warnings; runtime continues with `null` tables.
+- In tests/jsdom, external CSS (`style.css`) may warn; harmless.
 
 ### Coverage Gates
 - Configured in `vitest.config.ts` with V8 coverage provider and thresholds.
