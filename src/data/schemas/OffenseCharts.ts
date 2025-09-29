@@ -8,12 +8,14 @@ export const PlayLetterMapSchema = z.record(DefenseLetterSchema, PlayResultSchem
 
 export const DeckPlaysSchema = z.record(z.string(), PlayLetterMapSchema);
 
-export const OffenseChartsSchema = z.object({
+export const OffenseChartsInnerSchema = z.object({
   ProStyle: DeckPlaysSchema,
   BallControl: DeckPlaysSchema,
   AerialStyle: DeckPlaysSchema,
 });
 
-export type OffenseCharts = z.infer<typeof OffenseChartsSchema>;
+export const OffenseChartsSchema = z.object({ OffenseCharts: OffenseChartsInnerSchema });
+
+export type OffenseCharts = z.infer<typeof OffenseChartsInnerSchema>;
 
 
