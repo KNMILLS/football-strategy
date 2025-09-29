@@ -7,6 +7,9 @@
   },
   "scripts": {
     "test": "vitest --run",
+    "test:cov": "vitest --run --coverage",
+    "check:rules-cov": "node scripts/check-rules-coverage.mjs",
+    "ci": "npm run test:cov && npm run check:rules-cov",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview --port 5173",

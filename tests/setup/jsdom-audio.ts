@@ -32,12 +32,14 @@ class FakeDelayNode extends FakeNode {
   delayTime = new FakeAudioParam();
 }
 
-class FakeAudioBuffer {}
+class FakeAudioBuffer {
+  getChannelData() { return new Float32Array(0); }
+}
 
 class FakeAudioBufferSourceNode extends FakeNode {
   buffer: FakeAudioBuffer | null = null;
-  start() {}
-  stop() {}
+  start() { /* no-op */ }
+  stop() { /* no-op */ }
 }
 
 class FakeAudioContext {
@@ -50,6 +52,7 @@ class FakeAudioContext {
   createDelay() { return new FakeDelayNode(); }
   createConvolver() { return new FakeNode(); }
   createDynamicsCompressor() { return new FakeNode(); }
+  createWaveShaper() { return new FakeNode(); }
   createBuffer(_c: number, _l: number, _sr: number) { return new FakeAudioBuffer(); }
   createBufferSource() { return new FakeAudioBufferSourceNode(); }
 }

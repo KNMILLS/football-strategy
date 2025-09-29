@@ -53,6 +53,25 @@ async function loadDom(): Promise<JSDOM> {
 async function evalMainJs(dom: JSDOM) {
   const mainJs = await fs.readFile(path.resolve(process.cwd(), 'main.js'), 'utf8');
   dom.window.eval(mainJs);
+  // Bootstrap GS by importing actual rule modules so simulateOneGame matches golden baselines
+  if (!(dom.window as any).GS) {
+    const [KickoffMod, PuntMod, PlaceKickingMod, ResultParsingMod, TimekeepingMod, ChartsMod, LongGainMod, PATDecisionMod, CoachProfilesMod] = await Promise.all([
+      import('../../src/rules/special/Kickoff'),
+      import('../../src/rules/special/Punt'),
+      import('../../src/rules/special/PlaceKicking'),
+      import('../../src/rules/ResultParsing'),
+      import('../../src/rules/Timekeeping'),
+      import('../../src/rules/Charts'),
+      import('../../src/rules/LongGain'),
+      import('../../src/ai/PATDecision'),
+      import('../../src/ai/CoachProfiles'),
+    ]);
+    (dom.window as any).GS = {
+      rules: { Kickoff: KickoffMod, Punt: PuntMod, PlaceKicking: PlaceKickingMod, ResultParsing: ResultParsingMod, Timekeeping: TimekeepingMod, Charts: ChartsMod, LongGain: LongGainMod },
+      ai: { PATDecision: PATDecisionMod, CoachProfiles: CoachProfilesMod },
+      bus: { emit(){} },
+    };
+  }
 }
 
 let baseline: any;

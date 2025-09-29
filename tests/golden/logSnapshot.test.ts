@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { JSDOM } from 'jsdom';
-import { fileURLToPath } from 'node:url';
 
 function createLCG(seed: number): () => number {
   let s = seed % 2147483647;
@@ -56,9 +55,26 @@ async function evalMainJs(dom: JSDOM) {
   dom.window.eval(mainJs);
   // Ensure modules from src are initialized (exposes window.GS, bus, etc.)
   // index.html already loads /src/index.ts as a module via Vite in dev, but JSDOM won't.
-  // We simulate minimal bootstrap expected by main.js by ensuring window.GS exists.
+  // Bootstrap GS by importing real modules so simulation matches golden baseline
   if (!(dom.window as any).GS) {
-    (dom.window as any).GS = { bus: { emit(){} } };
+    const [KickoffMod, PuntMod, PlaceKickingMod, ResultParsingMod, TimekeepingMod, ChartsMod, LongGainMod, PATDecisionMod, CoachProfilesMod, EventBusMod] = await Promise.all([
+      import('../../src/rules/special/Kickoff'),
+      import('../../src/rules/special/Punt'),
+      import('../../src/rules/special/PlaceKicking'),
+      import('../../src/rules/ResultParsing'),
+      import('../../src/rules/Timekeeping'),
+      import('../../src/rules/Charts'),
+      import('../../src/rules/LongGain'),
+      import('../../src/ai/PATDecision'),
+      import('../../src/ai/CoachProfiles'),
+      import('../../src/utils/EventBus'),
+    ]);
+    const bus = new (EventBusMod as any).EventBus();
+    (dom.window as any).GS = {
+      rules: { Kickoff: KickoffMod, Punt: PuntMod, PlaceKicking: PlaceKickingMod, ResultParsing: ResultParsingMod, Timekeeping: TimekeepingMod, Charts: ChartsMod, LongGain: LongGainMod },
+      ai: { PATDecision: PATDecisionMod, CoachProfiles: CoachProfilesMod },
+      bus,
+    };
   }
 }
 
