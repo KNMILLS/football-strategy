@@ -22,7 +22,7 @@ export function performPAT(ctx: PATContext, rng: RNG): { aiPoints: number } {
     const success = rng() < 0.5;
     return { aiPoints: success ? 2 : 0 };
   }
-  // XP success ~ from main.js: use 2D6 table elsewhere; as a heuristic here, 98% success when abstracted
+  // XP success heuristic aligned with legacy behavior; 98% success when abstracted
   const success = rng() < 0.98;
   return { aiPoints: success ? 1 : 0 };
 }

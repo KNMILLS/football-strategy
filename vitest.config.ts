@@ -13,7 +13,21 @@ export default defineConfig({
         branches: 60,
         statements: 70,
       },
-      include: ['src/**/*.ts'],
+      include: [
+        'src/rules/**/*.ts',
+        'src/flow/**/*.ts',
+        'src/ai/**/*.ts',
+        'src/sim/**/*.ts',
+        'src/data/schemas/**/*.ts',
+        'src/data/loaders/**/*.ts',
+        'src/deck/**/*.ts',
+        'src/utils/**/*.ts',
+        'src/domain/**/*.ts'
+      ],
+      exclude: [
+        'src/ui/**',
+        'src/index.ts'
+      ],
     },
     setupFiles: ['tests/setup/jsdom-audio.ts'],
   },

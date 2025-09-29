@@ -3,6 +3,8 @@ import { loadJson } from './JsonLoader';
 import { OffenseChartsSchema, type OffenseCharts } from '../schemas/OffenseCharts';
 import { PlaceKickTableSchema, PlaceKickTableNormalizedSchema, type PlaceKickTable } from '../schemas/PlaceKicking';
 import { TimeKeepingSchema, TimeKeepingFlatSchema, type TimeKeeping } from '../schemas/Timekeeping';
+import type { Result } from './Result';
+import { type Ok, type Err } from './Result';
 
 // Long Gain schema (inline) based on data/long_gain.json
 const LongGainEntrySchema = z.object({
@@ -142,46 +144,139 @@ function toLongGain(json: any): LongGainTable | undefined {
   return undefined;
 }
 
+/** @deprecated prefer fetchOffenseCharts which returns Result */
 export async function loadOffenseCharts(): Promise<OffenseCharts | undefined> {
-  try {
-    const data = await loadJson('data/football_strategy_all_mappings.json', OffenseChartsSchema);
-    return data.OffenseCharts;
-  } catch {
-    return undefined;
-  }
+  const r = await fetchOffenseCharts();
+  return r.ok ? r.data : undefined;
 }
 
+/** @deprecated prefer fetchPlaceKicking which returns Result */
 export async function loadPlaceKicking(): Promise<PlaceKickTable | undefined> {
-  try {
-    const res = await fetch('data/place_kicking.json');
-    if (!res.ok) throw new Error(String(res.status));
-    const json = (await res.json()) as unknown;
-    return toPlaceKickTable(json);
-  } catch {
-    return undefined;
-  }
+  const r = await fetchPlaceKicking();
+  return r.ok ? r.data : undefined;
 }
 
+/** @deprecated prefer fetchTimeKeeping which returns Result */
 export async function loadTimeKeeping(): Promise<TimeKeeping | undefined> {
-  try {
-    const res = await fetch('data/time_keeping.json');
-    if (!res.ok) throw new Error(String(res.status));
-    const json = (await res.json()) as unknown;
-    return toTimeKeeping(json);
-  } catch {
-    return undefined;
-  }
+  const r = await fetchTimeKeeping();
+  return r.ok ? r.data : undefined;
 }
 
+/** @deprecated prefer fetchLongGain which returns Result */
 export async function loadLongGain(): Promise<LongGainTable | undefined> {
+  const r = await fetchLongGain();
+  return r.ok ? r.data : undefined;
+}
+
+// Result helpers and memoized fetchers
+const tablesCache = new Map<string, Result<any>>();
+
+function ok<T>(data: T): Ok<T> { return { ok: true, data }; }
+function err(code: string, message: string): Err { return { ok: false, error: { code, message } }; }
+
+export function clearTablesCache(): void {
+  tablesCache.clear();
+}
+
+async function fetchJson<T>(url: string): Promise<Result<T>> {
   try {
-    const res = await fetch('data/long_gain.json');
-    if (!res.ok) throw new Error(String(res.status));
-    const json = (await res.json()) as unknown;
-    return toLongGain(json);
-  } catch {
-    return undefined;
+    const res = await fetch(url);
+    if (!res.ok) return err('HTTP', `status ${res.status} for ${url}`);
+    const json = (await res.json()) as unknown as T;
+    return ok(json);
+  } catch (e: any) {
+    return err('HTTP', `failed to fetch ${url}: ${e?.message ?? String(e)}`);
   }
 }
 
+async function getOrFetch<T>(key: string, loader: () => Promise<Result<T>>): Promise<Result<T>> {
+  if (tablesCache.has(key)) return tablesCache.get(key) as Result<T>;
+  const res = await loader();
+  tablesCache.set(key, res as Result<any>);
+  return res;
+}
+
+export async function fetchOffenseCharts(): Promise<Result<OffenseCharts>> {
+  const key = 'data/football_strategy_all_mappings.json';
+  return getOrFetch(key, async () => {
+    const jsonRes = await fetchJson<unknown>(key);
+    if (!jsonRes.ok) return jsonRes as Err;
+    const parsed = OffenseChartsSchema.safeParse(jsonRes.data);
+    if (!parsed.success) return err('SCHEMA', parsed.error.message);
+    try {
+      return ok(parsed.data.OffenseCharts);
+    } catch (e: any) {
+      return err('TRANSFORM', e?.message ?? 'failed to extract OffenseCharts');
+    }
+  });
+}
+
+export async function fetchPlaceKicking(): Promise<Result<PlaceKickTable>> {
+  const key = 'data/place_kicking.json';
+  return getOrFetch(key, async () => {
+    const jsonRes = await fetchJson<unknown>(key);
+    if (!jsonRes.ok) return jsonRes as Err;
+    // Accept rich or normalized, transform to normalized if needed
+    const normalized = toPlaceKickTable(jsonRes.data);
+    if (!normalized) {
+      // Try to indicate if schema vs transform: first check union schema
+      const union = PlaceKickTableSchema.safeParse(jsonRes.data);
+      if (!union.success) return err('SCHEMA', union.error.message);
+      return err('TRANSFORM', 'failed to normalize place-kicking table');
+    }
+    return ok(normalized);
+  });
+}
+
+export async function fetchTimeKeeping(): Promise<Result<TimeKeeping>> {
+  const key = 'data/time_keeping.json';
+  return getOrFetch(key, async () => {
+    const jsonRes = await fetchJson<unknown>(key);
+    if (!jsonRes.ok) return jsonRes as Err;
+    const tk = toTimeKeeping(jsonRes.data);
+    if (!tk) {
+      const union = TimeKeepingSchema.safeParse(jsonRes.data);
+      if (!union.success) return err('SCHEMA', union.error.message);
+      return err('TRANSFORM', 'failed to normalize timekeeping table');
+    }
+    return ok(tk);
+  });
+}
+
+export async function fetchLongGain(): Promise<Result<LongGainTable>> {
+  const key = 'data/long_gain.json';
+  return getOrFetch(key, async () => {
+    const jsonRes = await fetchJson<unknown>(key);
+    if (!jsonRes.ok) return jsonRes as Err;
+    const lg = toLongGain(jsonRes.data);
+    if (!lg) {
+      const parsed = LongGainSchema.safeParse(jsonRes.data);
+      if (!parsed.success) return err('SCHEMA', parsed.error.message);
+      return err('TRANSFORM', 'failed to extract long gain results');
+    }
+    return ok(lg);
+  });
+}
+
+// Deprecated helpers: forward for backward compatibility
+/** @deprecated use fetchOffenseCharts */
+export async function loadOffenseChartsDeprecated(): Promise<OffenseCharts | undefined> {
+  const r = await fetchOffenseCharts();
+  return r.ok ? r.data : undefined;
+}
+/** @deprecated use fetchPlaceKicking */
+export async function loadPlaceKickingDeprecated(): Promise<PlaceKickTable | undefined> {
+  const r = await fetchPlaceKicking();
+  return r.ok ? r.data : undefined;
+}
+/** @deprecated use fetchTimeKeeping */
+export async function loadTimeKeepingDeprecated(): Promise<TimeKeeping | undefined> {
+  const r = await fetchTimeKeeping();
+  return r.ok ? r.data : undefined;
+}
+/** @deprecated use fetchLongGain */
+export async function loadLongGainDeprecated(): Promise<LongGainTable | undefined> {
+  const r = await fetchLongGain();
+  return r.ok ? r.data : undefined;
+}
 

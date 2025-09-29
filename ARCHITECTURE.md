@@ -7,4 +7,4 @@
 - src/ui: UI modules (planned) wired from src/index.ts
 - src/data: schemas and loaders
 
-Determinism: all pure resolvers accept an RNG function. Golden master tests exercise legacy main.js via jsdom to ensure parity during migration.
+Determinism: all pure resolvers accept an RNG function. Golden tests now exercise the TypeScript simulator/flow via jsdom; legacy `main.js` has been removed.

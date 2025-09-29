@@ -1,0 +1,56 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "vite-plugin-static-copy": {
+      "name": "vite-plugin-static-copy",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        {
+          "source": 1106976,
+          "name": "vite-plugin-static-copy",
+          "dependency": "vite-plugin-static-copy",
+          "title": "vite-plugin-static-copy files not included in `src` are possible to access with a crafted request",
+          "url": "https://github.com/advisories/GHSA-pp7p-q8fx-2968",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-22"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=0.4.3 <=2.3.1"
+        }
+      ],
+      "effects": [],
+      "range": "0.4.3 - 2.3.1",
+      "nodes": [
+        "node_modules/vite-plugin-static-copy"
+      ],
+      "fixAvailable": {
+        "name": "vite-plugin-static-copy",
+        "version": "3.1.2",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 1,
+      "high": 0,
+      "critical": 0,
+      "total": 1
+    },
+    "dependencies": {
+      "prod": 2,
+      "dev": 497,
+      "optional": 50,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 498
+    }
+  }
+}

@@ -1,4 +1,4 @@
-// Provide minimal WebAudio stubs so main.js SFX code can run in jsdom
+// Provide minimal WebAudio stubs so runtime can run in jsdom without AudioContext
 
 class FakeAudioParam {
   value = 0;

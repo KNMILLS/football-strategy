@@ -3,8 +3,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-// Golden master harness: for now, we exercise current main.js through JSDOM by
-// loading index.html to ensure DOM ids remain stable. We'll later swap to TS modules.
+// UI contract: ensure DOM ids remain stable against index.html used by TS runtime.
 
 function resolveRootPath(rel: string): string {
   // Tests run from project root; resolve relative to CWD

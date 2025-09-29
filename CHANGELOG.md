@@ -1,7 +1,7 @@
 ## Unreleased
 
 - Future: expand data-driven loaders for special teams tables
-- Future: port remaining UI/runtime from `main.js` into modules
+- Removed legacy `main.js` and bridge. TS-only runtime is the sole entrypoint.
 
 ## v1.0.0 — 2025-09-29
 

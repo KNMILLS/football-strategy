@@ -1,0 +1,53 @@
+
+> gridiron-strategy@1.0.0 build
+> tsc -b && vite build
+
+src/ai/Playcall.ts(38,26): error TS2532: Object is possibly 'undefined'.
+src/ai/Playcall.ts(46,10): error TS2532: Object is possibly 'undefined'.
+src/ai/Playcall.ts(74,12): error TS2532: Object is possibly 'undefined'.
+src/ai/Playcall.ts(80,14): error TS2532: Object is possibly 'undefined'.
+src/ai/Playcall.ts(87,12): error TS2532: Object is possibly 'undefined'.
+src/ai/Playcall.ts(228,33): error TS2322: Type 'DefensiveCardLabel | undefined' is not assignable to type 'DefensiveCardLabel'.
+  Type 'undefined' is not assignable to type 'DefensiveCardLabel'.
+src/deck/Dealer.ts(22,23): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/deck/Dealer.ts(22,40): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/deck/Dealer.ts(48,25): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/deck/Dealer.ts(48,42): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/deck/Dealer.ts(54,23): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(...items: ConcatArray<string>[]): string[]', gave the following error.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+  Overload 2 of 2, '(...items: (string | ConcatArray<string>)[]): string[]', gave the following error.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/deck/Dealer.ts(55,13): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/deck/Dealer.ts(78,23): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/deck/Dealer.ts(78,40): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/index.ts(135,5): error TS2353: Object literal may only specify known properties, and 'createFlow' does not exist in type '{ resolvePlayAdapter: (params: { state: GameState; charts: { ProStyle: Record<string, Record<"G" | "A" | "B" | "C" | "D" | "E" | "F" | "H" | "I" | "J", string>>; BallControl: Record<...>; AerialStyle: Record<...>; }; ... 4 more ...; ui?: { ...; }; }) => { ...; }; }'.
+src/qa/Harness.ts(86,22): error TS2532: Object is possibly 'undefined'.
+src/qa/Harness.ts(117,48): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/qa/Harness.ts(127,33): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/qa/Harness.ts(129,39): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/qa/Harness.ts(134,26): error TS2532: Object is possibly 'undefined'.
+src/sim/Simulator.ts(53,9): error TS2322: Type 'CoachProfile | undefined' is not assignable to type 'CoachProfile'.
+  Type 'undefined' is not assignable to type 'CoachProfile'.
+src/sim/Simulator.ts(54,9): error TS2322: Type 'CoachProfile | undefined' is not assignable to type 'CoachProfile'.
+  Type 'undefined' is not assignable to type 'CoachProfile'.
+src/ui/a11y/FocusTrap.ts(31,9): error TS18048: 'last' is possibly 'undefined'.
+src/ui/a11y/FocusTrap.ts(36,9): error TS18048: 'first' is possibly 'undefined'.
+src/ui/SpecialTeamsUI.ts(87,29): error TS2532: Object is possibly 'undefined'.
+src/ui/SpecialTeamsUI.ts(100,33): error TS18048: 'last' is possibly 'undefined'.
+src/ui/SpecialTeamsUI.ts(104,33): error TS18048: 'first' is possibly 'undefined'.
+src/ui/SpecialTeamsUI.ts(112,15): error TS18048: 'spec' is possibly 'undefined'.
+src/ui/SpecialTeamsUI.ts(112,30): error TS18048: 'spec' is possibly 'undefined'.
+src/ui/SpecialTeamsUI.ts(114,13): error TS2532: Object is possibly 'undefined'.

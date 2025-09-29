@@ -4,6 +4,8 @@ import { determineOutcomeFromCharts } from './Charts';
 import type { Outcome } from './ResultParsing';
 import { parseResultString } from './ResultParsing';
 import { timeOffWithTwoMinute } from './Timekeeping';
+import { administerPenalty } from './PenaltyAdmin';
+import { isInEndZone, isThroughEndZone, interceptionTouchback } from './Spots';
 import type { OffenseCharts } from '../data/schemas/OffenseCharts';
 
 export interface ResolveInput {
@@ -53,9 +55,23 @@ export function resolvePlayCore(input: ResolveInput): ResolveResult {
     charts: input.charts,
     rng: input.rng,
   });
-  // Penalties are handled externally; stop here if penalty
+  // Penalty administration
   if (outcome.category === 'penalty' && outcome.penalty) {
-    return { state, outcome, touchdown: false, safety: false, possessionChanged: false };
+    const pre = state;
+    // In penalty path, the post-play equals pre because we short-circuit before applying yards
+    const post = state;
+    const offenseGainedYards = 0;
+    const wasFirstDownOnPlay = false;
+    const admin = administerPenalty({
+      prePlayState: pre,
+      postPlayState: post,
+      offenseGainedYards,
+      outcome,
+      inTwoMinute: false,
+      wasFirstDownOnPlay,
+    });
+    const next = admin.decisionHint === 'decline' ? admin.declined : admin.accepted;
+    return { state: next, outcome, touchdown: false, safety: false, possessionChanged: false };
   }
   // Apply yards or category effects
   let next = { ...state };
@@ -72,6 +88,15 @@ export function resolvePlayCore(input: ResolveInput): ResolveResult {
     const ret = outcome.interceptReturn || 0;
     if (next.possession === 'player') next.ballOn = Math.max(0, Math.min(100, state.ballOn + ret));
     else next.ballOn = Math.max(0, Math.min(100, state.ballOn - ret));
+    // End-zone handling after interception return movement
+    if (isThroughEndZone(next.ballOn)) {
+      const tb = interceptionTouchback({ ballOn: next.ballOn, possessing: next.possession });
+      next.ballOn = tb.ballOn;
+    } else if (isInEndZone(next.ballOn)) {
+      // By legacy behavior: touchback if downed in end zone; TD only if return legitimately crosses opposite goal in-bounds
+      const tb = interceptionTouchback({ ballOn: next.ballOn, possessing: next.possession });
+      next.ballOn = tb.ballOn;
+    }
     // Reset downs
     next.down = 1; next.toGo = 10;
   } else if (outcome.category === 'fumble') {
