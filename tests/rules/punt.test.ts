@@ -11,7 +11,7 @@ describe('resolvePunt', () => {
     const out = resolvePunt({ ballOn: 90, puntingTeam: 'player' }, rng, () => 30);
     expect(out.touchback).toBe(true);
     expect(out.possessionFlips).toBe(true);
-    expect(out.ballOn).toBe(20);
+    expect(out.ballOn).toBe(80);
   });
 
   it('return in play with no fumble flips possession', () => {

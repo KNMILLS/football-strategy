@@ -1306,7 +1306,17 @@ function kickoff() {
   } else {
     onside = shouldAttemptOnside('ai');
   }
-  const result = resolveKickoff(onside, kickerTeam);
+  let result;
+  try {
+    if (window.GS && window.GS.rules && window.GS.rules.Kickoff && typeof window.GS.rules.Kickoff.resolveKickoff === 'function') {
+      const rng = () => game.rng();
+      const leadingOrTied = (kickerTeam === 'player' ? game.score.player : game.score.ai) >= (kickerTeam === 'player' ? game.score.ai : game.score.player);
+      result = window.GS.rules.Kickoff.resolveKickoff(rng, { onside, kickerLeadingOrTied: leadingOrTied });
+    }
+  } catch (e) { /* fall through to legacy */ }
+  if (!result) {
+    result = resolveKickoff(onside, kickerTeam);
+  }
   const yard = result.yardLine;
   // Determine ball placement. If there was no turnover, the receiving
   // team retains possession. The yard line returned is relative to the
@@ -2119,6 +2129,27 @@ function resolvePunt() {
   }
   const startSpot = formatYardForLog(game.ballOn);
   log(`${puntingTeam} lines up to punt from the ${startSpot} yard line.`);
+  // Try TS module resolver for determinism
+  try {
+    if (window.GS && window.GS.rules && window.GS.rules.Punt && typeof window.GS.rules.Punt.resolvePunt === 'function') {
+      const ctx = { ballOn: game.ballOn, puntingTeam: game.possession };
+      const rng = () => game.rng();
+      const out = window.GS.rules.Punt.resolvePunt(ctx, rng, window.GS.rules.LongGain ? window.GS.rules.LongGain.resolveLongGain : (()=>50));
+      const prevPossession = game.possession;
+      game.ballOn = out.ballOn;
+      if (out.possessionFlips) game.possession = game.possession === 'player' ? 'ai' : 'player';
+      game.down = 1; game.toGo = 10;
+      if (out.touchback) {
+        log('Punt sails into the end zone. Touchback to the 20.');
+      } else if (out.fumbleRecoveredByKickingTeam) {
+        const recovering = prevPossession === 'player' ? 'HOME' : 'AWAY';
+        log(`Ball is loose and recovered by ${recovering}!`);
+      }
+      finalizeAfterPunt();
+      return;
+    }
+  } catch (e) { /* fall back to legacy path below */ }
+  // Legacy JS path
   // Roll 2D6 for punt distance
   const distRoll = rollD6() + rollD6();
   const puntDistance = PUNT_DISTANCE_TABLE[distRoll] || 40;
