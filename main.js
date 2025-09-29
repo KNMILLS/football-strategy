@@ -442,9 +442,7 @@ function calculateTimeOff(outcome) {
 }
 
 // Roll a six‑sided die. Uses Math.random for unpredictability.
-function rollD6() {
-  return Math.floor(Math.random() * 6) + 1;
-}
+function rollD6() { return Math.floor(game.rng() * 6) + 1; }
 
 /**
  * Resolve a long gain based on the LONG_GAIN_TABLE. A roll of 1 triggers a
@@ -839,6 +837,47 @@ const fgOptions = document.getElementById('fg-options');
 const btnKickPAT = document.getElementById('kick-pat');
 const btnGoTwo = document.getElementById('go-two');
 const btnKickFG = document.getElementById('kick-fg');
+
+// Accessibility helpers: toggle visibility + aria-hidden and manage focus
+function setGroupVisibility(groupEl, visible) {
+  if (!groupEl) return;
+  if (visible) {
+    groupEl.classList.remove('hidden');
+    groupEl.setAttribute('aria-hidden', 'false');
+  } else {
+    groupEl.classList.add('hidden');
+    groupEl.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function focusFirstButton(groupEl) {
+  if (!groupEl) return;
+  const firstButton = groupEl.querySelector('button');
+  if (firstButton && typeof firstButton.focus === 'function') {
+    try { firstButton.focus(); } catch (e) {}
+  }
+}
+
+function showPatOptions() {
+  setGroupVisibility(patOptions, true);
+  // Move focus to first control for keyboard users
+  focusFirstButton(patOptions);
+  // Ensure FG options are hidden while PAT is active
+  if (fgOptions) setGroupVisibility(fgOptions, false);
+}
+
+function hidePatOptions() {
+  setGroupVisibility(patOptions, false);
+}
+
+function showFgOptions() {
+  setGroupVisibility(fgOptions, true);
+  // Do not steal focus on reveal; user may be mid-flow
+}
+
+function hideFgOptions() {
+  setGroupVisibility(fgOptions, false);
+}
 
 // DEV test setup controls
 const testPlayerDeck = document.getElementById('test-player-deck');
@@ -1379,7 +1418,7 @@ function shouldAttemptOnside(kicker) {
   if (diff <= 3 && t <= 120) {
     const highScoring = (game.score.player + game.score.ai) >= 40;
     const baseProb = 0.35 + (coach.onsideAggressive ? 0.25 : 0);
-    return highScoring || Math.random() < baseProb;
+    return highScoring || game.rng() < baseProb;
   }
   // Default late window (<= 5:00) matches previous heuristic
   if (coach.onsideAggressive && t <= 300 && diff >= 4) return true;
@@ -1463,12 +1502,12 @@ function updateFGOptions() {
     // Show field goal button on any down when within kicking range (inside 35 yards of goal)
     const distanceToGoal = 100 - game.ballOn;
     if (distanceToGoal <= 35) {
-      fgOptions.classList.remove('hidden');
+      showFgOptions();
     } else {
-      fgOptions.classList.add('hidden');
+      hideFgOptions();
     }
   } else {
-    fgOptions.classList.add('hidden');
+    hideFgOptions();
   }
   // We no longer set awaitingFG here; the player may still choose to run an offensive play instead of kicking.
   game.awaitingFG = false;
@@ -1579,12 +1618,12 @@ function aiChooseCard() {
     }
     // Coach pass/run bias: Reid leans pass, Belichick leans run when balanced
     if (preferred === 'balanced') {
-      if (coach.passBias > 0 && Math.random() < coach.passBias) preferred = 'pass';
-      if (coach.passBias < 0 && Math.random() < Math.abs(coach.passBias)) preferred = 'run';
+      if (coach.passBias > 0 && game.rng() < coach.passBias) preferred = 'pass';
+      if (coach.passBias < 0 && game.rng() < Math.abs(coach.passBias)) preferred = 'run';
     }
     let choices = DEFENSE_DECK.filter((card) => card.type === preferred);
     if (choices.length === 0) choices = DEFENSE_DECK;
-    return choices[Math.floor(Math.random() * choices.length)];
+    return choices[Math.floor(game.rng() * choices.length)];
   } else {
     // AI is on offense.
     // Fourth down decision-making
@@ -1599,7 +1638,7 @@ function aiChooseCard() {
         const mediumGo = ctx.isLate && ctx.scoreDiff > 0 && game.toGo <= (5 + Math.round(goBoost * 10));
         if (mediumGo) {
           const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'pass');
-          if (passes.length) return passes[Math.floor(Math.random() * passes.length)];
+          if (passes.length) return passes[Math.floor(game.rng() * passes.length)];
         }
         // Otherwise, punt if available
         const punts = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'punt');
@@ -1610,10 +1649,10 @@ function aiChooseCard() {
         // Fourth-and-short: go for it. Prefer run unless long yardage situation by down/time
         if (game.toGo <= 1) {
           const runs = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'run');
-          if (runs.length) return runs[Math.floor(Math.random() * runs.length)];
+          if (runs.length) return runs[Math.floor(game.rng() * runs.length)];
         }
         const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'pass');
-        if (passes.length) return passes[Math.floor(Math.random() * passes.length)];
+        if (passes.length) return passes[Math.floor(game.rng() * passes.length)];
       }
     }
     // Non‑fourth: choose tendency by distance and context
@@ -1636,16 +1675,16 @@ function aiChooseCard() {
     }
     // Coach pass/run bias for balanced/close calls
     if (prefer === 'balanced') {
-      if (coach.passBias > 0 && Math.random() < coach.passBias) prefer = 'pass';
-      if (coach.passBias < 0 && Math.random() < Math.abs(coach.passBias)) prefer = 'run';
+      if (coach.passBias > 0 && game.rng() < coach.passBias) prefer = 'pass';
+      if (coach.passBias < 0 && game.rng() < Math.abs(coach.passBias)) prefer = 'run';
     }
     // Select by preference
     if (prefer !== 'pass') {
       const runs = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'run' && avoidRestricted(c));
-      if (runs.length && (prefer === 'run' || Math.random() < 0.5)) return runs[Math.floor(Math.random() * runs.length)];
+      if (runs.length && (prefer === 'run' || game.rng() < 0.5)) return runs[Math.floor(game.rng() * runs.length)];
     }
     const passes = OFFENSE_DECKS[game.aiOffenseDeck].filter((c) => c.type === 'pass' && avoidRestricted(c));
-    if (passes.length) return passes[Math.floor(Math.random() * passes.length)];
+    if (passes.length) return passes[Math.floor(game.rng() * passes.length)];
     const fallback = OFFENSE_DECKS[game.aiOffenseDeck].find(avoidRestricted) || OFFENSE_DECKS[game.aiOffenseDeck][0];
     if (window.debug && window.debug.enabled) window.debug.event('ai', { action: 'choose_card', choice: fallback ? fallback.label : '(none)' });
     return fallback;
@@ -1653,6 +1692,11 @@ function aiChooseCard() {
 }
 
 function resolvePlay(playerCard, aiCard) {
+  try {
+    if (window.GS && window.GS.rules && window.GS.rules.Charts && window.GS.rules.ResolvePlayCore) {
+      // Placeholder: keep legacy path for now until full wiring; guard present for future swap
+    }
+  } catch (e) {}
   // Determine which card is offense and which is defense based on possession
   let offenseCard, defenseCard;
   if (window.debug && window.debug.enabled) window.debug.event('engine', { action: 'resolve_play', offense: (game.possession==='player'?'HOME':'AWAY'), playerCard: playerCard && playerCard.label, aiCard: aiCard && aiCard.label });
@@ -1880,7 +1924,7 @@ function resolvePlay(playerCard, aiCard) {
     if (touchdownOnReturn) {
       if (game.possession === 'player') {
         game.awaitingPAT = true;
-        patOptions.classList.remove('hidden');
+        showPatOptions();
         if (playZone) playZone.classList.add('hidden');
         updateHUD();
         return;
@@ -2085,9 +2129,9 @@ function resolvePlay(playerCard, aiCard) {
         }
         return;
       }
-      patOptions.classList.remove('hidden');
+      showPatOptions();
       // Ensure field goal option is hidden during PAT selection
-      if (fgOptions) fgOptions.classList.add('hidden');
+      if (fgOptions) hideFgOptions();
       // hide play zone (legacy) if present
       if (playZone) playZone.classList.add('hidden');
       updateHUD();
@@ -2097,7 +2141,7 @@ function resolvePlay(playerCard, aiCard) {
     } else {
       // AI will attempt its PAT immediately
       // Ensure field goal option is hidden during PAT resolution
-      if (fgOptions) fgOptions.classList.add('hidden');
+      if (fgOptions) hideFgOptions();
       setCurrentPlayResult('Touchdown (AI PAT resolving)');
       finalizeDebugPlay();
       aiAttemptPAT();
@@ -2197,9 +2241,9 @@ function resolvePunt() {
         returnYards = ret.yards || 0;
         if (returnYards > 0) log(`${teamName} returns it ${returnYards} yards.`);
         if (retRoll <= 4) {
-          if (Math.random() < 0.15) {
+          if (game.rng() < 0.15) {
             log('Returner fumbles!');
-            fumbleTurnover = Math.random() < 0.5;
+            fumbleTurnover = game.rng() < 0.5;
           }
         }
       }
@@ -2279,10 +2323,10 @@ function resolvePunt() {
       }
       // Small chance of fumble on mid results
       if (retRoll <= 4) {
-        if (Math.random() < 0.15) {
+        if (game.rng() < 0.15) {
           log('Returner fumbles!');
           // 50/50 recovery for kicking team
-          fumbleTurnover = Math.random() < 0.5;
+          fumbleTurnover = game.rng() < 0.5;
         }
       }
     }
@@ -2649,8 +2693,8 @@ function handleClockAndQuarter() {
 function endGame() {
   game.gameOver = true;
   // Hide special teams options at the end of the game.
-  patOptions.classList.add('hidden');
-  fgOptions.classList.add('hidden');
+  hidePatOptions();
+  hideFgOptions();
   log('Game over! Final score: HOME ' + game.score.player + ' — AWAY ' + game.score.ai);
 }
 
@@ -2722,7 +2766,7 @@ function attemptTwoPoint() {
 
 function finishPAT() {
   game.awaitingPAT = false;
-  patOptions.classList.add('hidden');
+  hidePatOptions();
   // After PAT, change possession and kickoff
   game.possession = game.possession === 'player' ? 'ai' : 'player';
   if (!game.gameOver) kickoff();
@@ -2857,7 +2901,7 @@ function attemptFieldGoal() {
       log(`They line up for a ${attemptYards} yard field goal attempt... and it's GOOD!`);
     }
   } else {
-    const missSide = Math.random() < 0.5 ? 'wide left' : 'wide right';
+    const missSide = (game.rng() < 0.5) ? 'wide left' : 'wide right';
     log(`They line up for a ${attemptYards} yard field goal attempt... and they MISS, ${missSide}.`);
     // Missed FG spotting per rules: flip possession, spot at kick spot if beyond 20, else at 20.
     // Spot of kick is LOS minus 7 yards relative to offense direction.
@@ -2894,7 +2938,7 @@ function attemptFieldGoal() {
   }
   // After FG attempt, standard timing
   game.awaitingFG = false;
-  fgOptions.classList.add('hidden');
+  hideFgOptions();
   // Deduct time for the field goal itself
   game.clock -= TIME_KEEPING.fieldgoal;
   // Check for two-minute warning after field goal attempt
@@ -3153,7 +3197,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
           const endAbs = originAbs + deltaAbs;
           const endX = yardToSvgX(Math.max(0, Math.min(100, endAbs)));
           const path = createSvgElement('path', { d: `M ${currX} ${currY} L ${endX} ${currY}`, class: 'playart-route' });
-          const pathId = `def-${Math.floor(Math.random()*1e9)}`;
+          const pathId = `def-${Math.floor(game.rng()*1e9)}`;
           path.id = pathId;
           playArtSvg.appendChild(path);
           const anim = document.createElementNS(NS, 'animateMotion');
@@ -3194,7 +3238,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
     for (const act of actions) {
       if (act.type === 'lead_insert' && act.actor === 'FB' && Array.isArray(act.path)) {
         fbPathEl = pathFromNormPoints(act.path);
-        fbPathEl.id = `fb-${Math.floor(Math.random()*1e9)}`;
+        fbPathEl.id = `fb-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(fbPathEl);
         try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'path', actor: 'FB', id: fbPathEl.id, d: fbPathEl.getAttribute('d'), points: act.path }); } catch {}
       }
@@ -3205,14 +3249,14 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
           hbPoints = [{ x: (0.5), y: (act.path[0] && act.path[0].y) || 0 }].concat(act.path.slice(1));
         }
         hbPathEl = pathFromNormPoints(hbPoints);
-        hbPathEl.id = `hb-${Math.floor(Math.random()*1e9)}`;
+        hbPathEl.id = `hb-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(hbPathEl);
         try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'path', actor: 'HB', id: hbPathEl.id, d: hbPathEl.getAttribute('d'), points: act.path }); } catch {}
       }
       // Generic route rendering for receivers/DBs if present: route_points on action
       if (Array.isArray(act.route) && act.actor) {
         const routePath = pathFromNormPoints(act.route);
-        routePath.id = `${act.actor.toLowerCase()}-route-${Math.floor(Math.random()*1e9)}`;
+        routePath.id = `${act.actor.toLowerCase()}-route-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(routePath);
         try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'route', actor: act.actor, id: routePath.id, d: routePath.getAttribute('d') }); } catch {}
       }
@@ -3221,7 +3265,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
         const hp = normToSvg(act.handoff_point);
         lastHandoffSvg = hp;
         const handoffPath = createSvgElement('path', { d: `M ${ballStart.x} ${ballStart.y} L ${hp.x} ${hp.y}`, class: 'playart-route' });
-        handoffPath.id = `handoff-${Math.floor(Math.random()*1e9)}`;
+        handoffPath.id = `handoff-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(handoffPath);
         try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'handoff_path', id: handoffPath.id, d: handoffPath.getAttribute('d'), handoffPointNorm: act.handoff_point, handoffPointSvg: hp }); } catch {}
         const anim1 = document.createElementNS(NS, 'animateMotion');
@@ -3256,7 +3300,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
         const endAbs = originAbs - dropDepthYards * (game.possession === 'player' ? 1 : -1);
         const qbEnd = { x: yardToSvgX(Math.max(0, Math.min(100, endAbs))), y: qbStart.y };
         const qbPath = createSvgElement('path', { d: `M ${qbStart.x} ${qbStart.y} L ${qbEnd.x} ${qbEnd.y}`, class: 'playart-route' });
-        qbPath.id = `qb-route-${Math.floor(Math.random()*1e9)}`;
+        qbPath.id = `qb-route-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(qbPath);
         if (qbNode) {
           const anim = document.createElementNS(NS, 'animateMotion');
@@ -3275,7 +3319,7 @@ function renderJsonPlayArt(def, outcome, startDelayMs = 0, defDefense = null) {
         const qbs = qb ? normToSvg(qb.start) : { x: yardToSvgX(originAbs), y: 300 };
         const tgt = normToSvg(act.target_point);
         const arc = createSvgElement('path', { d: `M ${qbs.x} ${qbs.y} Q ${(qbs.x + tgt.x) / 2} ${qbs.y - 120} ${tgt.x} ${tgt.y}`, class: 'playart-route' });
-        arc.id = `ball-arc-${Math.floor(Math.random()*1e9)}`;
+        arc.id = `ball-arc-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(arc);
         const anim = document.createElementNS(NS, 'animateMotion');
         anim.setAttribute('begin', `${(startDelayMs + 350) / 1000}s`);
@@ -3502,9 +3546,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 function choosePlayerCardForSimulation() {
   if (game.possession === 'player') {
     const deck = OFFENSE_DECKS[game.offenseDeck] || [];
-    return deck[Math.floor(Math.random() * deck.length)];
+    return deck[Math.floor(game.rng() * deck.length)];
   } else {
-    return DEFENSE_DECK[Math.floor(Math.random() * DEFENSE_DECK.length)];
+    return DEFENSE_DECK[Math.floor(game.rng() * DEFENSE_DECK.length)];
   }
 }
 
@@ -3542,7 +3586,7 @@ function simulateTick() {
         const endAbs = originAbs + dir * outcome.yards;
         const end = { x: yardToSvgX(Math.max(0, Math.min(100, endAbs))), y: start.y };
         const path = createSvgElement('path', { d: `M ${start.x} ${start.y} L ${end.x} ${end.y}`, class: 'playart-route' });
-        path.id = `hb-fallback-${Math.floor(Math.random()*1e9)}`;
+        path.id = `hb-fallback-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(path);
         hbPathEl = path;
         try { if (window.debug && window.debug.enabled) window.debug.event('anim', { action: 'path_fallback_hb', id: path.id, d: path.getAttribute('d'), yards: outcome.yards }); } catch {}
@@ -3554,7 +3598,7 @@ function simulateTick() {
         const endAbs = originAbs - dropDepthYards * (game.possession === 'player' ? 1 : -1);
         const qbEnd = { x: yardToSvgX(Math.max(0, Math.min(100, endAbs))), y: qbStart.y };
         const qbPath = createSvgElement('path', { d: `M ${qbStart.x} ${qbStart.y} L ${qbEnd.x} ${qbEnd.y}`, class: 'playart-route' });
-        qbPath.id = `qb-route-${Math.floor(Math.random()*1e9)}`;
+        qbPath.id = `qb-route-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(qbPath);
         if (qbNode) {
           const anim = document.createElementNS(NS, 'animateMotion');
@@ -3573,7 +3617,7 @@ function simulateTick() {
         const qbs = qb ? normToSvg(qb.start) : { x: yardToSvgX(originAbs), y: 300 };
         const tgt = normToSvg(act.target_point);
         const arc = createSvgElement('path', { d: `M ${qbs.x} ${qbs.y} Q ${(qbs.x + tgt.x) / 2} ${qbs.y - 120} ${tgt.x} ${tgt.y}`, class: 'playart-route' });
-        arc.id = `ball-arc-${Math.floor(Math.random()*1e9)}`;
+        arc.id = `ball-arc-${Math.floor(game.rng()*1e9)}`;
         playArtSvg.appendChild(arc);
         const anim = document.createElementNS(NS, 'animateMotion');
         anim.setAttribute('begin', `${(startDelayMs + 350) / 1000}s`);
@@ -3594,7 +3638,7 @@ function simulateTick() {
   if (game.down < 4 && playerCard && playerCard.type === 'punt') {
     const deck = OFFENSE_DECKS[game.offenseDeck] || [];
     const alternatives = deck.filter((c) => c.type !== 'punt');
-    if (alternatives.length) playerCard = alternatives[Math.floor(Math.random() * alternatives.length)];
+    if (alternatives.length) playerCard = alternatives[Math.floor(game.rng() * alternatives.length)];
   }
   const aiCard = aiChooseCard();
   if (game.possession === 'ai' && aiCard && aiCard.type === 'field-goal') {
@@ -3965,8 +4009,8 @@ function vfxParticles(x, y, count, gold) {
   for (let i = 0; i < n; i++) {
     const p = document.createElement('div');
     p.className = 'vfx-particle' + (gold ? ' gold' : '');
-    const dx = (Math.random() - 0.5) * 300;
-    const dy = (Math.random() - 0.5) * 40;
+    const dx = (game.rng() - 0.5) * 300;
+    const dy = (game.rng() - 0.5) * 40;
     p.style.left = `${baseX + dx}px`;
     p.style.top = `${baseY + dy}px`;
     vfxOverlay.appendChild(p);
@@ -4148,7 +4192,7 @@ const SFX = (() => {
     const bufferSize = 2 * audioCtx.sampleRate * dur;
     const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
+    for (let i = 0; i < bufferSize; i++) data[i] = (game.rng() * 2 - 1) * 0.35;
     const noise = audioCtx.createBufferSource();
     noise.buffer = noiseBuffer;
     const filter = audioCtx.createBiquadFilter();
@@ -4175,7 +4219,7 @@ const SFX = (() => {
     const bufferSize = Math.floor(audioCtx.sampleRate * (dur || 0.12));
     const buf = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = buf.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    for (let i = 0; i < bufferSize; i++) data[i] = (game.rng() * 2 - 1) * (1 - i / bufferSize);
     const src = audioCtx.createBufferSource();
     src.buffer = buf;
     const hp = audioCtx.createBiquadFilter();

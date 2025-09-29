@@ -23,5 +23,5 @@ export function resolveLongGain(rng: RNG): number {
     return 50 + extra;
   }
   const m = entry.match(/\+(\d+)/);
-  return m ? parseInt(m[1], 10) : 30;
+  return m && m[1] ? parseInt(m[1], 10) : 30;
 }

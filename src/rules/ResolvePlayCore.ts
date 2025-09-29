@@ -1,7 +1,8 @@
-import { GameState } from '../domain/GameState';
+import type { GameState } from '../domain/GameState';
 import type { RNG } from '../sim/RNG';
 import { determineOutcomeFromCharts } from './Charts';
-import { Outcome, parseResultString } from './ResultParsing';
+import type { Outcome } from './ResultParsing';
+import { parseResultString } from './ResultParsing';
 import { timeOffWithTwoMinute } from './Timekeeping';
 import type { OffenseCharts } from '../data/schemas/OffenseCharts';
 

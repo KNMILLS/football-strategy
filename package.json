@@ -14,7 +14,8 @@
     "lint": "eslint .",
     "format": "prettier -w .",
     "test:ui": "vitest --ui",
-    "baseline": "node scripts/generate-baseline.mjs"
+    "baseline": "node scripts/generate-baseline.mjs",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
