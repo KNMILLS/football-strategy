@@ -4,6 +4,7 @@ import { determineOutcomeFromCharts } from './Charts';
 import type { Outcome } from './ResultParsing';
 import { parseResultString } from './ResultParsing';
 import { timeOffWithTwoMinute } from './Timekeeping';
+import { administerPenalty } from './PenaltyAdmin';
 import type { OffenseCharts } from '../data/schemas/OffenseCharts';
 
 export interface ResolveInput {
@@ -53,9 +54,23 @@ export function resolvePlayCore(input: ResolveInput): ResolveResult {
     charts: input.charts,
     rng: input.rng,
   });
-  // Penalties are handled externally; stop here if penalty
+  // Penalty administration
   if (outcome.category === 'penalty' && outcome.penalty) {
-    return { state, outcome, touchdown: false, safety: false, possessionChanged: false };
+    const pre = state;
+    // In penalty path, the post-play equals pre because we short-circuit before applying yards
+    const post = state;
+    const offenseGainedYards = 0;
+    const wasFirstDownOnPlay = false;
+    const admin = administerPenalty({
+      prePlayState: pre,
+      postPlayState: post,
+      offenseGainedYards,
+      outcome,
+      inTwoMinute: false,
+      wasFirstDownOnPlay,
+    });
+    const next = admin.decisionHint === 'decline' ? admin.declined : admin.accepted;
+    return { state: next, outcome, touchdown: false, safety: false, possessionChanged: false };
   }
   // Apply yards or category effects
   let next = { ...state };
