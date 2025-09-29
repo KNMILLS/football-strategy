@@ -145,16 +145,18 @@ The design faithfully adapts the *Avalon Hill Football Strategy* board game whil
 
 * Two-minute warning, penalty nuance, advanced timekeeping.
 
-**Phase 3 – Immersion:**
+**Phase 3 – Expansion:**
+
+* Additional AI coaches, improved coach logic.
+
+**Phase 4 – Immersion:**
 
 * Improved commentary, animated plays, crowd/stadium presentation.
 
-**Phase 4 – Expansion:**
+**Phase 5 – Multiplayer:**
 
-* Multiplayer, new AI personas, additional modes.
+* Implement online multiplayer, ability to login with Google account and have game stats automatically saved to profile, implement persistent data store.
 
-**Phase 5 – Polish & Release:**
+**Phase 6 – Polish & Release:**
 
-* Full NFL 80s retro aesthetic.
-* Mobile optimization.
-* Mod support.
+* Mobile optimization, UI/UX cleanup, performance optimization.

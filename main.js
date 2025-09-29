@@ -1290,6 +1290,14 @@ function kickoff() {
   // team is indicated by game.possession. The kicking team is the other
   // side. Normal kickoffs are used here; onside kicks would pass true.
   const kickerTeam = game.possession === 'player' ? 'ai' : 'player';
+  // Begin a special-teams debug entry
+  beginDebugPlay(null, null);
+  if (game._currentDebugPlay) {
+    game._currentDebugPlay.downDistance = 'N/A';
+    game._currentDebugPlay.offenseDeck = 'Special Teams';
+    game._currentDebugPlay.offensePlay = 'Kickoff';
+    game._currentDebugPlay.defensePlay = 'Return';
+  }
   // Determine if this kickoff is onside. Player can force via toggle; AI uses heuristic.
   let onside = false;
   if (kickerTeam === 'player') {
@@ -2104,6 +2112,11 @@ function resolvePunt() {
   // Narrate punt and use tables for distance and return.
   // Leading blank line already printed by resolvePlay; avoid redundant preface lines
   const puntingTeam = game.possession === 'player' ? 'HOME' : 'AWAY';
+  const receivingTeam = game.possession === 'player' ? 'AWAY' : 'HOME';
+  // Override debug header to a context label instead of stale 4th & distance
+  if (game._currentDebugPlay) {
+    game._currentDebugPlay.downDistance = 'PUNT';
+  }
   const startSpot = formatYardForLog(game.ballOn);
   log(`${puntingTeam} lines up to punt from the ${startSpot} yard line.`);
   // Roll 2D6 for punt distance
@@ -2429,24 +2442,11 @@ function describePlayAction(card) {
       return 'hands off to the running back';
     }
   } else if (card.type === 'pass') {
-    // Passing plays
-    if (/Long Bomb/i.test(card.label) || /Deep/i.test(card.label)) {
-      return 'launches a deep pass downfield';
-    } else if (/Sideline Pass/i.test(card.label) || /Sideline/i.test(card.label)) {
-      return 'fires toward the sideline';
-    } else if (/Screen Pass/i.test(card.label) || /Screen/i.test(card.label)) {
-      return 'sets up a screen pass';
-    } else if (/Flair Pass/i.test(card.label) || /Flair/i.test(card.label)) {
-      return 'throws a flare pass to the back';
-    } else if (/Look In Pass/i.test(card.label) || /Button Hook Pass/i.test(card.label) || /Look\s*In/i.test(card.label) || /Button\s*Hook/i.test(card.label)) {
-      return 'throws a quick pass over the middle';
-    } else if (/Pop Pass/i.test(card.label)) {
-      return 'pops a pass over the linebackers';
-    } else {
-      return 'drops back and throws';
-    }
+    // Use a neutral phrasing so sack outcomes do not conflict with narration
+    return 'drops back to pass';
   } else if (card.type === 'punt') {
-    return 'booms a punt downfield';
+    // Avoid duplicate narration; resolvePunt() logs the setup line
+    return '';
   }
   return 'runs a trick play';
 }
@@ -2485,9 +2485,15 @@ function handleSafety(scorer) {
   if (scorer === 'player') {
     game.score.player += 2;
     log('Safety! HOME is awarded 2 points.');
+    if (!game._currentDebugPlay) beginDebugPlay(null, null);
+    setCurrentPlayResult('Safety (HOME +2)');
+    finalizeDebugPlay();
   } else {
     game.score.ai += 2;
     log('Safety! AWAY is awarded 2 points.');
+    if (!game._currentDebugPlay) beginDebugPlay(null, null);
+    setCurrentPlayResult('Safety (AWAY +2)');
+    finalizeDebugPlay();
   }
   if (game.gameOver) return;
   // Free kick by team scored against from its own 20.
@@ -2619,6 +2625,13 @@ function endGame() {
 
 // Extra point attempt after touchdown
 function attemptExtraPoint() {
+  // Begin debug entry for this conversion if not already in a play
+  if (!game._currentDebugPlay) beginDebugPlay(null, null);
+  if (game._currentDebugPlay) {
+    game._currentDebugPlay.offenseDeck = 'Special Teams';
+    game._currentDebugPlay.offensePlay = 'PAT Kick';
+    game._currentDebugPlay.defensePlay = 'Block';
+  }
   // Resolve PAT using the place kicking table (2D6). A result of 'G'
   // means the kick is good. Otherwise it is no good.
   const roll = rollD6() + rollD6();
@@ -2643,6 +2656,13 @@ function attemptExtraPoint() {
 }
 
 function attemptTwoPoint() {
+  // Begin debug entry
+  if (!game._currentDebugPlay) beginDebugPlay(null, null);
+  if (game._currentDebugPlay) {
+    game._currentDebugPlay.offenseDeck = 'Special Teams';
+    game._currentDebugPlay.offensePlay = 'Two-Point Try';
+    game._currentDebugPlay.defensePlay = 'Goal Line';
+  }
   // 50% success: treat as run vs run defense from 2 yards out
   if (game.rng() < 0.5) {
     if (game.possession === 'player') {
@@ -2655,7 +2675,7 @@ function attemptTwoPoint() {
   } else {
     log('Two‑point conversion fails.');
   }
-  setCurrentPlayResult(game.rng && false ? '' : (game.score.player === 0 && game.score.ai === 0 ? '' : 'Two-point conversion ' + (logElement.textContent.endsWith('fails.\n') ? 'failed' : 'good')));
+  setCurrentPlayResult('Two-point conversion ' + (logElement.textContent.endsWith('fails.\n') ? 'failed' : 'good'));
   finishPAT();
   finalizeDebugPlay();
 }
@@ -2718,6 +2738,13 @@ function aiAttemptPAT() {
 
 // Field goal attempt
 function attemptFieldGoal() {
+  // Begin debug entry
+  if (!game._currentDebugPlay) beginDebugPlay(null, null);
+  if (game._currentDebugPlay) {
+    game._currentDebugPlay.offenseDeck = 'Special Teams';
+    game._currentDebugPlay.offensePlay = 'Field Goal';
+    game._currentDebugPlay.defensePlay = 'Block';
+  }
   // Determine distance: distance from ball to opponent goal line
   const distance = game.possession === 'player' ? 100 - game.ballOn : game.ballOn;
   // Attempt distance includes placement (7) and end zone (10): use +17
@@ -3245,6 +3272,16 @@ function showToast(text) {
 function log(msg) {
   logElement.textContent += msg + '\n';
   logElement.scrollTop = logElement.scrollHeight;
+  // Capture commentary for the current debug play
+  try {
+    if (game && game._currentDebugPlay && typeof msg === 'string') {
+      const trimmed = msg.trim();
+      if (trimmed) {
+        if (!game._currentDebugPlay.comments) game._currentDebugPlay.comments = [];
+        game._currentDebugPlay.comments.push(trimmed);
+      }
+    }
+  } catch {}
 }
 
 function logClear() {
@@ -3268,7 +3305,8 @@ function beginDebugPlay(offenseCard, defenseCard) {
     offenseDeck: offDeck,
     offensePlay: offenseCard && offenseCard.label ? offenseCard.label : '(unknown)',
     defensePlay: defenseCard && defenseCard.label ? defenseCard.label : '(unknown)',
-    result: ''
+    result: '',
+    comments: []
   };
 }
 
@@ -3279,7 +3317,8 @@ function setCurrentPlayResult(text) {
 function finalizeDebugPlay() {
   const p = game._currentDebugPlay;
   if (!p) return;
-  const line = `${p.downDistance} | ${p.quarter} ${p.clock} | PB: ${p.offenseDeck} | OFF: ${p.offensePlay} | DEF: ${p.defensePlay} | RESULT: ${p.result}`;
+  const commentary = (p.comments && p.comments.length) ? ` | NOTES: ${p.comments.join(' / ')}` : '';
+  const line = `${p.downDistance} | ${p.quarter} ${p.clock} | PB: ${p.offenseDeck} | OFF: ${p.offensePlay} | DEF: ${p.defensePlay} | RESULT: ${p.result}${commentary}`;
   game.debugPlays.push(line);
   game._currentDebugPlay = null;
 }
@@ -3820,8 +3859,10 @@ function applyPenaltyDecision(choice, st) {
   handleClockAndQuarter();
   updateHUD();
   dealHands();
-  // Record accepted/declined decision in structured result
-  setCurrentPlayResult(`Penalty ${choice}`);
+  // Record accepted/declined decision in structured result with new D&D
+  const dnNames = ['1st','2nd','3rd','4th'];
+  const dn = dnNames[Math.min(4, Math.max(1, chosenDown)) - 1] || `${chosenDown}th`;
+  setCurrentPlayResult(`Penalty ${choice}; now ${dn} & ${chosenToGo}`);
   finalizeDebugPlay();
 }
 
