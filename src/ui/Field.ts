@@ -8,6 +8,101 @@ function yardToPercent(absYard: number): number {
   return 5 + (absYard / 100) * 90;
 }
 
+function selectField(container?: HTMLElement | null): HTMLElement | null {
+  if (typeof document === 'undefined') return null;
+  if (container) return container;
+  return $('field-display');
+}
+
+function setAriaHidden(el: HTMLElement): void {
+  el.setAttribute('aria-hidden', 'true');
+}
+
+function createYardLines(wrapper: HTMLElement): void {
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i <= 10; i++) {
+    const line = document.createElement('div');
+    line.className = 'yard-line';
+    (line as HTMLElement).style.left = `${i * 10}%`;
+    setAriaHidden(line);
+    (frag as any).appendChild(line);
+  }
+  wrapper.appendChild(frag);
+}
+
+function createLabels(wrapper: HTMLElement): void {
+  const frag = document.createDocumentFragment();
+  for (let pct = 10; pct <= 90; pct += 10) {
+    const labelValue = pct <= 50 ? pct : 100 - pct;
+    const topLabel = document.createElement('div');
+    topLabel.className = 'yard-label-top';
+    topLabel.textContent = String(labelValue);
+    (topLabel as HTMLElement).style.left = `${pct}%`;
+    setAriaHidden(topLabel);
+    (frag as any).appendChild(topLabel);
+
+    const bottomLabel = document.createElement('div');
+    bottomLabel.className = 'yard-label-bottom';
+    bottomLabel.textContent = String(labelValue);
+    (bottomLabel as HTMLElement).style.left = `${pct}%`;
+    setAriaHidden(bottomLabel);
+    (frag as any).appendChild(bottomLabel);
+  }
+  wrapper.appendChild(frag);
+}
+
+function createHashes(wrapper: HTMLElement): void {
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i <= 100; i++) {
+    const left = `${i}%`;
+    const markBottom = document.createElement('div');
+    markBottom.className = 'hash-mark';
+    if (i % 5 === 0) markBottom.classList.add('five');
+    (markBottom as HTMLElement).style.left = left;
+    setAriaHidden(markBottom);
+    (frag as any).appendChild(markBottom);
+
+    const markTop = document.createElement('div');
+    markTop.className = 'hash-mark top';
+    if (i % 5 === 0) markTop.classList.add('five');
+    (markTop as HTMLElement).style.left = left;
+    setAriaHidden(markTop);
+    (frag as any).appendChild(markTop);
+  }
+  wrapper.appendChild(frag);
+}
+
+function createEndZones(wrapper: HTMLElement): void {
+  if (!document.querySelector('.end-zone.home')) {
+    const homeZone = document.createElement('div');
+    homeZone.className = 'end-zone home';
+    const homeSpan = document.createElement('span');
+    homeSpan.className = 'end-zone-text';
+    homeSpan.textContent = 'HOME';
+    homeZone.appendChild(homeSpan);
+    wrapper.appendChild(homeZone);
+  }
+  if (!document.querySelector('.end-zone.visitor')) {
+    const visitorZone = document.createElement('div');
+    visitorZone.className = 'end-zone visitor';
+    const visitorSpan = document.createElement('span');
+    visitorSpan.className = 'end-zone-text';
+    visitorSpan.textContent = 'VISITORS';
+    visitorZone.appendChild(visitorSpan);
+    wrapper.appendChild(visitorZone);
+  }
+}
+
+function createMidLogo(wrapper: HTMLElement): void {
+  if (!document.querySelector('.mid-logo')) {
+    const midLogo = document.createElement('div');
+    midLogo.className = 'mid-logo';
+    midLogo.textContent = 'GS';
+    setAriaHidden(midLogo);
+    wrapper.appendChild(midLogo);
+  }
+}
+
 function ensureFieldOverlays(): void {
   if (typeof document === 'undefined') return;
   const field = $('field-display');
@@ -42,95 +137,74 @@ function ensureFieldOverlays(): void {
   }
 }
 
-function ensureFieldDecorations(): void {
-  if (typeof document === 'undefined') return;
-  const field = $('field-display');
+export function buildFieldChrome(container?: HTMLElement): void {
+  const field = selectField(container);
   if (!field) return;
+  // Idempotency: wrap everything in a single container
+  let chrome = field.querySelector('.field-chrome') as HTMLElement | null;
+  if (chrome) return;
+  chrome = document.createElement('div');
+  chrome.className = 'field-chrome';
+  (chrome as any).dataset.built = '1';
 
-  // Yard lines at each 10 yards (10..90)
-  if (!document.querySelector('.yard-line')) {
-    for (let i = 1; i < 10; i++) {
-      const line = document.createElement('div');
-      line.className = 'yard-line';
-      (line as HTMLElement).style.left = `${yardToPercent(i * 10)}%`;
-      (field as HTMLElement).appendChild(line);
-    }
-  }
+  // Build pieces into chrome wrapper
+  createYardLines(chrome);
+  createLabels(chrome);
+  createHashes(chrome);
+  createEndZones(chrome);
+  createMidLogo(chrome);
 
-  // Yard number labels (top and bottom) at 10,20,30,40,50
-  if (!document.querySelector('.yard-label-top') && !document.querySelector('.yard-label-bottom')) {
-    const labelValues = [10, 20, 30, 40, 50];
-    for (const value of labelValues) {
-      const pos = value;
-      const topLabel = document.createElement('div');
-      topLabel.className = 'yard-label-top';
-      topLabel.textContent = String(value);
-      (topLabel as HTMLElement).style.left = `${yardToPercent(pos)}%`;
-      (field as HTMLElement).appendChild(topLabel);
+  field.appendChild(chrome);
+}
 
-      const bottomLabel = document.createElement('div');
-      bottomLabel.className = 'yard-label-bottom';
-      bottomLabel.textContent = String(value);
-      (bottomLabel as HTMLElement).style.left = `${yardToPercent(pos)}%`;
-      (field as HTMLElement).appendChild(bottomLabel);
-    }
-  }
+export function destroyFieldChrome(container?: HTMLElement): void {
+  const field = selectField(container);
+  if (!field) return;
+  const chrome = field.querySelector('.field-chrome');
+  if (chrome) chrome.remove();
+}
 
-  // Hash marks at every yard along top and bottom (thicker every 5 yards)
-  // Always regenerate to avoid partial renders; remove any existing first
-  {
-    const existing = Array.from((field as HTMLElement).querySelectorAll('.hash-mark'));
-    for (const el of existing) el.remove();
-    const clamp = (val: number) => Math.max(5.5, Math.min(94.5, val));
-    for (let i = 1; i < 100; i++) {
-      const leftPct = clamp(yardToPercent(i));
-      const markBottom = document.createElement('div');
-      markBottom.className = 'hash-mark';
-      if (i % 5 === 0) markBottom.classList.add('five');
-      (markBottom as HTMLElement).style.left = `${leftPct}%`;
-      (field as HTMLElement).appendChild(markBottom);
+export function ensureFieldChrome(container?: HTMLElement): void {
+  const field = selectField(container);
+  if (!field) return;
+  if (!field.querySelector('.field-chrome')) buildFieldChrome(field);
+}
 
-      const markTop = document.createElement('div');
-      markTop.className = 'hash-mark top';
-      if (i % 5 === 0) markTop.classList.add('five');
-      (markTop as HTMLElement).style.left = `${leftPct}%`;
-      (field as HTMLElement).appendChild(markTop);
-    }
-  }
+type OverlayOpts = { art: string; label: string; xPercent: number; yPercent: number; ttlMs?: number };
 
-  // End zones and midfield logo
-  if (!document.querySelector('.end-zone.home')) {
-    const homeZone = document.createElement('div');
-    homeZone.className = 'end-zone home';
-    const homeSpan = document.createElement('span');
-    homeSpan.className = 'end-zone-text';
-    homeSpan.textContent = 'HOME';
-    homeZone.appendChild(homeSpan);
-    (field as HTMLElement).appendChild(homeZone);
-  }
-  if (!document.querySelector('.end-zone.visitor')) {
-    const visitorZone = document.createElement('div');
-    visitorZone.className = 'end-zone visitor';
-    const visitorSpan = document.createElement('span');
-    visitorSpan.className = 'end-zone-text';
-    visitorSpan.textContent = 'VISITORS';
-    visitorZone.appendChild(visitorSpan);
-    (field as HTMLElement).appendChild(visitorZone);
-  }
-  if (!document.querySelector('.mid-logo')) {
-    const midLogo = document.createElement('div');
-    midLogo.className = 'mid-logo';
-    midLogo.textContent = 'GS';
-    (field as HTMLElement).appendChild(midLogo);
-  }
+function clampPercent(v: number, min = 5, max = 95): number {
+  return Math.max(min, Math.min(max, v));
+}
+
+export function renderOverlayCard(opts: OverlayOpts): HTMLElement {
+  const field = selectField();
+  if (!field) throw new Error('field-display not found');
+  const card = document.createElement('div');
+  card.className = 'overlay-card';
+  (card as HTMLElement).style.left = `${clampPercent(opts.xPercent)}%`;
+  (card as HTMLElement).style.top = `${clampPercent(opts.yPercent)}%`;
+  (card as HTMLElement).style.backgroundImage = `url('${opts.art}')`;
+  if (opts.label) (card as HTMLElement).title = opts.label;
+  setAriaHidden(card);
+  field.appendChild(card);
+  const ttl = typeof opts.ttlMs === 'number' ? opts.ttlMs : 1500;
+  if (ttl && ttl > 0) setTimeout(() => { card.remove(); }, ttl);
+  return card;
+}
+
+export function clearOverlayCards(): void {
+  const field = selectField();
+  if (!field) return;
+  const overlays = Array.from(field.querySelectorAll('.overlay-card')) as HTMLElement[];
+  overlays.forEach(n => n.remove());
 }
 
 export function registerField(bus: EventBus): void {
-  // Ensure base field visuals and overlays exist even if legacy initField didn't run yet
-  ensureFieldDecorations();
+  // Ensure overlays and chrome exist
   ensureFieldOverlays();
+  ensureFieldChrome();
 
-  // Keep field construction in main.js for now; UI events only here
+  // VFX toast passthrough
   bus.on('vfx', ({ type, payload }) => {
     if (type === 'toast') {
       const overlay = $('vfx-overlay');
@@ -142,6 +216,10 @@ export function registerField(bus: EventBus): void {
       setTimeout(() => { d.remove(); }, 1500);
     }
   });
-}
 
+  // Optional overlay card event (cast to support extended event map in typed bus)
+  (bus as any).on('field:overlayCard', (p: OverlayOpts) => {
+    try { renderOverlayCard(p); } catch {}
+  });
+}
 

@@ -830,6 +830,41 @@ body[data-theme="modern"] .vfx-banner {
   background: linear-gradient(180deg, rgba(16,49,84,0.6), rgba(16,49,84,0.3));
 }
 
+/* --- Minimal modal styles for SpecialTeamsUI --- */
+.gs-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 20000;
+}
+.gs-modal__dialog {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20001;
+  max-width: 520px;
+  width: calc(100% - 2rem);
+  background: #0f2744;
+  border: 2px solid #004080;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+}
+.gs-modal {
+  padding: 1rem;
+}
+.gs-modal h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+  color: #e6f0ff;
+}
+.gs-modal p { margin: 0 0 0.75rem 0; }
+.gs-modal__buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+.gs-modal__button { min-width: 140px; }
+
 /* Retro scanlines overlay */
 body[data-theme="retro"]::before {
   content: "";

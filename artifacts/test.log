@@ -1,0 +1,90 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Gridiron-TS/Gridiron/gridiron_full_game[39m
+
+ [31m❯[39m tests/runtime/boot_watchdog.test.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 11[2mms[22m[39m
+[31m   [31m×[31m boot watchdog: index.html + TS runtime[2m > [22mrenders scoreboard, field, and log without black screen[39m[32m 9[2mms[22m[39m
+[31m     → The URL must be of scheme file[39m
+ [32m✓[39m tests/golden/baselineHarness.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 65[2mms[22m[39m
+ [32m✓[39m tests/ui/hand_click.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 103[2mms[22m[39m
+ [32m✓[39m tests/ui/controls_actions.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 122[2mms[22m[39m
+ [32m✓[39m tests/ui/penalty_ui.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [31m❯[39m tests/deck/dealer_basic.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 12[2mms[22m[39m
+   [32m✓[39m Dealer basic flow[2m > [22mShuffling is deterministic with the same rng[32m 3[2mms[22m[39m
+   [32m✓[39m Dealer basic flow[2m > [22minitialHand deals handSize cards; drawToFull refills; playCard moves to discard[32m 1[2mms[22m[39m
+[31m   [31m×[31m Dealer basic flow[2m > [22mrecycleIfNeeded reshuffles discard into draw when empty; immutability preserved[39m[32m 6[2mms[22m[39m
+[31m     → expected 0 to be greater than 0[39m
+ [32m✓[39m tests/ui/vfx.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 59[2mms[22m[39m
+ [32m✓[39m tests/ui/devmode_visibility.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 83[2mms[22m[39m
+ [32m✓[39m tests/ui/special_teams_ui.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 78[2mms[22m[39m
+ [32m✓[39m tests/qa/harness_actions.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 521[2mms[22m[39m
+   [33m[2m✓[22m[39m QA Harness actions[2m > [22mstartTestGame emits final log [33m 497[2mms[22m[39m
+ [32m✓[39m tests/ui/field_chrome.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 278[2mms[22m[39m
+ [31m❯[39m tests/rules/invariants.test.ts [2m([22m[2m2 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 540[2mms[22m[39m
+[31m   [31m×[31m Game invariants (jsdom)[2m > [22mscore never decreases; PAT follows TD[39m[33m 495[2mms[22m[39m
+[31m     → Cannot read properties of undefined (reading 'start')[39m
+[31m   [31m×[31m Game invariants (jsdom)[2m > [22mno defensive penalty ends the game; untimed down is scheduled[39m[32m 44[2mms[22m[39m
+[31m     → evalMainJs is not defined[39m
+ [32m✓[39m tests/fuzz/fuzz_simulation.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 191[2mms[22m[39m
+ [32m✓[39m tests/invariants/state_machine.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 205[2mms[22m[39m
+ [31m❯[39m tests/data/loaders_result.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 29[2mms[22m[39m
+   [32m✓[39m tables fetch* loaders return Result and are memoized[2m > [22mOffenseCharts success[32m 6[2mms[22m[39m
+   [32m✓[39m tables fetch* loaders return Result and are memoized[2m > [22mOffenseCharts schema error[32m 2[2mms[22m[39m
+   [32m✓[39m tables fetch* loaders return Result and are memoized[2m > [22mOffenseCharts network error[32m 1[2mms[22m[39m
+   [32m✓[39m tables fetch* loaders return Result and are memoized[2m > [22mPlaceKicking success and memoization[32m 4[2mms[22m[39m
+[31m   [31m×[31m tables fetch* loaders return Result and are memoized[2m > [22mPlaceKicking schema error[39m[32m 11[2mms[22m[39m
+[31m     → expected true to be false // Object.is equality[39m
+[31m   [31m×[31m tables fetch* loaders return Result and are memoized[2m > [22mTimeKeeping transform error[39m[32m 3[2mms[22m[39m
+[31m     → expected true to be false // Object.is equality[39m
+   [32m✓[39m tables fetch* loaders return Result and are memoized[2m > [22mLongGain network error[32m 1[2mms[22m[39m
+ [32m✓[39m tests/runtime/smoke_black_screen.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 901[2mms[22m[39m
+   [33m[2m✓[22m[39m runtime smoke: no black screen[2m > [22mrenders core UI elements within timeout [33m 899[2mms[22m[39m
+ [32m✓[39m tests/runtime/bootstrap.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1032[2mms[22m[39m
+   [33m[2m✓[22m[39m runtime bootstrap[2m > [22mexposes window.GS with typed API and updates HUD via EventBus [33m 1030[2mms[22m[39m
+ [32m✓[39m tests/data/availability.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 805[2mms[22m[39m
+   [33m[2m✓[22m[39m data availability[2m > [22mboots with missing data and logs concise message [33m 803[2mms[22m[39m
+ [32m✓[39m tests/data/loaders_integration.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1088[2mms[22m[39m
+   [33m[2m✓[22m[39m integration: index uses fetch* loaders and populates window.GS.tables[2m > [22mpopulates tables on success [33m 1034[2mms[22m[39m
+ [31m❯[39m tests/golden/logSnapshot.test.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 36[2mms[22m[39m
+[31m   [31m×[31m full-game log snapshot[2m > [22mmatches baseline for seed=1, PAT kick[39m[32m 35[2mms[22m[39m
+[31m     → expected 'AWAY scores 6 points.\nAI extra point…' to deeply equal ''[39m
+ [31m❯[39m tests/golden/simulateOneGame.test.ts [2m([22m[2m4 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 47[2mms[22m[39m
+[31m   [31m×[31m simulateOneGame golden master[2m > [22mseed=1 PAT=kick[39m[32m 34[2mms[22m[39m
+[31m     → expected { Object (home, away, ...) } to deeply equal { home: 18, away: 45, winner: 'away' }[39m
+[31m   [31m×[31m simulateOneGame golden master[2m > [22mseed=42 PAT=two[39m[32m 3[2mms[22m[39m
+[31m     → expected { Object (home, away, ...) } to deeply equal { home: 27, away: 58, winner: 'away' }[39m
+[31m   [31m×[31m simulateOneGame golden master[2m > [22mseed=1337 PAT=auto[39m[32m 2[2mms[22m[39m
+[31m     → expected { Object (home, away, ...) } to deeply equal { home: 14, away: 30, winner: 'away' }[39m
+[31m   [31m×[31m simulateOneGame golden master[2m > [22mseed=2025 PAT=kick[39m[32m 2[2mms[22m[39m
+[31m     → expected { Object (home, away, ...) } to deeply equal { home: 47, away: 21, winner: 'home' }[39m
+ [32m✓[39m tests/ui/log_append.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m tests/ui/controls_visibility.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m tests/rules/edge_cases.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/rules/charts_determineOutcome.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/ui/devmode_controls.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m✓[39m tests/ui/sfx.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/deck/decks_defs.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/ai/playcall.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/data/schema_other_tables.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m tests/rules/parsing_timekeeping.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/rules/spots_endzone.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/rules/play_validation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/data/schema_mappings.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/flow/missed_fg_and_touchbacks.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/rules/penalty_admin.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/deck/hand_bus.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/ai/pat_decision.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/rules/punt.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/rules/resolve_play_core.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/rules/kickoff.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/rules/two_minute_timekeeping.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m tests/rules/longgain.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/flow/penalty_flow_integration.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/rules/place_kicking.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/golden/smoke.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m tests/rules/penalties.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m6 failed[39m[22m[2m | [22m[1m[32m41 passed[39m[22m[90m (47)[39m
+[2m      Tests [22m [1m[31m11 failed[39m[22m[2m | [22m[1m[32m111 passed[39m[22m[90m (122)[39m
+[2m   Start at [22m 17:27:01
+[2m   Duration [22m 8.82s[2m (transform 4.72s, setup 1.15s, collect 9.10s, tests 6.50s, environment 111.38s, prepare 13.23s)[22m
+

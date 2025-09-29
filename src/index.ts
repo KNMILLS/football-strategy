@@ -12,6 +12,10 @@ import { resolvePlayCore } from './rules/ResolvePlayCore';
 import type { ResolveInput as CoreResolveInput } from './rules/ResolvePlayCore';
 import { EventBus } from './utils/EventBus';
 import type { GameRuntime, TablesState } from './runtime/types';
+import { GameFlow, type FlowEvent, type PlayInput } from './flow/GameFlow';
+import { createLCG } from './sim/RNG';
+import { validateOffensePlay, canAttemptFieldGoal } from './rules/PlayValidation';
+import { OFFENSE_DECKS, DEFENSE_DECK, WHITE_SIGN_RESTRICTIONS } from './data/decks';
 
 let uiRegistered = false;
 const bus = new EventBus();
@@ -23,24 +27,33 @@ async function ensureUIRegistered(): Promise<void> {
   try { (await import('./ui/Log')).registerLog(bus); } catch {}
   try { (await import('./ui/Field')).registerField(bus); } catch {}
   try { (await import('./ui/Hand')).registerHand(bus); } catch {}
+  try { (await import('./ui/Controls')).registerControls(bus); } catch {}
+  try { (await import('./ui/DevMode')).registerDevMode(bus); } catch {}
+  try { (await import('./ui/SpecialTeamsUI')).registerSpecialTeamsUI(bus); } catch {}
+  try { (await import('./ui/PenaltyUI')).registerPenaltyUI(bus); } catch {}
+  try { (await import('./ui/VFX')).registerVFX(bus); } catch {}
+  try { (await import('./ui/SFX')).registerSFX(bus); } catch {}
+  try { (await import('./qa/Harness')).registerQAHarness(bus); } catch {}
   uiRegistered = true;
 }
 
 async function preloadTables(): Promise<void> {
   try {
     const loaders = await import('./data/loaders/tables');
-    const [offenseCharts, placeKicking, timeKeeping, longGain] = await Promise.all([
-      loaders.loadOffenseCharts(),
-      loaders.loadPlaceKicking(),
-      loaders.loadTimeKeeping(),
-      loaders.loadLongGain(),
+    const [oc, pk, tk, lg] = await Promise.all([
+      loaders.fetchOffenseCharts(),
+      loaders.fetchPlaceKicking(),
+      loaders.fetchTimeKeeping(),
+      loaders.fetchLongGain(),
     ]);
     tables = {
-      offenseCharts: offenseCharts ?? null,
-      placeKicking: placeKicking ?? null,
-      timeKeeping: timeKeeping ?? null,
-      longGain: longGain ?? null,
+      offenseCharts: oc.ok ? oc.data : null,
+      placeKicking: pk.ok ? pk.data : null,
+      timeKeeping: tk.ok ? tk.data : null,
+      longGain: lg.ok ? lg.data : null,
     };
+    const summary = `Loaded offense charts ${oc.ok ? '✓' : `✕ (${oc.error.code})`}, place-kicking ${pk.ok ? '✓' : `✕ (${pk.error.code})`}, timekeeping ${tk.ok ? '✓' : `✕ (${tk.error.code})`}, long-gain ${lg.ok ? '✓' : `✕ (${lg.error.code})`}`;
+    bus.emit('log', { message: summary });
   } catch {
     tables = { offenseCharts: null, placeKicking: null, timeKeeping: null, longGain: null };
   }
@@ -53,6 +66,11 @@ function setTheme(theme: string): void {
   if (typeof document === 'undefined') return;
   (document.body as any).dataset.theme = theme;
 }
+
+// Bridge UI theme change events to body dataset
+bus.on('ui:themeChanged', ({ theme }: any) => {
+  try { setTheme(theme); } catch {}
+});
 
 async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'vintage'|'modern' }): Promise<void> {
   if (typeof window === 'undefined') return;
@@ -114,6 +132,113 @@ const runtime: GameRuntime = {
       if ((res as any).safety) events.push({ type: 'safety' });
       return { nextState, outcome: (res as any).outcome, events } as any;
     },
+    createFlow: (seed?: number) => {
+      const rng = createLCG(seed ?? 12345);
+      if (!tables.offenseCharts) throw new Error('Offense charts not loaded');
+      const flow = new GameFlow({ charts: tables.offenseCharts, rng });
+      let flowState: import('./domain/GameState').GameState | null = null;
+      let pendingPenalty: { accepted: import('./domain/GameState').GameState; declined: import('./domain/GameState').GameState; meta: any } | null = null;
+      const translate = (events: FlowEvent[]) => {
+        for (const ev of events) {
+          if (ev.type === 'hud') bus.emit('hudUpdate', ev.payload as any);
+          else if (ev.type === 'log') {
+            bus.emit('log', { message: ev.message });
+            if (/Field goal missed/i.test(ev.message)) {
+              (bus as any).emit && (bus as any).emit('vfx:banner', { text: 'NO GOOD' });
+              (bus as any).emit && (bus as any).emit('sfx:crowd', { kind: 'groan' });
+            }
+          }
+          else if (ev.type === 'vfx') {
+            const kind = ev.payload.kind;
+            if (kind === 'td') {
+              (bus as any).emit && (bus as any).emit('vfx:banner', { text: 'TOUCHDOWN!', gold: true });
+              (bus as any).emit && (bus as any).emit('vfx:flash', {});
+              (bus as any).emit && (bus as any).emit('sfx:crowd', { kind: 'cheer' });
+            } else if (kind === 'interception') {
+              (bus as any).emit && (bus as any).emit('vfx:banner', { text: 'INTERCEPTION!' });
+              (bus as any).emit && (bus as any).emit('vfx:shake', { selector: 'body' });
+              (bus as any).emit && (bus as any).emit('sfx:hit', {});
+            } else if (kind === 'twoMinute') {
+              (bus as any).emit && (bus as any).emit('vfx:flash', {});
+            }
+            bus.emit('vfx', { type: kind, payload: ev.payload.data });
+          }
+          else if (ev.type === 'choice-required') {
+            (bus as any).emit('flow:choiceRequired', { choice: ev.choice, data: ev.data });
+            if (ev.choice === 'penaltyAcceptDecline') {
+              const d: any = ev.data || {};
+              pendingPenalty = { accepted: d.accepted, declined: d.declined, meta: d.meta };
+            }
+          }
+          else if (ev.type === 'final') bus.emit('log', { message: `Final — HOME ${ev.payload.score.player} — AWAY ${ev.payload.score.ai}` });
+          else if (ev.type === 'halftime') bus.emit('log', { message: 'Halftime' });
+          else if (ev.type === 'endOfQuarter') bus.emit('log', { message: `End of Q${ev.payload.quarter}` });
+          else if (ev.type === 'score') {
+            bus.emit('log', { message: `Score: ${ev.payload.kind}` });
+            (bus as any).emit && (bus as any).emit('vfx:scorePop', {});
+            if (ev.payload.kind === 'FG') {
+              (bus as any).emit && (bus as any).emit('vfx:banner', { text: 'FIELD GOAL!' });
+              (bus as any).emit && (bus as any).emit('sfx:beep', { freq: 880, type: 'triangle' });
+            } else if (ev.payload.kind === 'Safety') {
+              (bus as any).emit && (bus as any).emit('vfx:banner', { text: 'SAFETY!', gold: true });
+              (bus as any).emit && (bus as any).emit('sfx:beep', { freq: 220, type: 'square' });
+            } else if (ev.payload.kind === 'TD') {
+              (bus as any).emit && (bus as any).emit('vfx:banner', { text: 'TOUCHDOWN!', gold: true });
+              (bus as any).emit && (bus as any).emit('sfx:crowd', { kind: 'cheer' });
+            }
+          }
+        }
+      };
+      (bus as any).on && (bus as any).on('ui:choice.penalty', (p: { decision: 'accept'|'decline' }) => {
+        if (!pendingPenalty) return;
+        const ctx = pendingPenalty;
+        const chosen = p.decision === 'accept' ? ctx.accepted : ctx.declined;
+        const fin = (flow as any).finalizePenaltyDecision(chosen, p.decision, ctx.meta);
+        flowState = fin.state as any;
+        translate(fin.events);
+        pendingPenalty = null;
+      });
+      return {
+        resolveSnap: (state: import('./domain/GameState').GameState, input: PlayInput) => {
+          const res = flow.resolveSnap(state, input);
+          translate(res.events);
+          flowState = res.state as any;
+          return res;
+        },
+        applyPenaltyDecision: (state: import('./domain/GameState').GameState, decision: 'accept'|'decline', context: { accepted: import('./domain/GameState').GameState; declined: import('./domain/GameState').GameState; meta: any }) => {
+          const chosen = decision === 'accept' ? context.accepted : context.declined;
+          const fin = (flow as any).finalizePenaltyDecision(chosen, decision, context.meta);
+          translate(fin.events);
+          flowState = fin.state as any;
+          return fin;
+        },
+        resolvePATAndRestart: (state: import('./domain/GameState').GameState, side: 'player'|'ai') => {
+          const res = flow.resolvePATAndRestart(state, side);
+          translate(res.events);
+          flowState = res.state as any;
+          return res;
+        },
+        attemptFieldGoal: (state: import('./domain/GameState').GameState, attemptYards: number, side: 'player'|'ai') => {
+          const res = flow.attemptFieldGoal(state, attemptYards, side);
+          translate(res.events);
+          flowState = res.state as any;
+          return res;
+        },
+        resolveSafetyRestart: (state: import('./domain/GameState').GameState, conceding: 'player'|'ai') => {
+          const res = flow.resolveSafetyRestart(state, conceding);
+          translate(res.events);
+          flowState = res.state as any;
+          return res;
+        },
+        performKickoff: (state: import('./domain/GameState').GameState, type: 'normal'|'onside', kicking: 'player'|'ai') => {
+          const res = flow.performKickoff(state, type, kicking);
+          translate(res.events);
+          flowState = res.state as any;
+          return res;
+        },
+        inner: flow,
+      } as any;
+    },
   },
 };
 
@@ -124,4 +249,6 @@ declare global {
 if (typeof window !== 'undefined' && !window.GS) {
   window.GS = runtime;
 }
+
+// Ensure no legacy bridge remains; runtime boots purely via TS modules.
 

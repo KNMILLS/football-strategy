@@ -1,5 +1,22 @@
 ## Gridiron Strategy — Modernized Runtime and TS Modules
 
+## Data files
+
+- Location during development: `data/` at the repo root.
+- Location in production build: emitted to `dist/data/` with the same relative paths.
+- Runtime loads JSON tables via `fetch('data/*.json')` from the site root.
+
+Adding/updating tables:
+- Place JSON files under `data/`. On `npm run dev`, Vite serves them at `/data/...`.
+- On `npm run build`, files are copied to `dist/data/` and fetched at runtime.
+
+Fallback behavior:
+- If any table is missing or invalid, the app still boots. Corresponding entries in `window.GS.tables` are set to `null`, and a concise log message is emitted (e.g., `Loaded offense charts ✓, place-kicking ✓, timekeeping ✕ (SCHEMA), long-gain ✓`).
+
+CI/Tests:
+- Tests stub `global.fetch` to provide deterministic inputs for loaders.
+- The dev server requires `data/` reachable at `/data/...` for manual verification.
+
 ### Scripts
 - `npm run dev` — start Vite dev server
 - `npm run test` — run Vitest in jsdom with coverage
@@ -12,7 +29,7 @@
   - Special teams: `special/Kickoff.ts`, `special/Punt.ts`, `special/PlaceKicking.ts`
 - Data schemas live under `src/data/schemas/**` and are validated via Zod.
 - Deterministic RNG utilities in `src/sim/RNG.ts` (LCG); never use `Math.random()` in code.
-- TS-only runtime boot: `index.html` loads `src/index.ts` directly. No legacy `main.js` or `src/legacy/main-bridge.ts` is used.
+- TS-only runtime boot: `index.html` loads `src/index.ts` directly. Legacy `main.js` and `src/legacy/*` are removed.
 - The runtime exposes a typed API on `window.GS` for UI, tests, and dev tools.
 
 ### Determinism & Tests
@@ -41,7 +58,7 @@
   - `runtime.resolvePlayAdapter(...)` for migration parity
 
 ### Troubleshooting
-- If UI appears blank, check console for table load warnings; runtime continues with `null` tables.
+- **Black screen**: CI watchdog test fails if `#scoreboard`, `#field-display`, or `#log` are missing. Locally, run `npm run dev` and check console for table load messages.
 - In tests/jsdom, external CSS (`style.css`) may warn; harmless.
 
 ### Coverage Gates

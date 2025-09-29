@@ -26,9 +26,7 @@ export function registerHand(bus: EventBus): void {
         };
       }
       div.addEventListener('click', () => {
-        try {
-          (window as any).playCard && (window as any).playCard(card.id);
-        } catch {}
+        bus.emit('ui:playCard', { cardId: card.id } as any);
       });
       div.addEventListener('mouseenter', () => {
         if (!cardPreview) return;

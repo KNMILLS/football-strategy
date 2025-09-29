@@ -49,78 +49,16 @@ async function loadDom(): Promise<JSDOM> {
   return dom;
 }
 
-async function evalMainJs(dom: JSDOM) {
-  if (!(dom.window as any).GS) {
-    const rollD6 = (rng: () => number) => Math.floor(rng() * 6) + 1;
-    const NORMAL_KICKOFF_TABLE: any = { 2: 'FUMBLE*', 3: 'PENALTY -10*', 4: 10, 5: 15, 6: 20, 7: 25, 8: 30, 9: 35, 10: 40, 11: 'LG', 12: 'LG + 5' };
-    const ONSIDE_KICK_TABLE: any = { 1: { possession: 'kicker', yard: 40 }, 2: { possession: 'kicker', yard: 40 }, 3: { possession: 'receiver', yard: 35 }, 4: { possession: 'receiver', yard: 35 }, 5: { possession: 'receiver', yard: 35 }, 6: { possession: 'receiver', yard: 30 } };
-    const resolveLongGain = (rng: () => number) => Math.min(20 + Math.floor(rng() * 30), 50);
-    function parseKickoffYardLine(res: number | string, rng: () => number) {
-      if (typeof res === 'number') return { yardLine: res, turnover: false } as any;
-      if (res === 'LG') return { yardLine: Math.min(resolveLongGain(rng), 50), turnover: false } as any;
-      if (res === 'LG + 5') return { yardLine: Math.min(resolveLongGain(rng) + 5, 50), turnover: false } as any;
-      return { yardLine: 25, turnover: false } as any;
-    }
-    function resolveKickoff(rng: () => number, opts: { onside: boolean; kickerLeadingOrTied: boolean }) {
-      if (opts.onside) {
-        let roll = rollD6(rng);
-        if (opts.kickerLeadingOrTied) roll = Math.min(6, roll + 1);
-        const entry = ONSIDE_KICK_TABLE[roll] || { possession: 'receiver', yard: 35 };
-        return { yardLine: entry.yard, turnover: entry.possession === 'kicker' };
-      }
-      let roll = rollD6(rng) + rollD6(rng);
-      let entry: any = NORMAL_KICKOFF_TABLE[roll];
-      let turnover = false; let penalty = false;
-      if (typeof entry === 'string' && entry.includes('*')) {
-        if (/FUMBLE/i.test(entry)) turnover = true;
-        if (/PENALTY/i.test(entry)) penalty = true;
-        entry = (entry as string).replace('*', '').trim();
-        const reroll = rollD6(rng) + rollD6(rng);
-        let res2: any = NORMAL_KICKOFF_TABLE[reroll];
-        if (typeof res2 === 'string' && res2.includes('*')) {
-          if (/FUMBLE/i.test(res2)) turnover = false;
-          if (/PENALTY/i.test(res2)) penalty = false;
-          res2 = (res2 as string).replace('*', '').trim();
-        }
-        entry = res2;
-      }
-      const parsed = parseKickoffYardLine(entry, rng) as any;
-      let finalYard = parsed.yardLine;
-      if (penalty) finalYard = Math.max(0, parsed.yardLine - 10);
-      return { yardLine: finalYard, turnover };
-    }
-    function attemptFieldGoal(rng: () => number, attemptYards: number) {
-      const ay = Math.round(attemptYards);
-      if (ay > 45) return false;
-      let p = 0.5;
-      if (ay <= 12) p = 0.95;
-      else if (ay <= 22) p = 0.85;
-      else if (ay <= 32) p = 0.7;
-      else if (ay <= 38) p = 0.6;
-      else if (ay <= 45) p = 0.5;
-      return rng() < p;
-    }
-    (dom.window as any).GS = {
-      rules: { Kickoff: { resolveKickoff }, PlaceKicking: { attemptPAT: (rng: () => number) => rng() < 0.98, attemptFieldGoal } },
-      ai: { PATDecision: { performPAT: () => ({ choice: 'kick' }) } },
-      bus: { emit(){} },
-    };
-  }
-  const mainJs = await fs.readFile(path.resolve(process.cwd(), 'main.js'), 'utf8');
-  dom.window.eval(mainJs);
-  // Mute SFX by stubbing global sfx functions if present
-  try {
-    (dom.window as any).beep = () => {};
-    (dom.window as any).noiseBurst = () => {};
-    (dom.window as any).noiseCrowd = () => {};
-  } catch {}
+async function bootRuntime(dom: JSDOM) {
+  await import('../../src/index.ts');
+  await (dom.window as any).GS.start();
 }
 
 describe('Game invariants (jsdom)', () => {
   it('score never decreases; PAT follows TD', async () => {
     const dom = await loadDom();
     dom.window.Math.random = createLCG(1337);
-    await evalMainJs(dom);
+    await bootRuntime(dom);
 
     const scoreHistory: { player: number; ai: number }[] = [];
     let sawTouchdownAwaitingPAT = false;
@@ -130,9 +68,18 @@ describe('Game invariants (jsdom)', () => {
     const origLog = (msg: any) => logs.push(String(msg));
     // Monkey-patch: main.js log() emits to GS.bus, but also writes DOM. We'll watch DOM after each snap instead.
 
-    // Run the sim but step through internal loop by calling simulateOneGame and intercept global state via DOM/HUD text
-    const result = dom.window.simulateOneGame({ playerPAT: 'auto' });
-    expect(result).toBeTruthy();
+    // Drive flow a bit and assert invariants on emitted log messages
+    const GS = (dom.window as any).GS;
+    const flow = GS.runtime.createFlow(1337);
+    let state: import('../../src/domain/GameState').GameState = {
+      seed: 1337, quarter: 1, clock: 15*60, down: 1, toGo: 10, ballOn: 25, possession: 'player', awaitingPAT: false, gameOver: false, score: { player: 0, ai: 0 }
+    } as any;
+    const ko = flow.performKickoff(state, 'normal', 'ai');
+    state = ko.state as any;
+    for (let i = 0; i < 120 && !state.gameOver; i++) {
+      const res = flow.resolveSnap(state, { deckName: 'Pro Style', playLabel: 'Run & Pass Option', defenseLabel: 'Run & Pass' });
+      state = res.state as any;
+    }
 
     // Parse log to check invariants
     const logEl = dom.window.document.getElementById('log');
@@ -180,7 +127,15 @@ describe('Game invariants (jsdom)', () => {
     await evalMainJs(dom);
     // Start a test setup at end of Q4 with clock near 0; we rely on built-in test controls API path
     // Fallback: directly simulate One Game and ensure we can find an "Untimed down" message iff penalty at 0 occurs.
-    dom.window.simulateOneGame({ playerPAT: 'auto' });
+    const GS2 = (dom.window as any).GS;
+    const flow2 = GS2.runtime.createFlow(1);
+    let state2: import('../../src/domain/GameState').GameState = {
+      seed: 1, quarter: 4, clock: 20, down: 4, toGo: 1, ballOn: 50, possession: 'player', awaitingPAT: false, gameOver: false, score: { player: 0, ai: 0 }
+    } as any;
+    for (let i = 0; i < 10 && !state2.gameOver; i++) {
+      const res = flow2.resolveSnap(state2, { deckName: 'Pro Style', playLabel: 'Run & Pass Option', defenseLabel: 'Run & Pass' });
+      state2 = res.state as any;
+    }
     const logEl = dom.window.document.getElementById('log');
     const text = (logEl && logEl.textContent) || '';
     // Not deterministic to force a defensive penalty at 0: assert we never log a defensive-penalty ends game message; main.js explicitly logs 'Untimed down...' when applicable.

@@ -38,18 +38,12 @@ export function resolvePunt(ctx: PuntContext, rng: RNG, resolveLongGain: (rng: R
   const distRoll = rollD6(rng) + rollD6(rng);
   const puntDistance = PUNT_DISTANCE_TABLE[distRoll] ?? 40;
   let ballOn = ctx.ballOn + (puntingIsPlayer ? puntDistance : -puntDistance);
-  // End zone over/through
-  if (ballOn > 100 || ballOn < 0) {
-    // Through end zone: touchback to receiving team's 20.
-    const receivingIsPlayer = !puntingIsPlayer;
-    ballOn = receivingIsPlayer ? 20 : 80;
-    return { ballOn, possessionFlips: true, fumbleRecoveredByKickingTeam: false, touchback: true };
-  }
-  if (ballOn === 100 || ballOn === 0) {
-    // Lands in end zone: for purity, assume down at 20 (no UI choice) — matches default AI choice when not trailing late
-    const receivingIsPlayer = !puntingIsPlayer;
-    ballOn = receivingIsPlayer ? 20 : 80;
-    return { ballOn, possessionFlips: true, fumbleRecoveredByKickingTeam: false, touchback: true };
+  // End zone over/through using centralized Spots helpers
+  if (ballOn > 100 || ballOn < 0 || ballOn === 100 || ballOn === 0) {
+    const receiving = puntingIsPlayer ? 'ai' : 'player';
+    // Inline to avoid circular imports if any; mirrors Spots.puntTouchback
+    const tbBallOn = receiving === 'player' ? 20 : 80;
+    return { ballOn: tbBallOn, possessionFlips: true, fumbleRecoveredByKickingTeam: false, touchback: true };
   }
   // In play: resolve return
   const retRoll = rollD6(rng) + rollD6(rng);

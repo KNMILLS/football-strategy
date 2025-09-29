@@ -23,9 +23,9 @@ async function loadHtml(rootDir) {
   return dom;
 }
 
-async function evalMainJs(dom, rootDir) {
-  const mainJs = await fs.readFile(path.join(rootDir, 'main.js'), 'utf8');
-  dom.window.eval(mainJs);
+async function bootRuntime(dom, rootDir) {
+  await import(path.join(rootDir, 'src', 'index.ts'));
+  await (dom.window).GS.start();
 }
 
 async function simulateOne(seed, options) {
@@ -62,11 +62,20 @@ async function simulateOne(seed, options) {
   dom.window.webkitAudioContext = FakeAudioContext;
   // Disable SFX if available
   try { if (dom.window.SFX && dom.window.SFX.setEnabled) dom.window.SFX.setEnabled(false); } catch {}
-  await evalMainJs(dom, rootDir);
+  await bootRuntime(dom, rootDir);
   // After main.js loads, try disabling again
   try { if (dom.window.SFX && dom.window.SFX.setEnabled) dom.window.SFX.setEnabled(false); } catch {}
-  const res = dom.window.simulateOneGame(options || {});
-  return res;
+  // Drive a short simulation via TS flow to produce a deterministic summary
+  const GS = (dom.window).GS;
+  const flow = GS.runtime.createFlow(seed);
+  let state = { seed, quarter: 1, clock: 15*60, down: 1, toGo: 10, ballOn: 25, possession: 'player', awaitingPAT: false, gameOver: false, score: { player: 0, ai: 0 } };
+  const ko = flow.performKickoff(state, 'normal', 'ai');
+  state = ko.state;
+  for (let i = 0; i < 120 && !state.gameOver; i++) {
+    const res = flow.resolveSnap(state, { deckName: 'Pro Style', playLabel: 'Run & Pass Option', defenseLabel: 'Run & Pass' });
+    state = res.state;
+  }
+  return { home: state.score.player, away: state.score.ai, winner: state.score.player >= state.score.ai ? 'home' : 'away' };
 }
 
 async function main() {
