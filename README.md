@@ -26,6 +26,15 @@
 3) Build: `npm run build`
 4) Dev server: `npm run dev` then open `http://localhost:5173` and smoke test
 
+### Dev Mode
+- Toggle via the checkbox in the header. When on, normal controls (`#controls-normal`) are hidden and test controls (`#controls-test`) are shown.
+- You can force Dev Mode on page load by appending `#dev` to the URL (e.g., `http://localhost:5173/#dev`).
+- Dev Mode provides: start test game, run full auto game, theme selection, SFX toggles, and debug log export.
+
+### Troubleshooting
+- If the New Game button or Dev Mode toggle appears unresponsive, ensure the dev server has compiled without errors and that `main.js` is being loaded. In this refactor, a legacy loader injects `main.js` after the DOM is ready.
+- In tests or jsdom, external CSS (`style.css`) may warn about loading; this is harmless and does not affect logic.
+
 ### Coverage Gates
 - Configured in `vitest.config.ts` with V8 coverage provider and thresholds.
 - Adjust thresholds via `coverageThresholds` if refactors significantly move code.

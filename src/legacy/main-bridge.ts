@@ -7,7 +7,12 @@
 // Load the classic script as a non-module to preserve legacy semantics and avoid strict-mode redeclaration errors.
 export async function loadLegacyClassicScript(): Promise<void> {
   if (typeof document === 'undefined') return;
-  const url = new URL('../../main.js?url', import.meta.url).href;
+  // Ensure DOM is ready before binding handlers inside main.js
+  if (document.readyState === 'loading') {
+    await new Promise<void>((resolve) => document.addEventListener('DOMContentLoaded', () => resolve(), { once: true }));
+  }
+  // Use direct path to main.js so the script executes (no ?url asset URL)
+  const url = new URL('../../main.js', import.meta.url).href;
   await new Promise<void>((resolve, reject) => {
     const s = document.createElement('script');
     s.src = url;
