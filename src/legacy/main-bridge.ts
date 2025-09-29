@@ -1,7 +1,18 @@
 // Legacy DOM/UI bootstrap side-effects
-// The classic script initializes event listeners and game UI directly.
-// We load it here as an ES module to preserve behavior during migration.
-// @ts-expect-error: No type declarations for legacy script
-await import('../../main.js');
+// Load the classic script as a non-module to preserve legacy semantics and avoid strict-mode redeclaration errors.
+export async function loadLegacyClassicScript(): Promise<void> {
+  if (typeof document === 'undefined') return;
+  const url = new URL('../../main.js?url', import.meta.url).href;
+  await new Promise<void>((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = url;
+    s.async = false; // preserve execution order
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Failed to load legacy main.js'));
+    document.head.appendChild(s);
+  });
+}
+
+await loadLegacyClassicScript();
 
 

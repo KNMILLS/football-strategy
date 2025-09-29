@@ -17,9 +17,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Oxanium:wght@400;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/index-CNfRggwP.js"></script>
+  <script type="module" crossorigin src="/assets/index-DYSS7c_H.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/LongGain-B92lIB4o.js">
-  <link rel="stylesheet" crossorigin href="/assets/index-C9p4-6-s.css">
+  <link rel="stylesheet" crossorigin href="/assets/index-CGf1dMMR.css">
 </head>
 <body>
   <div id="game">
@@ -57,7 +57,7 @@
                 <option value="John Madden">John Madden</option>
               </select>
             </div>
-            <button id="new-game" class="btn">New Game</button>
+            <button id="new-game" class="btn" aria-label="Start a new game">New Game</button>
           </div>
           <div id="controls-test" class="hidden">
             <div class="control-row">
@@ -141,7 +141,7 @@
             </div>
           </div>
         </div>
-        <div id="log" class="log" tabindex="0" aria-label="Play log" role="log"></div>
+        <div id="log" class="log" tabindex="0" aria-label="Play log" role="log" aria-live="polite"></div>
       </aside>
       <section id="play-area" class="play-area">
         <!-- Field display shows a stylised football field. Yard lines are drawn
@@ -154,12 +154,12 @@
     <footer id="footer">
       <div id="play-controls" class="play-controls">
         <!-- The play zone has been removed; cards can now be dropped anywhere on the field. -->
-        <div id="pat-options" class="pat-options hidden">
-          <button id="kick-pat" class="btn">Kick Extra Point (1)</button>
-          <button id="go-two" class="btn">Go for Two (2)</button>
+        <div id="pat-options" class="pat-options hidden" role="group" aria-label="Point after touchdown options" aria-hidden="true">
+          <button id="kick-pat" class="btn" aria-label="Kick extra point, 1 point (keyboard 1)">Kick Extra Point (1)</button>
+          <button id="go-two" class="btn" aria-label="Go for two, 2 points (keyboard 2)">Go for Two (2)</button>
         </div>
-        <div id="fg-options" class="fg-options hidden">
-          <button id="kick-fg" class="btn">Kick Field Goal (3)</button>
+        <div id="fg-options" class="fg-options hidden" role="group" aria-label="Field goal options" aria-hidden="true">
+          <button id="kick-fg" class="btn" aria-label="Attempt field goal (keyboard 3)">Kick Field Goal (3)</button>
         </div>
       </div>
       <div id="hand" class="hand" aria-label="Player hand"></div>
@@ -178,6 +178,6 @@
       if (location.hash && location.hash.includes('dev')) localStorage.setItem('gs_dev_mode','1');
     } catch {} })();
   </script>
-  <script src="main.js"></script>
+  
 </body>
 </html>

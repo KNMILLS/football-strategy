@@ -1,0 +1,1 @@
+async function r(){if(typeof document>"u")return;const a=new URL("/assets/main-Fe-yqtAp.js?url",import.meta.url).href;await new Promise((n,t)=>{const e=document.createElement("script");e.src=a,e.async=!1,e.onload=()=>n(),e.onerror=()=>t(new Error("Failed to load legacy main.js")),document.head.appendChild(e)})}await r();export{r as loadLegacyClassicScript};
