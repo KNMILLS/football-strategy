@@ -50,8 +50,6 @@ async function loadDom(): Promise<JSDOM> {
 }
 
 async function evalMainJs(dom: JSDOM) {
-  const mainJs = await fs.readFile(path.resolve(process.cwd(), 'main.js'), 'utf8');
-  dom.window.eval(mainJs);
   if (!(dom.window as any).GS) {
     const rollD6 = (rng: () => number) => Math.floor(rng() * 6) + 1;
     const NORMAL_KICKOFF_TABLE: any = { 2: 'FUMBLE*', 3: 'PENALTY -10*', 4: 10, 5: 15, 6: 20, 7: 25, 8: 30, 9: 35, 10: 40, 11: 'LG', 12: 'LG + 5' };
@@ -91,12 +89,25 @@ async function evalMainJs(dom: JSDOM) {
       if (penalty) finalYard = Math.max(0, parsed.yardLine - 10);
       return { yardLine: finalYard, turnover };
     }
+    function attemptFieldGoal(rng: () => number, attemptYards: number) {
+      const ay = Math.round(attemptYards);
+      if (ay > 45) return false;
+      let p = 0.5;
+      if (ay <= 12) p = 0.95;
+      else if (ay <= 22) p = 0.85;
+      else if (ay <= 32) p = 0.7;
+      else if (ay <= 38) p = 0.6;
+      else if (ay <= 45) p = 0.5;
+      return rng() < p;
+    }
     (dom.window as any).GS = {
-      rules: { Kickoff: { resolveKickoff }, PlaceKicking: { attemptPAT: (rng: () => number) => rng() < 0.98 } },
+      rules: { Kickoff: { resolveKickoff }, PlaceKicking: { attemptPAT: (rng: () => number) => rng() < 0.98, attemptFieldGoal } },
       ai: { PATDecision: { performPAT: () => ({ choice: 'kick' }) } },
       bus: { emit(){} },
     };
   }
+  const mainJs = await fs.readFile(path.resolve(process.cwd(), 'main.js'), 'utf8');
+  dom.window.eval(mainJs);
   // Mute SFX by stubbing global sfx functions if present
   try {
     (dom.window as any).beep = () => {};

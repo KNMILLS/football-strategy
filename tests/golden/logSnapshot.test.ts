@@ -51,10 +51,6 @@ async function loadDom(): Promise<JSDOM> {
 }
 
 async function evalMainJs(dom: JSDOM) {
-  const mainJs = await fs.readFile(path.resolve(process.cwd(), 'main.js'), 'utf8');
-  dom.window.eval(mainJs);
-  // Ensure modules from src are initialized (exposes window.GS, bus, etc.)
-  // index.html already loads /src/index.ts as a module via Vite in dev, but JSDOM won't.
   // Bootstrap GS by importing real modules so simulation matches golden baseline
   if (!(dom.window as any).GS) {
     const [KickoffMod, PuntMod, PlaceKickingMod, ResultParsingMod, TimekeepingMod, ChartsMod, LongGainMod, PATDecisionMod, CoachProfilesMod, EventBusMod] = await Promise.all([
@@ -76,6 +72,8 @@ async function evalMainJs(dom: JSDOM) {
       bus,
     };
   }
+  const mainJs = await fs.readFile(path.resolve(process.cwd(), 'main.js'), 'utf8');
+  dom.window.eval(mainJs);
 }
 
 describe('full-game log snapshot', () => {
