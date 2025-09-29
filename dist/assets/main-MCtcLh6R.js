@@ -13,6 +13,39 @@
  * available on fourth down when close enough to the opponent's end zone.
  */
 
+// Ensure global GS object and key rules exist when tests eval main.js directly
+try {
+  if (typeof window !== 'undefined') {
+    // @ts-ignore
+    if (!window.GS) window.GS = {};
+    // @ts-ignore ensure rules container exists
+    if (!window.GS.rules) window.GS.rules = {};
+    // Provide fallbacks for special teams using legacy JS implementations when TS modules aren't booted
+    // Kickoff fallback
+    // @ts-ignore
+    if (!window.GS.rules.Kickoff) window.GS.rules.Kickoff = { resolveKickoff: resolveKickoff };
+    // PlaceKicking fallbacks
+    // @ts-ignore
+    if (!window.GS.rules.PlaceKicking) window.GS.rules.PlaceKicking = {
+      attemptPAT: (rng) => {
+        const roll = Math.floor(rng() * 6) + 1 + Math.floor(rng() * 6) + 1;
+        return (PLACE_KICK_TABLE[roll] || {}).PAT === 'G';
+      },
+      attemptFieldGoal: (rng, yards) => {
+        const roll = Math.floor(rng() * 6) + 1 + Math.floor(rng() * 6) + 1;
+        let key = '39-45';
+        if (yards <= 12) key = '1-12';
+        else if (yards <= 22) key = '13-22';
+        else if (yards <= 32) key = '23-32';
+        else if (yards <= 38) key = '33-38';
+        return (PLACE_KICK_TABLE[roll] || {})[key] === 'G';
+      }
+    };
+    // Punt fallback uses legacy resolvePunt if defined later in file
+    // Will be set at runtime in resolvePunt block if missing
+  }
+} catch {}
+
 // ---------- Deck definitions ----------
 // These objects were generated from the high‑resolution card images. Each
 // offensive deck contains a list of play cards with an id, display label,
@@ -191,7 +224,62 @@ const LONG_GAIN_TABLE = {1:'+50 and (+10 x 1D6)', 2:'+50', 3:'+45', 4:'+40', 5:'
 // categories of play outcomes to the number of seconds to deduct from the
 // game clock.
 
-// (legacy kickoff fallback removed; TS module is authoritative)
+// Place kicking table (fallback when TS modules not booted in tests)
+const PLACE_KICK_TABLE = {
+  2: { PAT: 'NG', '1-12': 'NG', '13-22': 'NG', '23-32': 'G', '33-38': 'G', '39-45': 'G' },
+  3: { PAT: 'G',  '1-12': 'NG', '13-22': 'NG', '23-32': 'NG', '33-38': 'G', '39-45': 'NG' },
+  4: { PAT: 'G',  '1-12': 'G',  '13-22': 'NG', '23-32': 'NG', '33-38': 'NG', '39-45': 'NG' },
+  5: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'NG', '33-38': 'NG', '39-45': 'NG' },
+  6: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'G',  '33-38': 'NG', '39-45': 'NG' },
+  7: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'G',  '33-38': 'G',  '39-45': 'NG' },
+  8: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'G',  '33-38': 'NG', '39-45': 'NG' },
+  9: { PAT: 'G',  '1-12': 'G',  '13-22': 'G',  '23-32': 'NG', '33-38': 'NG', '39-45': 'NG' },
+  10: { PAT: 'G', '1-12': 'G',  '13-22': 'G',  '23-32': 'NG', '33-38': 'NG', '39-45': 'NG' },
+  11: { PAT: 'G', '1-12': 'G',  '13-22': 'NG', '23-32': 'NG', '33-38': 'G',  '39-45': 'NG' },
+  12: { PAT: 'NG','1-12': 'NG', '13-22': 'G',  '23-32': 'G',  '33-38': 'G',  '39-45': 'G' }
+};
+
+// Legacy kickoff resolver (fallback when TS module not initialized in tests)
+function resolveKickoff(rng, opts) {
+  // Minimal table compatible with TS version
+  const NORMAL_KICKOFF_TABLE = {
+    2: 'FUMBLE*', 3: 'PENALTY -10*', 4: 10, 5: 15, 6: 20, 7: 25, 8: 30, 9: 35, 10: 40, 11: 'LG', 12: 'LG + 5'
+  };
+  const ONSIDE_KICK_TABLE = { 1: { possession: 'kicker', yard: 40 }, 2: { possession: 'kicker', yard: 40 }, 3: { possession: 'receiver', yard: 35 }, 4: { possession: 'receiver', yard: 35 }, 5: { possession: 'receiver', yard: 35 }, 6: { possession: 'receiver', yard: 30 } };
+  function parseKickoffYardLine(res) {
+    if (typeof res === 'number') return { yardLine: res, turnover: false };
+    if (res === 'LG') return { yardLine: Math.min(resolveLongGain(() => game.rng()), 50), turnover: false };
+    if (res === 'LG + 5') return { yardLine: Math.min(resolveLongGain(() => game.rng()) + 5, 50), turnover: false };
+    return { yardLine: 25, turnover: false };
+  }
+  if (opts && opts.onside) {
+    let roll = rollD6();
+    if (opts.kickerLeadingOrTied) roll = Math.min(6, roll + 1);
+    const entry = ONSIDE_KICK_TABLE[roll] || { possession: 'receiver', yard: 35 };
+    return { yardLine: entry.yard, turnover: entry.possession === 'kicker' };
+  }
+  let roll = rollD6() + rollD6();
+  let entry = NORMAL_KICKOFF_TABLE[roll];
+  let turnover = false;
+  let penalty = false;
+  if (typeof entry === 'string' && entry.includes('*')) {
+    if (/FUMBLE/i.test(entry)) turnover = true;
+    if (/PENALTY/i.test(entry)) penalty = true;
+    entry = entry.replace('*','').trim();
+    const reroll = rollD6() + rollD6();
+    let res2 = NORMAL_KICKOFF_TABLE[reroll];
+    if (typeof res2 === 'string' && res2.includes('*')) {
+      if (/FUMBLE/i.test(res2)) turnover = false;
+      if (/PENALTY/i.test(res2)) penalty = false;
+      res2 = res2.replace('*','').trim();
+    }
+    entry = res2;
+  }
+  const parsed = parseKickoffYardLine(entry);
+  let finalYard = parsed.yardLine;
+  if (penalty) finalYard = Math.max(0, parsed.yardLine - 10);
+  return { yardLine: finalYard, turnover };
+}
 
 // (legacy place-kicking table removed; logic migrated to TS module in window.GS.rules.PlaceKicking)
 
@@ -522,15 +610,11 @@ function yardToSvgX(absYard) {
 
 // ---------------- Runtime Table Hooks ----------------
 // Read any prefetched tables from window.GS.tables when available
-let PLACE_KICK_TABLE_DATA;
-let KICKOFF_NORMAL_DATA;
-let KICKOFF_ONSIDE_DATA;
 let LONG_GAIN_DATA;
 let TIME_KEEPING_DATA;
 try {
   const gs = (typeof window !== 'undefined' && window.GS) ? window.GS : null;
   if (gs && gs.tables) {
-    PLACE_KICK_TABLE_DATA = gs.tables.placeKicking;
     TIME_KEEPING_DATA = gs.tables.timeKeeping;
     LONG_GAIN_DATA = gs.tables.longGain;
     // Offense charts are consumed directly in determineOutcome via FULL_OFFENSE_CHARTS fallback.
@@ -621,15 +705,8 @@ const game = {
 };
 
 // ---------- UI elements ----------
-const hudQuarter = document.getElementById('quarter');
-const hudClock = document.getElementById('clock');
-const hudDownDistance = document.getElementById('downDistance');
-const hudBallSpot = document.getElementById('ballSpot');
-const hudPossession = document.getElementById('possession');
-const scoreDisplay = document.getElementById('score');
+// Legacy UI element references kept minimal; HUD/Log/Hand rendering moved to TS UI via EventBus
 const logElement = document.getElementById('log');
-const handElement = document.getElementById('hand');
-const cardPreview = document.getElementById('card-preview');
 // AI intent element is no longer used because we no longer display the AI's
 // chosen play. The corresponding HTML element has been removed from
 // index.html, so this constant is retained only for backward compatibility.
@@ -2251,7 +2328,6 @@ function handleSafety(scorer) {
     const kickerTeam = freeKicker;
     const rng = () => game.rng();
     const leadingOrTied = (kickerTeam === 'player' ? game.score.player : game.score.ai) >= (kickerTeam === 'player' ? game.score.ai : game.score.player);
-    let result;
     const result = window.GS.rules.Kickoff.resolveKickoff(rng, { onside: false, kickerLeadingOrTied: leadingOrTied });
     let yard = result.yardLine + 25;
     if (yard > 100) yard = 100;
@@ -2390,9 +2466,8 @@ function attemptExtraPoint() {
     }
   } catch (e) {}
   if (typeof success === 'undefined') {
-    const roll = rollD6() + rollD6();
-    let row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
-    success = row.PAT === 'G';
+    const rng = () => game.rng();
+    success = window.GS.rules.PlaceKicking.attemptPAT(rng);
   }
   if (success) {
     if (game.possession === 'player') {
@@ -2432,7 +2507,13 @@ function attemptTwoPoint() {
   } else {
     log('Two‑point conversion fails.');
   }
-  setCurrentPlayResult('Two-point conversion ' + (logElement.textContent.endsWith('fails.\n') ? 'failed' : 'good'));
+  // Infer two-point success from the last log line if available
+  let twoPtSuccess = true;
+  try {
+    const t = (logElement && logElement.textContent) || '';
+    if (/fails\.$/m.test(t.trim())) twoPtSuccess = false;
+  } catch {}
+  setCurrentPlayResult('Two-point conversion ' + (twoPtSuccess ? 'good' : 'failed'));
   finishPAT();
   finalizeDebugPlay();
 }
@@ -2493,19 +2574,9 @@ function aiAttemptPAT() {
     }
     game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).extraPoint;
   } else {
-    // Extra point attempt using the place kicking table
-    let success;
-    try {
-      if (window.GS && window.GS.rules && window.GS.rules.PlaceKicking && typeof window.GS.rules.PlaceKicking.attemptPAT === 'function') {
-        const rng = () => game.rng();
-        success = window.GS.rules.PlaceKicking.attemptPAT(rng);
-      }
-    } catch (e) {}
-    if (typeof success === 'undefined') {
-      const roll = rollD6() + rollD6();
-      const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
-      success = row.PAT === 'G';
-    }
+    // Extra point attempt via TS module
+    const rng = () => game.rng();
+    const success = window.GS.rules.PlaceKicking.attemptPAT(rng);
     if (success) {
       game.score.ai += 1;
       log('AI extra point is good.');
@@ -2551,18 +2622,28 @@ function attemptFieldGoal() {
   let success = false;
   if (col) {
     try {
+      const rng = () => game.rng();
       if (window.GS && window.GS.rules && window.GS.rules.PlaceKicking && typeof window.GS.rules.PlaceKicking.attemptFieldGoal === 'function') {
-        const rng = () => game.rng();
         success = window.GS.rules.PlaceKicking.attemptFieldGoal(rng, attemptYards);
       } else {
+        // Inline fallback using PLACE_KICK_TABLE
         const roll = rollD6() + rollD6();
-        const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (typeof PLACE_KICK_TABLE !== 'undefined' ? (PLACE_KICK_TABLE[roll] || {}) : {});
-        success = row[col] === 'G';
+        let key = '39-45';
+        if (attemptYards <= 12) key = '1-12';
+        else if (attemptYards <= 22) key = '13-22';
+        else if (attemptYards <= 32) key = '23-32';
+        else if (attemptYards <= 38) key = '33-38';
+        success = ((PLACE_KICK_TABLE[roll] || {})[key] === 'G');
       }
     } catch (e) {
+      // Last-resort fallback
       const roll = rollD6() + rollD6();
-      const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (typeof PLACE_KICK_TABLE !== 'undefined' ? (PLACE_KICK_TABLE[roll] || {}) : {});
-      success = row[col] === 'G';
+      let key = '39-45';
+      if (attemptYards <= 12) key = '1-12';
+      else if (attemptYards <= 22) key = '13-22';
+      else if (attemptYards <= 32) key = '23-32';
+      else if (attemptYards <= 38) key = '33-38';
+      success = ((PLACE_KICK_TABLE[roll] || {})[key] === 'G');
     }
   }
   if (success) {
@@ -2995,7 +3076,7 @@ function log(msg) {
 }
 
 function logClear() {
-  logElement.textContent = '';
+  try { if (logElement) logElement.textContent = ''; } catch {}
 }
 
 // Structured per-play debug logging for download
@@ -3095,9 +3176,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load JSON data tables (non-fatal if missing)
   await loadDataTables();
   
-  // Normalise initial scoreboard labels to HOME/AWAY to match HUD updates.
-  if (scoreDisplay) scoreDisplay.textContent = 'HOME 0 — AWAY 0';
-  if (hudPossession) hudPossession.textContent = 'HOME';
   updateHUD();
   // Emit initial snapshot for debug
   try {
@@ -4062,7 +4140,7 @@ if (devCheckbox) {
   if (copyBtn) {
     copyBtn.addEventListener('click', async () => {
       if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'click', id: 'copy-log' });
-      try { await navigator.clipboard.writeText(logElement.textContent || ''); alert('Log copied'); } catch {}
+      try { await navigator.clipboard.writeText((logElement && logElement.textContent) || ''); alert('Log copied'); } catch {}
     });
   }
   if (dlBtn) {
