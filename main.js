@@ -2251,7 +2251,6 @@ function handleSafety(scorer) {
     const kickerTeam = freeKicker;
     const rng = () => game.rng();
     const leadingOrTied = (kickerTeam === 'player' ? game.score.player : game.score.ai) >= (kickerTeam === 'player' ? game.score.ai : game.score.player);
-    let result;
     const result = window.GS.rules.Kickoff.resolveKickoff(rng, { onside: false, kickerLeadingOrTied: leadingOrTied });
     let yard = result.yardLine + 25;
     if (yard > 100) yard = 100;
@@ -2493,19 +2492,9 @@ function aiAttemptPAT() {
     }
     game.clock -= ((typeof TIME_KEEPING_DATA !== 'undefined' && TIME_KEEPING_DATA) || TIME_KEEPING).extraPoint;
   } else {
-    // Extra point attempt using the place kicking table
-    let success;
-    try {
-      if (window.GS && window.GS.rules && window.GS.rules.PlaceKicking && typeof window.GS.rules.PlaceKicking.attemptPAT === 'function') {
-        const rng = () => game.rng();
-        success = window.GS.rules.PlaceKicking.attemptPAT(rng);
-      }
-    } catch (e) {}
-    if (typeof success === 'undefined') {
-      const roll = rollD6() + rollD6();
-      const row = PLACE_KICK_TABLE_DATA ? (PLACE_KICK_TABLE_DATA[roll] || {}) : (PLACE_KICK_TABLE[roll] || {});
-      success = row.PAT === 'G';
-    }
+    // Extra point attempt via TS module
+    const rng = () => game.rng();
+    const success = window.GS.rules.PlaceKicking.attemptPAT(rng);
     if (success) {
       game.score.ai += 1;
       log('AI extra point is good.');
