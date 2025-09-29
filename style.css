@@ -279,42 +279,7 @@ footer#footer {
   box-shadow: 0 0 10px rgba(255,230,0,0.6);
 }
 
-/* Play art overlay (SVG and elements) */
-.field-display svg.play-art {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-.playart-offense {
-  fill: #ffffff;
-  stroke: #001a33;
-  stroke-width: 2px;
-}
-.playart-defense line {
-  stroke: #cc3333;
-  stroke-width: 2px;
-}
-.playart-route {
-  fill: none;
-  stroke: #ffa500;
-  stroke-width: 2px;
-  stroke-dasharray: 4 4;
-  opacity: 0.7;
-}
-.playart-ball {
-  fill: #a0522d;
-  stroke: #5c2f1b;
-  stroke-width: 1px;
-}
-.playart-ball-trail {
-  fill: none;
-  stroke: #ffffff;
-  stroke-width: 1px;
-  opacity: 0.6;
-}
+/* Play animations removed (deferred as future feature) */
 
 /* Play controls container: houses the drop zone and special teams options */
 #play-controls {

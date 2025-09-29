@@ -104,7 +104,7 @@ The design faithfully adapts the *Avalon Hill Football Strategy* board game whil
 
 ### 6.1 Field & Presentation
 
-* Animated players/icons moving on field (instead of abstract LOS lines).
+* Animated players/icons moving on field (deferred): In a future phase, reintroduce SVG-based play animations for players and ball over the field (snap, handoff, pursuit, tackle, spot). This feature was removed from the current build to streamline scope and will return with a polished, deterministic implementation driven by JSON scripts.
 * Stadium crowd ambience, sound effects for plays.
 * Dynamic weather/lighting (rain, snow, day/night).
 

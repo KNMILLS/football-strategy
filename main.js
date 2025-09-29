@@ -3264,39 +3264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initField();
   // Load JSON data tables (non-fatal if missing)
   await loadDataTables();
-  try { if (typeof loadPlayArtData === 'function') await loadPlayArtData(); } catch {}
-  try { if (typeof loadPlayArtDataset === 'function') await loadPlayArtDataset(); } catch {}
-  // Load animator module and combo animation JSON (dev/test only, safe if missing)
-  try {
-    const mod = (window.GSAnimator && window.GSAnimator.initField) ? window.GSAnimator : await import('./scripts/gs_animator.js');
-    window.GSAnimator = mod;
-    if (mod && typeof mod.initField === 'function') {
-      mod.initField(document.getElementById('field-display'));
-    }
-    // Preload the example combo JSON and expose a quick dev runner
-    try {
-      let combo;
-      try {
-        const respExp = await fetch('./data/combo_ProStyle_PowerUpMiddle_InsideBlitz_scripts.expanded.json');
-        if (respExp.ok) combo = await respExp.json();
-      } catch {}
-      if (!combo) {
-        const resp = await fetch('./data/combo_ProStyle_PowerUpMiddle_InsideBlitz_scripts.json');
-        if (resp.ok) combo = await resp.json();
-      }
-      // If granular helper exists, generate 60 FPS granular timeline when hash includes #granular
-      if (combo && window.location.hash.includes('granular60') && typeof mod.makeGranularCombo === 'function') {
-        combo = mod.makeGranularCombo(combo, 1/60);
-      }
-      if (combo && typeof mod.loadCombo === 'function') mod.loadCombo(combo);
-      // Expose a quick test hook to animate a chart (A..J) at current ball spot
-      window.__GS_RUN_COMBO = (key = 'F', speed = 1) => {
-        try {
-          return mod.animate({ chartKey: key, dir: undefined, ballOnYard: game.ballOn, speed });
-        } catch (e) { console.warn('GS combo animate failed:', e); return null; }
-      };
-    } catch {}
-  } catch {}
+  
   // Normalise initial scoreboard labels to HOME/AWAY to match HUD updates.
   if (scoreDisplay) scoreDisplay.textContent = 'HOME 0 — AWAY 0';
   if (hudPossession) hudPossession.textContent = 'HOME';
@@ -4182,9 +4150,6 @@ if (devCheckbox) {
   const autoBtn = document.getElementById('run-auto-game');
   const copyBtn = document.getElementById('copy-log');
   const dlBtn = document.getElementById('download-debug');
-  const runComboBtn = document.getElementById('run-combo-script');
-  const comboSelect = document.getElementById('combo-script-select');
-  const exportGranularBtn = document.getElementById('export-granular-60');
   if (startBtn) {
     startBtn.addEventListener('click', () => {
       if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'click', id: 'start-test-game' });
@@ -4246,50 +4211,6 @@ if (devCheckbox) {
       const blob = new Blob([content], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = 'gridiron-full-debug.log'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
-    });
-  }
-  if (runComboBtn && comboSelect) {
-    runComboBtn.addEventListener('click', () => {
-      const key = comboSelect.value || 'F';
-      try {
-        if (window.GSAnimator && typeof window.GSAnimator.animate === 'function') {
-          window.GSAnimator.animate({ chartKey: key, dir: undefined, ballOnYard: game.ballOn, speed: 0.6 });
-        } else if (typeof window.__GS_RUN_COMBO === 'function') {
-          window.__GS_RUN_COMBO(key, 0.6);
-        }
-      } catch (e) {
-        console.warn('Run combo failed', e);
-      }
-    });
-  }
-  if (exportGranularBtn) {
-    exportGranularBtn.addEventListener('click', async () => {
-      try {
-        // Load base combo
-        let combo;
-        try {
-          const respExp = await fetch('./data/combo_ProStyle_PowerUpMiddle_InsideBlitz_scripts.expanded.json');
-          if (respExp.ok) combo = await respExp.json();
-        } catch {}
-        if (!combo) {
-          const resp = await fetch('./data/combo_ProStyle_PowerUpMiddle_InsideBlitz_scripts.json');
-          if (resp.ok) combo = await resp.json();
-        }
-        if (!combo) return alert('Combo JSON not found');
-        if (!window.GSAnimator || typeof window.GSAnimator.makeGranularCombo !== 'function') return alert('Animator helper missing');
-        const granular = window.GSAnimator.makeGranularCombo(combo, 1/60);
-        const blob = new Blob([JSON.stringify(granular, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'combo_ProStyle_PowerUpMiddle_InsideBlitz_scripts.expanded.json';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
-      } catch (e) {
-        console.warn('Export granular failed', e);
-        alert('Export failed (see console)');
-      }
     });
   }
 })();
