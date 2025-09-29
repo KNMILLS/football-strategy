@@ -705,15 +705,8 @@ const game = {
 };
 
 // ---------- UI elements ----------
-const hudQuarter = document.getElementById('quarter');
-const hudClock = document.getElementById('clock');
-const hudDownDistance = document.getElementById('downDistance');
-const hudBallSpot = document.getElementById('ballSpot');
-const hudPossession = document.getElementById('possession');
-const scoreDisplay = document.getElementById('score');
+// Legacy UI element references kept minimal; HUD/Log/Hand rendering moved to TS UI via EventBus
 const logElement = document.getElementById('log');
-const handElement = document.getElementById('hand');
-const cardPreview = document.getElementById('card-preview');
 // AI intent element is no longer used because we no longer display the AI's
 // chosen play. The corresponding HTML element has been removed from
 // index.html, so this constant is retained only for backward compatibility.
@@ -2514,7 +2507,13 @@ function attemptTwoPoint() {
   } else {
     log('Two‑point conversion fails.');
   }
-  setCurrentPlayResult('Two-point conversion ' + (logElement.textContent.endsWith('fails.\n') ? 'failed' : 'good'));
+  // Infer two-point success from the last log line if available
+  let twoPtSuccess = true;
+  try {
+    const t = (logElement && logElement.textContent) || '';
+    if (/fails\.$/m.test(t.trim())) twoPtSuccess = false;
+  } catch {}
+  setCurrentPlayResult('Two-point conversion ' + (twoPtSuccess ? 'good' : 'failed'));
   finishPAT();
   finalizeDebugPlay();
 }
@@ -3077,7 +3076,7 @@ function log(msg) {
 }
 
 function logClear() {
-  logElement.textContent = '';
+  try { if (logElement) logElement.textContent = ''; } catch {}
 }
 
 // Structured per-play debug logging for download
@@ -3177,9 +3176,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load JSON data tables (non-fatal if missing)
   await loadDataTables();
   
-  // Normalise initial scoreboard labels to HOME/AWAY to match HUD updates.
-  if (scoreDisplay) scoreDisplay.textContent = 'HOME 0 — AWAY 0';
-  if (hudPossession) hudPossession.textContent = 'HOME';
   updateHUD();
   // Emit initial snapshot for debug
   try {
@@ -4144,7 +4140,7 @@ if (devCheckbox) {
   if (copyBtn) {
     copyBtn.addEventListener('click', async () => {
       if (window.debug && window.debug.enabled) window.debug.event('ui', { action: 'click', id: 'copy-log' });
-      try { await navigator.clipboard.writeText(logElement.textContent || ''); alert('Log copied'); } catch {}
+      try { await navigator.clipboard.writeText((logElement && logElement.textContent) || ''); alert('Log copied'); } catch {}
     });
   }
   if (dlBtn) {
