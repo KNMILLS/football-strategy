@@ -1,6 +1,6 @@
 import type { RNG } from '../sim/RNG';
 
-export interface PenaltyInfo { on: 'offense' | 'defense'; yards: number }
+export interface PenaltyInfo { on: 'offense' | 'defense'; yards: number; firstDown?: boolean }
 
 export function maybePenalty(rng: RNG): PenaltyInfo | null {
   if (rng() < 0.1) {

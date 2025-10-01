@@ -46,7 +46,7 @@ export interface DiceResolutionResult {
   // Penalty information (if doubles 2-19)
   penalty?: {
     roll: number; // d10 roll result
-    penaltyInfo: PenaltyTable['entries'][number];
+    penaltyInfo: PenaltyTable['entries'][keyof PenaltyTable['entries']];
     options: {
       accept: () => void;
       decline: () => void;

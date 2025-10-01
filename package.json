@@ -14,7 +14,7 @@
     "test:integration:ci": "npm run test:integration:full",
     "test:watch": "nodemon --exec \"npm run test:integration\" --watch src --ext .ts,.js",
     "check:rules-cov": "node scripts/check-rules-coverage.mjs",
-    "ci": "npm run typecheck && npm run lint -- --max-warnings=0 && npm run test:cov && npm run test:integration:ci && npm run check:rules-cov",
+    "ci": "npm run typecheck && npm run lint -- --max-warnings=0 && npm run validate-tables && npm run test:cov && npm run test:integration:ci && npm run check:rules-cov",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview --port 5173",
@@ -23,6 +23,9 @@
     "format": "prettier -w .",
     "test:ui": "vitest --ui",
     "baseline": "node scripts/generate-baseline.mjs",
+    "validate-tables": "node scripts/validate-tables.mjs",
+    "validate-baseline": "node scripts/generate-deterministic-baseline.mjs",
+    "sim:matchup": "node scripts/sim-matchup.mjs",
     "prepare": "husky"
   },
   "keywords": [],

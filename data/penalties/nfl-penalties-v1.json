@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "entries": {
+    "1": {
+      "side": "defense",
+      "yards": 5,
+      "label": "Defensive Offsides"
+    },
+    "2": {
+      "side": "offense",
+      "yards": 5,
+      "label": "False Start"
+    },
+    "3": {
+      "side": "defense",
+      "yards": 10,
+      "auto_first_down": true,
+      "label": "Defensive Pass Interference"
+    },
+    "4": {
+      "side": "offense",
+      "yards": 10,
+      "override_play_result": true,
+      "label": "Offensive Holding"
+    },
+    "5": {
+      "side": "defense",
+      "yards": 15,
+      "auto_first_down": true,
+      "override_play_result": true,
+      "label": "Roughing the Passer"
+    },
+    "6": {
+      "side": "offense",
+      "yards": 15,
+      "loss_of_down": true,
+      "override_play_result": true,
+      "label": "Intentional Grounding"
+    },
+    "7": {
+      "side": "defense",
+      "yards": 5,
+      "label": "Defensive Holding"
+    },
+    "8": {
+      "side": "offense",
+      "yards": 10,
+      "label": "Offensive Pass Interference"
+    },
+    "9": {
+      "side": "defense",
+      "yards": 10,
+      "label": "Illegal Contact"
+    },
+    "10": {
+      "side": "offset",
+      "label": "Offsetting Penalties"
+    }
+  }
+}

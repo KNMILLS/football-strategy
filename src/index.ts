@@ -309,7 +309,13 @@ async function registerOptionalUI(): Promise<void> {
     './ui/PenaltyUI',
     './ui/VFX',
     './ui/SFX',
-    './qa/Harness'
+    './qa/Harness',
+    // Dice UI components (button-based card system for 2d20 dice engine)
+    './ui/dice/DiceUI',
+    './ui/dice/CardSelector',
+    './ui/dice/PenaltyModal',
+    './ui/dice/ResultDisplay',
+    './ui/dice/integration'
   ];
 
   // Load optional components in background

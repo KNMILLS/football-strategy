@@ -1,0 +1,70 @@
+{
+  "version": "1.0",
+  "entries": {
+    "1": {
+      "side": "offense",
+      "yards": -15,
+      "loss_of_down": true,
+      "override_play_result": false,
+      "label": "Offense: -15 yards + Loss of Down"
+    },
+    "2": {
+      "side": "offense",
+      "yards": -15,
+      "override_play_result": false,
+      "label": "Offense: -15 yards personal foul"
+    },
+    "3": {
+      "side": "offense",
+      "yards": -10,
+      "override_play_result": false,
+      "label": "Offense: -10 yards holding"
+    },
+    "4": {
+      "side": "offense",
+      "yards": -5,
+      "replay_down": true,
+      "override_play_result": true,
+      "label": "Offense: -5 yards false start, replay down"
+    },
+    "5": {
+      "side": "offset",
+      "replay_down": true,
+      "override_play_result": true,
+      "label": "Offsetting penalties, replay down"
+    },
+    "6": {
+      "side": "defense",
+      "yards": 5,
+      "replay_down": true,
+      "override_play_result": true,
+      "label": "Defense: +5 yards encroachment, replay down"
+    },
+    "7": {
+      "side": "defense",
+      "yards": 5,
+      "override_play_result": false,
+      "label": "Defense: +5 yards offside"
+    },
+    "8": {
+      "side": "defense",
+      "yards": 10,
+      "override_play_result": false,
+      "label": "Defense: +10 yards illegal use of hands"
+    },
+    "9": {
+      "side": "defense",
+      "yards": 10,
+      "auto_first_down": true,
+      "override_play_result": false,
+      "label": "Defense: +10 yards + auto first down"
+    },
+    "10": {
+      "side": "defense",
+      "yards": 15,
+      "auto_first_down": true,
+      "override_play_result": false,
+      "label": "Defense: +15 yards + auto first down"
+    }
+  }
+}

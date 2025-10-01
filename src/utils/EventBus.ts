@@ -67,6 +67,22 @@ export type EventMap = {
   'ui:choice.safetyFreeKick': { action: 'kickoff+25'|'puntFrom20' };
   // Penalty UI
   'ui:choice.penalty': { decision: 'accept'|'decline' };
+  // Dice UI events
+  'ui:playbookSelected': { playbook: string };
+  'ui:defensiveCardToggled': { cardId: string };
+  'ui:cardSelected': { cardId: string };
+  'ui:diceResult': { diceResult: { d1: number; d2: number; sum: number; isDoubles: boolean }; outcome: any };
+  'ui:resultDisplayShown': { result: any };
+  'ui:resultDisplayHidden': {};
+  'ui:penaltyOverride': { penaltyInfo: any; description: string };
+  'ui:possessionChanged': { isPlayerOffense: boolean };
+  'ui:gameReset': {};
+  'ui:diceUIReady': { config: any };
+  'ui:diceUIEvent': { event: any };
+  'ui:playbookStateChanged': { state: any };
+  'ui:defensiveStateChanged': { state: any };
+  'ui:penaltyStateChanged': { state: any };
+  'ui:resultStateChanged': { state: any };
   // QA/Dev harness
   'qa:startTestGame': {
     seed: number;

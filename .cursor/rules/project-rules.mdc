@@ -6,6 +6,8 @@ globs:
   - "scripts/**"
   - "data/**"
   - "assets/**"
+  - "docs/**"
+  - "prompts/**"
 alwaysApply: true
 ---
 ## Project Rules for Cursor and CI
@@ -13,67 +15,90 @@ alwaysApply: true
 These rules align Cursor AI edits with this repository's architecture, tests, and CI.
 
 ### Workflow
-- **Always run**: `npm run typecheck && npm run lint -- --max-warnings=0 && npm run test` before and after non-trivial edits.
-- Prefer small, isolated edits in a single module with matching tests.
-- Never edit `dist/**`, `coverage/**`, `artifacts/**`, or `node_modules/**`.
+- **Plan first**: Before changing code, output a brief bullet plan listing files to read, files to edit/create, and test additions. Then proceed.
+- **Run locally** before and after non-trivial edits:  
+  `npm run typecheck && npm run lint -- --max-warnings=0 && npm run test`
+- Prefer **small, isolated edits** in a single module with matching tests. Split big tasks into multiple commits.
+- Never edit or generate files under: `dist/**`, `coverage/**`, `artifacts/**`, `node_modules/**`.
+- Do **not** mass-rename/move files without explicit instruction and a migration plan.
+
+### Git & PR Hygiene
+- Create a feature branch per task using: `feat/<area>-<slug>` or `chore/<area>-<slug>`.
+- Use **Conventional Commits** (imperative, scoped):  
+  `feat(rules): add 2d20 resolver`, `fix(ui): modal focus trap`, `docs(gdd): update migration status`.
+- Open focused PRs (≤ ~500 LOC) with: summary, risk/rollback, test plan, and screenshots/logs where relevant.
 
 ### TypeScript & Determinism
-- Use strict types; avoid `any` and unsafe casts.
-- Never use `Math.random()`; inject RNG or use `src/sim/RNG.ts`.
-- Keep core rules under `src/rules/**` pure; no DOM/browser access.
-- Do not change `window.GS` public API without updating tests and `README.md`.
+- TS strict: avoid `any` and unsafe casts; prefer narrow types and discriminated unions.
+- **No `Math.random()`**. Use injected RNG or `src/sim/RNG.ts`. Seed RNG in tests.
+- Keep `src/rules/**` pure (no DOM, no timers, no I/O). Side-effects belong in flow/UI layers.
+- Don’t change the `window.GS` public API without updating tests and `README.md`.
 
 ### Imports & Structure
-- Respect facade/barrel boundaries (e.g., `src/flow/GameFlow.ts`, `src/data/loaders/**`, `src/ui/**`).
-- Prefer path resolution via `vite-tsconfig-paths`.
-- Enforce import hygiene: imports first, no duplicates, blank line after imports.
+- Respect facades/barrels (e.g., `src/flow/GameFlow.ts`, `src/data/loaders/**`, `src/ui/**`).
+- Use path resolution via `vite-tsconfig-paths`.
+- Import hygiene: group/std order, no duplicates, blank line after imports.
 
 ### Linting & Formatting
 - Follow `eslint.config.js` and Prettier. Fix all errors; avoid inline disables.
-- `console` allowed; `debugger` forbidden; allow loop constants per config.
+- `console` allowed for debug logs; `debugger` forbidden.
 - Remove unused imports/variables.
 
 ### Testing Policy (Vitest)
-- jsdom environment with coverage thresholds (lines/functions/statements ≥ 70%, branches ≥ 60%).
-- When editing `src/rules/**`, `src/flow/**`, `src/ai/**`, `src/sim/**`, add/adjust tests to keep thresholds.
-- Do not weaken thresholds; only raise when adding significant tests.
-- Golden tests: update via `npm run baseline` only when deterministic output changes are intentional.
-- Integration/runtime watchdog tests must remain green (guard against black screens by asserting critical DOM presence).
+- `jsdom` env; coverage thresholds: lines/funcs/stmts ≥ 70%, branches ≥ 60%.
+- When editing `src/{rules,flow,ai,sim}/**`, add/adjust tests to maintain thresholds.
+- **Deterministic tests** only (seeded RNG). No real network; stub `fetch`.
+- Golden tests: update via `npm run baseline` only for intentional, reviewed changes.
+- Runtime watchdog/integration tests must stay green (assert critical DOM presence; no “black screen”).
 
-### Data & Schemas
-- JSON lives in `data/**` and is fetched from `/data/...` at runtime.
-- Maintain Zod schemas in `src/data/schemas/**`; update loaders and tests when evolving tables.
-- In tests, stub `fetch` deterministically; avoid real network.
+### Data & Schemas (Dice Engine)
+- All matchup tables live in `data/**` and load via `src/data/loaders/**`.
+- Zod schemas in `src/data/schemas/**`; update loaders + tests when evolving tables.
+- **Enforce new engine constraints** in schemas & tests:  
+  - Tables map **sums 3..39 only** (2 & 40 are doubles-only; disallow entries for them).  
+  - **Turnover band includes 3–5** at minimum.  
+  - **Penalty doubles 2–19** route to a **10-slot** penalty table; **4/5/6 are forced overrides** (ignore play result).  
+  - `clock` ∈ {"10","20","30"}; `oob` is boolean.  
+  - **Field-position clamp**: yards never exceed remaining field; safeties/goal-line cases covered.
 
 ### UI & Accessibility
-- Preserve DOM IDs, text, and ARIA roles used by tests (`#log[role="log"]`, `aria-live`, focus rules).
-- Keep all interactive controls keyboard operable; use `:focus-visible`.
-- Avoid UI changes that delay or remove critical DOM (`#scoreboard`, `#field-display`, `#log`).
+- Preserve DOM IDs, text, and ARIA roles used by tests (`#scoreboard`, `#field-display`, `#log[role="log"]`, live regions).
+- All interactive controls keyboard-operable; implement `:focus-visible` and modal **focus trap**.
+- Avoid changes that delay/remove critical DOM during load. Keep first meaningful paint stable.
 
 ### Performance & Flow
 - Favor event-driven flows via `EventBus`; avoid nondeterministic timers/races.
 - Keep control flow simple; avoid deep nesting and hidden side effects.
+- **AI EV budget**: EV computations must run within 100ms under CI; if exceeded, fall back to a reduced sample or cached EVs.
 
 ### Build & Dev
-- Use Vite dev server on port 5173 (`npm run dev`); avoid custom servers.
+- Use Vite dev server on port 5173 (`npm run dev`); no custom servers.
 - Keep `vite.config.ts` minimal; prefer plugins over ad-hoc bundler logic.
 
 ### CSS & Assets
 - Do not rename/remove selectors/IDs referenced by UI/tests.
-- Place static assets under `assets/**`. Do not import from `dist/**`.
+- Place static assets under `assets/**`. Never import from `dist/**`.
 
 ### Error Handling
-- Use `src/ui/ErrorBoundary.ts` to surface errors; do not silently swallow exceptions.
+- Use `src/ui/ErrorBoundary.ts` to surface errors; no silent catches.
+- Log unexpected exceptions to the dev console with contextual info (no secrets).
 
-### Commit & PR Checklist
-- Run: `npm run ci` (typecheck, lint, coverage, integration, rules coverage) before pushing.
-- Summarize behavioral changes and attach updated baselines if outputs changed intentionally.
-- Update `README.md`/`DATA_SCHEMA.md` when APIs/tables evolve.
+### Docs & Protected Files
+- Treat `docs/**`, `prompts/**`, and the **GDD** as protected: only update them when a prompt explicitly requires it.
+- When the **GDD** changes, add a short “Migration Status” note and link to related PRs.
+
+### Feature Flags (Migration Safety)
+- The dice engine must be **feature-flagged** alongside the legacy resolver until removal is approved.
+- Provide a settings or ENV switch to toggle engines; tests must run against both where applicable.
+
+### Commit & PR Checklist (pre-push)
+- `npm run ci` (typecheck, lint, unit/integration, coverage, validation).
+- Summarize behavioral changes; attach updated baselines when applicable.
+- Update `README.md` / `DATA_SCHEMA.md` if APIs/tables evolve.
 
 ### Quick Commands
-- Lint/typecheck/tests: `npm run typecheck && npm run lint -- --max-warnings=0 && npm run test`
+- Lint/typecheck/tests:  
+  `npm run typecheck && npm run lint -- --max-warnings=0 && npm run test`
 - Full CI parity: `npm run ci`
 - Integration suite: `npm run test:integration` (or `:full` in CI)
 - Update goldens intentionally: `npm run baseline`
-
-

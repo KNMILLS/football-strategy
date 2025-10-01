@@ -11,6 +11,8 @@ export { fetchOffenseCharts } from './offenseCharts';
 export { fetchPlaceKicking } from './placeKicking';
 export { fetchTimeKeeping } from './timeKeeping';
 export { fetchLongGain } from './longGain';
+export { fetchMatchupTable, fetchMatchupTableByCards } from './matchupTables';
+export { fetchPenaltyTable, fetchPenaltyTableByName } from './penaltyTables';
 
 export { clearTablesCache } from './http';
 

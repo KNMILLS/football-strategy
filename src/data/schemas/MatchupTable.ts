@@ -7,9 +7,9 @@ export const DiceOutcomeSchema = z.object({
   tags: z.array(z.string()).optional(),
   // Optional fields for special outcomes
   turnover: z.object({
-    type: z.enum(['INT', 'FUMBLE']),
-    return_yards: z.number().int().optional(),
-    return_to: z.enum(['LOS', 'ENDZONE']).optional(),
+    type: z.enum(['INT', 'FUM']),
+    return_yards: z.number().int(),
+    return_to: z.enum(['LOS']),
   }).optional(),
   oob: z.boolean().optional(),
 });
@@ -44,94 +44,130 @@ export const MatchupTableSchema = z.object({
     risk_profile: z.enum(['low', 'medium', 'high']),
     explosive_start_sum: z.number().int().min(20).max(39),
   }),
+}).refine((data) => {
+  // GDD requirement: Turnover band includes 3–5 at minimum
+  const entries3to5 = ['3', '4', '5'].every(key => key in data.entries);
+  if (!entries3to5) {
+    return false;
+  }
+
+  // GDD requirement: Field-position clamp - yards never exceed remaining field
+  // This is enforced at runtime by the game engine, but we can validate basic constraints
+  for (const [sum, outcome] of Object.entries(data.entries)) {
+    const sumNum = parseInt(sum);
+    // Turnover outcomes should have return_yards if specified
+    if (outcome.turnover) {
+      if (outcome.turnover.return_yards !== undefined && outcome.turnover.return_yards < 0) {
+        return false; // Return yards cannot be negative
+      }
+      if (outcome.turnover.return_to && outcome.turnover.return_to !== 'LOS') {
+        return false; // Only LOS returns are supported
+      }
+    }
+  }
+
+  return true;
+}, {
+  message: "Table does not meet GDD requirements: must include entries 3-5 for turnover band, return yards must be non-negative, and return_to must be 'LOS'",
 });
 
 // Schema for penalty table (10 slots for d10 rolls)
 export const PenaltyTableSchema = z.object({
   version: z.string(),
-  entries: z.tuple([
+  entries: z.object({
     // 1-10 penalty outcomes
-    z.object({
-      side: z.enum(['offense', 'defense']),
-      yards: z.number().int(),
-      auto_first: z.boolean().optional(),
+    '1': z.object({
+      side: z.enum(['offense', 'defense', 'offset']),
+      yards: z.number().int().optional(),
+      auto_first_down: z.boolean().optional(),
       loss_of_down: z.boolean().optional(),
-      replay: z.boolean().optional(),
-      description: z.string(),
+      replay_down: z.boolean().optional(),
+      override_play_result: z.boolean().optional(),
+      label: z.string(),
     }),
-    z.object({
-      side: z.enum(['offense', 'defense']),
-      yards: z.number().int(),
-      auto_first: z.boolean().optional(),
+    '2': z.object({
+      side: z.enum(['offense', 'defense', 'offset']),
+      yards: z.number().int().optional(),
+      auto_first_down: z.boolean().optional(),
       loss_of_down: z.boolean().optional(),
-      replay: z.boolean().optional(),
-      description: z.string(),
+      replay_down: z.boolean().optional(),
+      override_play_result: z.boolean().optional(),
+      label: z.string(),
     }),
-    z.object({
-      side: z.enum(['offense', 'defense']),
-      yards: z.number().int(),
-      auto_first: z.boolean().optional(),
+    '3': z.object({
+      side: z.enum(['offense', 'defense', 'offset']),
+      yards: z.number().int().optional(),
+      auto_first_down: z.boolean().optional(),
       loss_of_down: z.boolean().optional(),
-      replay: z.boolean().optional(),
-      description: z.string(),
+      replay_down: z.boolean().optional(),
+      override_play_result: z.boolean().optional(),
+      label: z.string(),
     }),
-    z.object({
-      side: z.enum(['offense', 'defense']),
-      yards: z.number().int(),
-      auto_first: z.boolean().optional(),
+    // Slots 4, 5, 6 are forced overrides (ignore play result)
+    '4': z.object({
+      side: z.enum(['offense', 'defense', 'offset']),
+      yards: z.number().int().optional(),
+      auto_first_down: z.boolean().optional(),
       loss_of_down: z.boolean().optional(),
-      replay: z.boolean().optional(),
-      description: z.string(),
+      replay_down: z.boolean().optional(),
+      override_play_result: z.literal(true), // Must be true for forced overrides
+      label: z.string(),
     }),
-    z.object({
-      side: z.enum(['offense', 'defense']),
-      yards: z.number().int(),
-      auto_first: z.boolean().optional(),
+    '5': z.object({
+      side: z.enum(['offense', 'defense', 'offset']),
+      yards: z.number().int().optional(),
+      auto_first_down: z.boolean().optional(),
       loss_of_down: z.boolean().optional(),
-      replay: z.boolean().optional(),
-      description: z.string(),
+      replay_down: z.boolean().optional(),
+      override_play_result: z.literal(true), // Must be true for forced overrides
+      label: z.string(),
     }),
-    z.object({
-      side: z.enum(['offense', 'defense']),
-      yards: z.number().int(),
-      auto_first: z.boolean().optional(),
+    '6': z.object({
+      side: z.enum(['offense', 'defense', 'offset']),
+      yards: z.number().int().optional(),
+      auto_first_down: z.boolean().optional(),
       loss_of_down: z.boolean().optional(),
-      replay: z.boolean().optional(),
-      description: z.string(),
+      replay_down: z.boolean().optional(),
+      override_play_result: z.literal(true), // Must be true for forced overrides
+      label: z.string(),
     }),
-    z.object({
-      side: z.enum(['offense', 'defense']),
-      yards: z.number().int(),
-      auto_first: z.boolean().optional(),
+    '7': z.object({
+      side: z.enum(['offense', 'defense', 'offset']),
+      yards: z.number().int().optional(),
+      auto_first_down: z.boolean().optional(),
       loss_of_down: z.boolean().optional(),
-      replay: z.boolean().optional(),
-      description: z.string(),
+      replay_down: z.boolean().optional(),
+      override_play_result: z.boolean().optional(),
+      label: z.string(),
     }),
-    z.object({
-      side: z.enum(['offense', 'defense']),
-      yards: z.number().int(),
-      auto_first: z.boolean().optional(),
+    '8': z.object({
+      side: z.enum(['offense', 'defense', 'offset']),
+      yards: z.number().int().optional(),
+      auto_first_down: z.boolean().optional(),
       loss_of_down: z.boolean().optional(),
-      replay: z.boolean().optional(),
-      description: z.string(),
+      replay_down: z.boolean().optional(),
+      override_play_result: z.boolean().optional(),
+      label: z.string(),
     }),
-    z.object({
-      side: z.enum(['offense', 'defense']),
-      yards: z.number().int(),
-      auto_first: z.boolean().optional(),
+    '9': z.object({
+      side: z.enum(['offense', 'defense', 'offset']),
+      yards: z.number().int().optional(),
+      auto_first_down: z.boolean().optional(),
       loss_of_down: z.boolean().optional(),
-      replay: z.boolean().optional(),
-      description: z.string(),
+      replay_down: z.boolean().optional(),
+      override_play_result: z.boolean().optional(),
+      label: z.string(),
     }),
-    z.object({
-      side: z.enum(['offense', 'defense']),
-      yards: z.number().int(),
-      auto_first: z.boolean().optional(),
+    '10': z.object({
+      side: z.enum(['offense', 'defense', 'offset']),
+      yards: z.number().int().optional(),
+      auto_first_down: z.boolean().optional(),
       loss_of_down: z.boolean().optional(),
-      replay: z.boolean().optional(),
-      description: z.string(),
+      replay_down: z.boolean().optional(),
+      override_play_result: z.boolean().optional(),
+      label: z.string(),
     }),
-  ]),
+  }),
 });
 
 // Type exports
