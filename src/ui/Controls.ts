@@ -10,37 +10,61 @@ export function registerControls(bus: EventBus): void {
   if (registered) return;
   registered = true;
 
-  const newGameBtn = $('new-game') as HTMLButtonElement | null;
-  const deckSelect = $('deck-select') as HTMLSelectElement | null;
-  const opponentSelect = $('opponent-select') as HTMLSelectElement | null;
-  const devModeCheckbox = $('dev-mode') as HTMLInputElement | null;
-  const themeSelect = $('theme-select') as HTMLSelectElement | null;
+  console.log('Controls component registering...');
 
-  const patOptions = $('pat-options');
-  const patKickBtn = $('pat-kick') as HTMLButtonElement | null;
-  const patTwoBtn = $('pat-two') as HTMLButtonElement | null;
+  // Wait for DOM elements to be available
+  const waitForElements = () => {
+    const newGameBtn = $('new-game') as HTMLButtonElement | null;
+    const deckSelect = $('deck-select') as HTMLSelectElement | null;
+    const opponentSelect = $('opponent-select') as HTMLSelectElement | null;
+    const devModeCheckbox = (document.getElementById('dev-mode') || document.getElementById('dev-mode-checkbox')) as HTMLInputElement | null;
+    const themeSelect = $('theme-select') as HTMLSelectElement | null;
 
-  const fgOptions = $('fg-options');
-  const fgKickBtn = $('fg-kick') as HTMLButtonElement | null;
+    const patOptions = $('pat-options');
+    const patKickBtn = (document.getElementById('pat-kick') || document.getElementById('kick-pat')) as HTMLButtonElement | null;
+    const patTwoBtn = (document.getElementById('pat-two') || document.getElementById('go-two')) as HTMLButtonElement | null;
 
-  // Initialize dev-mode from localStorage if present
-  if (devModeCheckbox) {
-    try {
-      const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('gs_dev_mode') : null;
-      if (stored === '1' || stored === '0') {
-        devModeCheckbox.checked = stored === '1';
-      }
-    } catch {}
-  }
+    const fgOptions = $('fg-options');
+    const fgKickBtn = (document.getElementById('fg-kick') || document.getElementById('kick-fg')) as HTMLButtonElement | null;
 
-  // Wire New Game
-  if (newGameBtn) {
-    newGameBtn.addEventListener('click', () => {
-      const deckName = deckSelect && deckSelect.value ? deckSelect.value : '';
-      const opponentName = opponentSelect && opponentSelect.value ? opponentSelect.value : '';
-      bus.emit('ui:newGame', { deckName, opponentName });
+    console.log('Controls elements found:', {
+      newGameBtn: !!newGameBtn,
+      deckSelect: !!deckSelect,
+      opponentSelect: !!opponentSelect,
+      devModeCheckbox: !!devModeCheckbox
     });
-  }
+
+    if (!newGameBtn) {
+      console.log('Controls elements not found, waiting...');
+      setTimeout(waitForElements, 100);
+      return;
+    }
+
+    console.log('Controls elements found, setting up event handlers...');
+
+    // Initialize dev-mode from localStorage if present
+    if (devModeCheckbox) {
+      try {
+        const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('gs_dev_mode') : null;
+        if (stored === '1' || stored === '0') {
+          devModeCheckbox.checked = stored === '1';
+        }
+      } catch {}
+    }
+
+    // Wire New Game
+    if (newGameBtn) {
+      console.log('Setting up new game button event handler');
+      newGameBtn.addEventListener('click', () => {
+        console.log('New game button clicked');
+        const deckName = deckSelect && deckSelect.value ? deckSelect.value : '';
+        const opponentName = opponentSelect && opponentSelect.value ? opponentSelect.value : '';
+        console.log('Emitting new game event:', { deckName, opponentName });
+        bus.emit('ui:newGame', { deckName, opponentName });
+      });
+    } else {
+      console.error('New game button not found!');
+    }
 
   // Wire Dev Mode
   if (devModeCheckbox) {
@@ -112,20 +136,24 @@ export function registerControls(bus: EventBus): void {
     });
   }
 
-  // Subscribe to controls:update to toggle visibility/enabled state
-  bus.on('controls:update', (p) => {
-    if (patOptions) (patOptions as any).hidden = !(p.awaitingPAT === true);
-    if (fgOptions) (fgOptions as any).hidden = !(p.showFG === true);
-    const enabled = p.enabled !== false;
-    if (patKickBtn) patKickBtn.disabled = !enabled;
-    if (patTwoBtn) patTwoBtn.disabled = !enabled;
-    if (fgKickBtn) fgKickBtn.disabled = !enabled;
-    if (p.hints) {
-      if (patKickBtn && p.hints.patKickHint) patKickBtn.title = p.hints.patKickHint;
-      if (patTwoBtn && p.hints.patTwoHint) patTwoBtn.title = p.hints.patTwoHint;
-      if (fgKickBtn && p.hints.fgHint) fgKickBtn.title = p.hints.fgHint;
-    }
-  });
+    // Subscribe to controls:update to toggle visibility/enabled state
+    bus.on('controls:update', (p) => {
+      if (patOptions) (patOptions as any).hidden = !(p.awaitingPAT === true);
+      if (fgOptions) (fgOptions as any).hidden = !(p.showFG === true);
+      const enabled = p.enabled !== false;
+      if (patKickBtn) patKickBtn.disabled = !enabled;
+      if (patTwoBtn) patTwoBtn.disabled = !enabled;
+      if (fgKickBtn) fgKickBtn.disabled = !enabled;
+      if (p.hints) {
+        if (patKickBtn && p.hints.patKickHint) patKickBtn.title = p.hints.patKickHint;
+        if (patTwoBtn && p.hints.patTwoHint) patTwoBtn.title = p.hints.patTwoHint;
+        if (fgKickBtn && p.hints.fgHint) fgKickBtn.title = p.hints.fgHint;
+      }
+    });
+  };
+
+  // Start waiting for elements
+  waitForElements();
 }
 
 

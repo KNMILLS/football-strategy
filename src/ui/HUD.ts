@@ -10,16 +10,37 @@ function yardToPercent(absYard: number): number {
 }
 
 export function registerHUD(bus: EventBus): void {
-  const scoreDisplay = $('score');
-  const hudQuarter = $('quarter');
-  const hudClock = $('clock');
-  const hudDownDistance = $('downDistance');
-  const hudBallSpot = $('ballSpot');
-  const hudPossession = $('possession');
+  console.log('HUD component registering...');
 
-  const downNames = ['1st', '2nd', '3rd', '4th'];
+  // Wait for DOM elements to be available
+  const waitForElements = () => {
+    const scoreDisplay = $('score');
+    const hudQuarter = $('quarter');
+    const hudClock = $('clock');
+    const hudDownDistance = $('downDistance');
+    const hudBallSpot = $('ballSpot');
+    const hudPossession = $('possession');
 
-  bus.on('hudUpdate', (p: HudUpdatePayload) => {
+    console.log('HUD elements found:', {
+      scoreDisplay: !!scoreDisplay,
+      hudQuarter: !!hudQuarter,
+      hudClock: !!hudClock,
+      hudDownDistance: !!hudDownDistance,
+      hudBallSpot: !!hudBallSpot,
+      hudPossession: !!hudPossession
+    });
+
+    if (!scoreDisplay || !hudQuarter || !hudClock || !hudDownDistance || !hudBallSpot || !hudPossession) {
+      console.log('HUD elements not found, waiting...');
+      setTimeout(waitForElements, 100);
+      return;
+    }
+
+    console.log('HUD elements found, setting up event listeners...');
+
+    const downNames = ['1st', '2nd', '3rd', '4th'];
+
+    bus.on('hudUpdate', (p: HudUpdatePayload) => {
     // Query overlay elements at event time to allow late construction
     const scrimmageLineEl = typeof document !== 'undefined' ? document.querySelector('.scrimmage-line') as HTMLElement | null : null;
     const firstDownLineEl = typeof document !== 'undefined' ? document.querySelector('.firstdown-line') as HTMLElement | null : null;
@@ -86,7 +107,11 @@ export function registerHUD(bus: EventBus): void {
       (scrimmageLineEl as HTMLElement).style.display = 'block';
       (firstDownLineEl as HTMLElement).style.display = 'block';
     }
-  });
+    });
+  };
+
+  // Start waiting for elements
+  waitForElements();
 }
 
 

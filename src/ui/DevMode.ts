@@ -26,7 +26,7 @@ export function registerDevMode(bus: EventBus): void {
     if (!panel || typeof document === 'undefined') return null;
     const row = document.createElement('div'); row.className = 'control-row';
     const label = document.createElement('label'); label.htmlFor = 'test-seed'; label.textContent = 'Seed:';
-    const input = document.createElement('input'); input.type = 'number'; (input as any).min = '1'; input.value = '12345'; input.id = 'test-seed';
+    const input = document.createElement('input'); input.type = 'number'; (input as any).min = '1'; input.placeholder = 'random'; input.value = ''; input.id = 'test-seed';
     row.appendChild(label); row.appendChild(input);
     panel.insertBefore(row, panel.firstChild);
     return input as HTMLInputElement;
@@ -36,6 +36,28 @@ export function registerDevMode(bus: EventBus): void {
   const runAutoBtn = $('run-auto-game') as HTMLButtonElement | null;
   const copyLogBtn = $('copy-log') as HTMLButtonElement | null;
   const downloadBtn = $('download-debug') as HTMLButtonElement | null;
+  // Create Validated Batch controls dynamically if panel exists
+  const validatedBatch = ((): { container: HTMLElement | null; count: HTMLInputElement | null; chunk: HTMLInputElement | null; pat: HTMLSelectElement | null; run: HTMLButtonElement | null } => {
+    if (!panel || typeof document === 'undefined') return { container: null, count: null, chunk: null, pat: null, run: null };
+    const container = document.createElement('div'); container.className = 'control-row';
+    const label = document.createElement('label'); label.textContent = 'Validated Batch:';
+    label.style.marginRight = '8px';
+    const count = document.createElement('input'); count.type = 'number'; (count as any).min = '1'; (count as any).max = '10000'; count.value = '100'; count.id = 'validated-batch-count'; count.title = 'Number of games';
+    count.style.width = '6rem'; count.style.marginRight = '8px';
+    const chunk = document.createElement('input'); chunk.type = 'number'; (chunk as any).min = '1'; (chunk as any).max = '1000'; chunk.value = '50'; chunk.id = 'validated-batch-chunk'; chunk.title = 'Chunk size';
+    chunk.style.width = '5rem'; chunk.style.marginRight = '8px';
+    const pat = document.createElement('select'); pat.id = 'validated-batch-pat'; pat.title = 'Player PAT policy';
+    for (const v of ['auto','kick','two']) { const o = document.createElement('option'); o.value = v; o.textContent = v; pat.appendChild(o); }
+    pat.style.marginRight = '8px';
+    const run = document.createElement('button'); run.id = 'run-validated-batch'; run.textContent = 'Run Validated Batch';
+    container.appendChild(label);
+    container.appendChild(count);
+    container.appendChild(chunk);
+    container.appendChild(pat);
+    container.appendChild(run);
+    panel.appendChild(container);
+    return { container, count, chunk, pat, run };
+  })();
 
   // Initialize dev mode from localStorage and emit
   let devEnabled = false;
@@ -44,21 +66,34 @@ export function registerDevMode(bus: EventBus): void {
     if (stored === '1') devEnabled = true;
   } catch {}
   if (devToggle) devToggle.checked = devEnabled;
-  if (panel) (panel as any).hidden = !devEnabled;
+  if (panel) {
+    (panel as any).hidden = !devEnabled;
+    (panel as HTMLElement).classList.toggle('hidden', !devEnabled);
+    (panel as HTMLElement).setAttribute('aria-hidden', (!devEnabled).toString());
+  }
   bus.emit('ui:devModeChanged', { enabled: devEnabled });
 
   if (devToggle) {
     devToggle.addEventListener('change', () => {
       const enabled = !!devToggle.checked;
       try { if (typeof localStorage !== 'undefined') localStorage.setItem('gs_dev_mode', enabled ? '1' : '0'); } catch {}
-      if (panel) (panel as any).hidden = !enabled;
+      if (panel) {
+        (panel as any).hidden = !enabled;
+        (panel as HTMLElement).classList.toggle('hidden', !enabled);
+        (panel as HTMLElement).setAttribute('aria-hidden', (!enabled).toString());
+      }
       bus.emit('ui:devModeChanged', { enabled });
     });
   }
 
   // Sync visibility on devModeChanged (idempotent)
   bus.on('ui:devModeChanged', ({ enabled }) => {
-    if (panel) (panel as any).hidden = !enabled;
+    try { (globalThis as any).GS = (globalThis as any).GS || {}; (globalThis as any).GS.__devMode = { enabled: !!enabled }; } catch {}
+    if (panel) {
+      (panel as any).hidden = !enabled;
+      (panel as HTMLElement).classList.toggle('hidden', !enabled);
+      (panel as HTMLElement).setAttribute('aria-hidden', (!enabled).toString());
+    }
     if (devToggle) devToggle.checked = !!enabled;
   });
 
@@ -85,7 +120,8 @@ export function registerDevMode(bus: EventBus): void {
 
   if (startTestBtn) {
     startTestBtn.addEventListener('click', () => {
-      const seed = seedInput ? parseInt(seedInput.value || '12345', 10) : 12345;
+      const provided = seedInput ? parseInt(seedInput.value || '0', 10) : 0;
+      const seed = (isFinite(provided) && provided > 0) ? provided : Math.floor(Math.random() * 1e9);
       const playerDeckVal = playerDeck ? playerDeck.value : 'Pro Style';
       const aiDeckVal = aiDeck ? aiDeck.value : 'Pro Style';
       const startingPossession = (possession ? possession.value : 'player') as 'player'|'ai';
@@ -100,12 +136,12 @@ export function registerDevMode(bus: EventBus): void {
 
   if (runAutoBtn) {
     runAutoBtn.addEventListener('click', () => {
-      const seed = seedInput ? parseInt(seedInput.value || '0', 10) : 0;
-      if (seed > 0) {
-        bus.emit('qa:runAutoGame', { seed, playerPAT: 'auto' } as any);
+      const provided = seedInput ? parseInt(seedInput.value || '0', 10) : 0;
+      if (isFinite(provided) && provided > 0) {
+        bus.emit('qa:runAutoGame', { seed: provided, playerPAT: 'auto' } as any);
       } else {
-        const seeds = Array.from({ length: 100 }, (_, i) => i + 1);
-        bus.emit('qa:runBatch', { seeds, playerPAT: 'auto' } as any);
+        const seed = Math.floor(Math.random() * 1e9);
+        bus.emit('qa:runAutoGame', { seed, playerPAT: 'auto' } as any);
       }
     });
   }
@@ -119,6 +155,18 @@ export function registerDevMode(bus: EventBus): void {
   if (downloadBtn) {
     downloadBtn.addEventListener('click', () => {
       bus.emit('qa:downloadDebug', {} as any);
+    });
+  }
+
+  if (validatedBatch.run && validatedBatch.count && validatedBatch.pat) {
+    validatedBatch.run.addEventListener('click', () => {
+      const n = parseInt(validatedBatch.count!.value || '100', 10);
+      const count = (isFinite(n) && n > 0) ? Math.min(n, 10000) : 100;
+      const pat = (validatedBatch.pat!.value === 'kick' || validatedBatch.pat!.value === 'two') ? validatedBatch.pat!.value as any : 'auto';
+      const seeds = Array.from({ length: count }, (_, i) => i + 1);
+      const c = validatedBatch.chunk ? parseInt(validatedBatch.chunk.value || '50', 10) : 50;
+      const chunkSize = (isFinite(c) && c > 0) ? Math.min(c, 1000) : 50;
+      bus.emit('qa:runValidatedBatch', { seeds, playerPAT: pat, chunkSize } as any);
     });
   }
 

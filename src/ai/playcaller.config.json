@@ -1,0 +1,11 @@
+{
+  "aggressiveness_offense": 0.6,
+  "aggressiveness_defense": 0.55,
+  "trick_play_rate": 0.02,
+  "blitz_rate_base": 0.2,
+  "deception_bias": 0.3,
+  "tempo_preference": "normal",
+  "risk_tolerance_late": 0.65
+}
+
+

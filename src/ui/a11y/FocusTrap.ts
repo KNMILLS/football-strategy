@@ -23,16 +23,17 @@ export function activateFocusTrap(container: HTMLElement): FocusTrapHandle {
       e.preventDefault();
       return;
     }
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
+		const first = focusables[0];
+		const last = focusables[focusables.length - 1];
+		if (!first || !last) return;
     const active = document.activeElement as HTMLElement | null;
     if (e.shiftKey) {
-      if (!active || active === first || !container.contains(active)) {
+			if (!active || active === first || !container.contains(active)) {
         last.focus();
         e.preventDefault();
       }
     } else {
-      if (!active || active === last || !container.contains(active)) {
+			if (!active || active === last || !container.contains(active)) {
         first.focus();
         e.preventDefault();
       }

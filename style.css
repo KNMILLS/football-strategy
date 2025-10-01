@@ -231,6 +231,12 @@ footer#footer {
   z-index: 5;
 }
 
+/* Defense hand tint when AI has possession */
+.hand.disabled .card {
+  filter: hue-rotate(180deg) saturate(0.8) brightness(0.9);
+  outline: 2px solid rgba(255, 255, 255, 0.15);
+}
+
 
 /* Field display occupies the majority of the play area and shows a stylised
    football field. The background uses alternating dark greens to suggest
@@ -257,7 +263,7 @@ footer#footer {
 
   /* Place the field underneath the hand/cards. The footer and hand have
      higher z-indices so that hovered cards never go behind the field. */
-  z-index: 1;
+  z-index: 2;
 }
 
 
@@ -278,6 +284,8 @@ footer#footer {
   width: 3px;
   background: rgba(0, 200, 255, 0.95);
   box-shadow: 0 0 10px rgba(0,200,255,0.7);
+  /* Ensure line appears above midfield logo */
+  z-index: 10;
 }
 
 /* Yellow line for the line to gain */
@@ -288,6 +296,8 @@ footer#footer {
   width: 3px;
   background: rgba(255, 230, 0, 0.95);
   box-shadow: 0 0 10px rgba(255,230,0,0.6);
+  /* Ensure line appears above midfield logo */
+  z-index: 10;
 }
 
 /* Play animations removed (deferred as future feature) */
@@ -462,8 +472,7 @@ footer#footer {
   transform: translate(-50%, -50%) rotate(90deg);
 }
 
-/* Midfield logo: centred element representing a logo at midfield. This
-   element may contain text or an image background set via JS. */
+/* Midfield logo: centred element representing the NFL shield logo at midfield. */
 .field-display .mid-logo {
   position: absolute;
   top: 50%;
@@ -475,11 +484,10 @@ footer#footer {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: radial-gradient(circle at center, #004080 0%, #001f3f 70%);
-  color: #ffeb3b;
-  font-size: 1.2rem;
-  font-weight: bold;
+  background: url('nfl-shield-logo.png') center/contain no-repeat;
   pointer-events: none;
+  /* Ensure logo is below field lines and markers */
+  z-index: 1;
 }
 
 /* Red zone overlay: highlights the last 20 yards near each end zone. It is

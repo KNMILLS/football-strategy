@@ -1,1 +1,0 @@
-const c={1:"+50 and (+10 x 1D6)",2:"+50",3:"+45",4:"+40",5:"+35",6:"+30"};function o(n){return Math.floor(n()*6)+1}function s(n){const e=o(n),t=c[e];if(!t)return 30;if(t.includes("and"))return 50+o(n)*10;const r=t.match(/\+(\d+)/);return r&&r[1]?parseInt(r[1],10):30}export{c as LONG_GAIN_TABLE,s as resolveLongGain,o as rollD6};

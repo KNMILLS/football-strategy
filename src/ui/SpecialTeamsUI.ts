@@ -38,13 +38,13 @@ class ModalManager {
     backdrop.className = 'gs-modal__backdrop';
     backdrop.tabIndex = -1 as any;
 
-    const dialog = document.createElement('div');
+		const dialog = document.createElement('div');
     dialog.className = 'gs-modal__dialog';
     dialog.setAttribute('role', 'dialog');
     dialog.setAttribute('aria-modal', 'true');
     dialog.setAttribute('data-dialog-id', id);
 
-    const titleId = `gs-modal-title-${Date.now()}`;
+		const titleId = `gs-modal-title-${Date.now()}`;
     dialog.setAttribute('aria-labelledby', titleId);
 
     const wrap = document.createElement('div');
@@ -60,7 +60,7 @@ class ModalManager {
     const btnRow = document.createElement('div');
     btnRow.className = 'gs-modal__buttons';
 
-    const buttons: HTMLButtonElement[] = [];
+		const buttons: HTMLButtonElement[] = [];
     for (const b of opts.buttons) {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -83,35 +83,39 @@ class ModalManager {
     root.appendChild(dialog);
     this.activeDialog = dialog;
 
-    // Focus management
-    if (buttons.length > 0) buttons[0].focus();
+		// Focus management
+    if (buttons.length > 0) {
+      const firstBtn = buttons[0];
+      if (firstBtn && typeof (firstBtn as any).focus === 'function') firstBtn.focus();
+    }
 
     // Trap focus within dialog
-    const focusables = () => Array.from(dialog.querySelectorAll('button')) as HTMLElement[];
+		const focusables = () => Array.from(dialog.querySelectorAll('button')) as HTMLElement[];
     const keyHandler = (e: KeyboardEvent) => {
       if (!this.activeDialog) return;
-      const keys = focusables();
-      const first = keys[0];
-      const last = keys[keys.length - 1];
+			const keys = focusables();
+			if (keys.length === 0) return;
+			const first = keys[0]!;
+			const last = keys[keys.length - 1]!;
       if (e.key === 'Tab') {
-        if (keys.length === 0) return;
+				if (keys.length === 0) return;
         if (e.shiftKey) {
-          if (document.activeElement === first) {
+					if (document.activeElement === first) {
             e.preventDefault(); last.focus();
           }
         } else {
-          if (document.activeElement === last) {
+					if (document.activeElement === last) {
             e.preventDefault(); first.focus();
           }
         }
       }
       // Hotkeys
       if (e.key && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        for (let i = 0; i < opts.buttons.length; i++) {
-          const spec = opts.buttons[i];
+				for (let i = 0; i < opts.buttons.length; i++) {
+					const spec = opts.buttons[i]!;
           if (spec.hotkey && spec.hotkey.toLowerCase() === e.key.toLowerCase()) {
             e.preventDefault();
-            buttons[i].click();
+						buttons[i] && buttons[i]!.click();
             break;
           }
         }

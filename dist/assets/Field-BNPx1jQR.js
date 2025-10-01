@@ -1,1 +1,0 @@
-function i(t){return typeof document<"u"?document.getElementById(t):null}function u(t){t.on("vfx",({type:r,payload:n})=>{if(r==="toast"){const o=i("vfx-overlay");if(!o)return;const e=document.createElement("div");e.className="vfx-toast",e.textContent=n&&n.text?String(n.text):"",o.appendChild(e),setTimeout(()=>{e.remove()},1500)}})}export{u as registerField};

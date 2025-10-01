@@ -1,0 +1,22 @@
+{
+  "Gain 0-20 (in bounds)": "30s",
+  "Gain 20+ (in bounds)": "45s",
+  "All plays for a Loss": "30s",
+  "All plays Out of Bounds": "-15s",
+  "Incomplete Passes": "15s",
+  "Interceptions": "30s",
+  "Penalties": "15s",
+  "Fumbles": "15s",
+  "Kickoffs, Field Goals, Punts in bounds": "15s",
+  "Extra Points": "0s",
+  "Timeout after 45s play": "15s",
+  "Timeout after 30s play": "0s",
+  "Timeout after 15s play": "0s",
+  "Notes": [
+    "Clock stops at 2 minutes of both halves",
+    "Half cannot end on defensive penalty",
+    "Extra points can be attempted after time runs out"
+  ]
+}
+
+

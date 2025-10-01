@@ -1,0 +1,15 @@
+{
+  "name": "Onside Kickoff Table",
+  "dice": "1d6",
+  "dieRollModifier": "+1 to the die roll if the kicking team is not trailing",
+  "results": {
+    "1": { "possession": "kicking", "yardLine": 40, "referenceSide": "kicking" },
+    "2": { "possession": "kicking", "yardLine": 40, "referenceSide": "kicking" },
+    "3": { "possession": "receiving", "yardLine": 35, "referenceSide": "kicking" },
+    "4": { "possession": "receiving", "yardLine": 35, "referenceSide": "kicking" },
+    "5": { "possession": "receiving", "yardLine": 35, "referenceSide": "kicking" },
+    "6": { "possession": "receiving", "yardLine": 30, "referenceSide": "kicking" }
+  }
+}
+
+

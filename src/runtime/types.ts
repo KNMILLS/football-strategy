@@ -40,6 +40,7 @@ export interface GameRuntime {
       rng: import('../sim/RNG').RNG;
       ui?: { inTwoMinute?: boolean };
     }) => { nextState: any; outcome: any; events: Array<{ type: string; data?: any }> };
+    createFlow?: (seed?: number) => any;
   };
 }
 

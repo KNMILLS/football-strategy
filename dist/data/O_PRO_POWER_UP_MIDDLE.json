@@ -1,0 +1,137 @@
+{
+  "id": "O_PRO_POWER_UP_MIDDLE",
+  "style": "Pro Style",
+  "label": "Power Up Middle",
+  "source_image_path": "/mnt/data/play_art_cards/Pro Style/Power Up Middle.jpg",
+  "card_text": {
+    "title": "POWER UP MIDDLE",
+    "set_label": "Pro Style",
+    "bottom_bar": {
+      "icons_labels": ["FG", "KICK-OFF", "ONSIDE", "LG"],
+      "values_left_to_right": ["NG", "55 + lg", "KB K43", "90"]
+    },
+    "results_table": {
+      "roll_1": "Y-2",
+      "roll_2": "Y-1",
+      "roll_3": "Y+10",
+      "roll_4": "Y+1",
+      "roll_5": "Y+1",
+      "roll_6": "Y+2",
+      "roll_7": "Y+3",
+      "roll_8": "Y+7",
+      "roll_9": "Y+9",
+      "roll_0": "Y+10"
+    },
+    "footer": "© 2004 Marcelo Paschoalin"
+  },
+  "play_art": {
+    "overview": "Downhill power run through the A-gap in an I-formation look. Fullback inserts first to the Mike. Halfback takes a straight handoff and follows the FB through the interior crease. Line fires out with double-team at point of attack and seals inside. Receivers stalk for force players.",
+    "animation_blueprint": {
+      "field_frame": {
+        "coordinate_system": "normalized",
+        "origin": "ball_on_LOS_center",
+        "x_range": [0.0, 1.0],
+        "y_range": [-0.20, 0.80],
+        "offense_moves_positive_y": true
+      },
+      "entities": [
+        {"id": "LT",  "role": "left_tackle",  "start": {"x": 0.35, "y": 0.00}},
+        {"id": "LG",  "role": "left_guard",   "start": {"x": 0.43, "y": 0.00}},
+        {"id": "C",   "role": "center",       "start": {"x": 0.50, "y": 0.00}},
+        {"id": "RG",  "role": "right_guard",  "start": {"x": 0.57, "y": 0.00}},
+        {"id": "RT",  "role": "right_tackle", "start": {"x": 0.65, "y": 0.00}},
+        {"id": "TE",  "role": "tight_end_right", "start": {"x": 0.73, "y": 0.00}},
+        {"id": "WRL", "role": "wide_receiver_left",  "start": {"x": 0.20, "y": 0.00}},
+        {"id": "WRR", "role": "wide_receiver_right", "start": {"x": 0.85, "y": 0.00}},
+        {"id": "QB",  "role": "quarterback",  "start": {"x": 0.50, "y": -0.03}},
+        {"id": "FB",  "role": "fullback",     "start": {"x": 0.50, "y": -0.07}},
+        {"id": "HB",  "role": "halfback",     "start": {"x": 0.50, "y": -0.12}}
+      ],
+      "meta": {
+        "formation_guess": "I-Form Tight Right",
+        "poa_gap": "right A-gap",
+        "ball_carrier": "HB",
+        "lead_blocker": "FB",
+        "defense_color_hint": "red",
+        "offense_color_hint": "white"
+      },
+      "timeline": [
+        {
+          "t": 0.00,
+          "label": "set",
+          "actions": [
+            {"type": "idle", "actors": ["OL","TE","WRL","WRR","QB","FB","HB"], "duration": 0.15}
+          ]
+        },
+        {
+          "t": 0.15,
+          "label": "snap",
+          "actions": [
+            {"type": "snap", "from": "C", "to": "QB"},
+            {"type": "first_step", "actors": ["OL","TE"], "direction": "forward", "distance_y": 0.01}
+          ]
+        },
+        {
+          "t": 0.20,
+          "label": "point_of_attack_set",
+          "actions": [
+            {"type": "double_team", "actors": ["C","RG"], "target": "DT_inside_right", "drive_vector": {"x": 0.00, "y": 0.03}},
+            {"type": "down_block",  "actor": "LG", "target": "DT_inside_left", "seal": "left_A"},
+            {"type": "hinge",       "actor": "RT", "target": "DE_right", "seal": "inside"},
+            {"type": "down_block",  "actor": "TE", "target": "OLB_right", "seal": "inside"},
+            {"type": "stalk_block", "actor": "WRL", "target": "CB_left"},
+            {"type": "stalk_block", "actor": "WRR", "target": "CB_right"}
+          ]
+        },
+        {
+          "t": 0.28,
+          "label": "mesh",
+          "actions": [
+            {"type": "handoff", "from": "QB", "to": "HB", "handoff_point": {"x": 0.50, "y": -0.01}},
+            {"type": "carryout_fake", "actor": "QB", "path": [{"x": 0.47, "y": -0.04}]}
+          ]
+        },
+        {
+          "t": 0.30,
+          "label": "insert_and_follow",
+          "actions": [
+            {"type": "lead_insert", "actor": "FB", "gap": "right_A", "path": [{"x": 0.52, "y": 0.01}, {"x": 0.52, "y": 0.06}], "target_priority": ["MIKE","SAFETY_ROLLDOWN"]},
+            {"type": "follow", "actor": "HB", "lead": "FB", "gap": "right_A", "path": [{"x": 0.52, "y": 0.00}, {"x": 0.52, "y": 0.10}]}
+          ]
+        },
+        {
+          "t": 0.60,
+          "label": "second_level_rules",
+          "actions": [
+            {"type": "climb", "actor": "C", "landmark": "MIKE", "condition": "DT_secures"},
+            {"type": "climb", "actor": "RG", "landmark": "WILL", "condition": "DT_secures"},
+            {"type": "seal",  "actor": "LG", "landmark": "A_left_wall"},
+            {"type": "wall_off", "actor": "RT", "landmark": "B_right"},
+            {"type": "drive", "actor": "TE", "landmark": "OLB_right_to_safety"}
+          ]
+        },
+        {
+          "t": 0.90,
+          "label": "back_rules",
+          "actions": [
+            {"type": "decision_branch", "actor": "HB", "rules": [
+              {"if": "A_gap_open", "then": "hit_A_gap"},
+              {"if": "A_gap_clogged_right_push", "then": "bounce_to_B_right"},
+              {"if": "interior_stacked", "then": "press_A_then_cut_left_B"}
+            ]},
+            {"type": "finish", "actor": "HB", "technique": "pad_level_low_two_hands_on_ball"}
+          ]
+        }
+      ],
+      "animation_hints": {
+        "pace": "downhill",
+        "hb_speed": 1.0,
+        "fb_speed": 0.95,
+        "ol_drive_speed": 0.6,
+        "play_estimated_duration_seconds": 4.0
+      }
+    }
+  }
+}
+
+

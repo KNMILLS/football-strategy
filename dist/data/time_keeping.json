@@ -1,0 +1,26 @@
+{
+  "name": "Time Keeping Table",
+  "units": "seconds",
+  "rules": [
+    { "event": "gain_in_bounds_0_to_20", "duration": 30 },
+    { "event": "gain_in_bounds_20_plus", "duration": 45 },
+    { "event": "all_plays_for_loss", "duration": 30 },
+    { "event": "out_of_bounds", "adjustment": -15 },
+    { "event": "incomplete_pass", "adjustment": 15 },
+    { "event": "interception", "adjustment": 30 },
+    { "event": "penalty", "adjustment": 15 },
+    { "event": "fumble", "adjustment": 15 },
+    { "event": "kickoff_fg_punt_in_bounds", "adjustment": 15 },
+    { "event": "extra_point", "adjustment": 0 },
+    { "event": "timeout_after_45_play", "adjustment": 15 },
+    { "event": "timeout_after_30_play", "adjustment": 0 },
+    { "event": "timeout_after_15_play", "adjustment": 0 }
+  ],
+  "notes": [
+    "Clock stops at 2 minutes of both halves.",
+    "Half cannot end on defensive penalty.",
+    "Extra points can be attempted after time runs out."
+  ]
+}
+
+

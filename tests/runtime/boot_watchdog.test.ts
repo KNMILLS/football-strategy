@@ -1,8 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
+import path from 'node:path';
 
 function loadIndexHtmlBody() {
-  const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+  // Resolve absolute path then convert to file URL for readFileSync
+  const abs = path.resolve(process.cwd(), 'index.html');
+  const fileUrl = pathToFileURL(abs);
+  const html = readFileSync(fileUrl, 'utf8');
   const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
   const body = bodyMatch ? bodyMatch[1] : '';
   document.body.innerHTML = body;

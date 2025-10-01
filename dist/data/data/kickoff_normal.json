@@ -1,0 +1,25 @@
+{
+  "name": "Normal Kickoff Table",
+  "dice": "2d6",
+  "results": {
+    "2": { "type": "fumble", "rerollForYardLine": true },
+    "3": { "type": "penalty", "yards": -10, "team": "receiving", "rerollForYardLine": true },
+    "4": { "type": "yard_line", "yardLine": 10 },
+    "5": { "type": "yard_line", "yardLine": 15 },
+    "6": { "type": "yard_line", "yardLine": 20 },
+    "7": { "type": "yard_line", "yardLine": 25 },
+    "8": { "type": "yard_line", "yardLine": 30 },
+    "9": { "type": "yard_line", "yardLine": 35 },
+    "10": { "type": "yard_line", "yardLine": 40 },
+    "11": { "type": "long_gain", "modifierYards": 0 },
+    "12": { "type": "long_gain", "modifierYards": 5 }
+  },
+  "notes": [
+    "On results marked with *, roll again to determine yard line.",
+    "On second fumble, possession reverts back to Receiving Team.",
+    "Penalties are against receiving team; double penalties are offsetting.",
+    "Penalties on LG results are marked from the 50 yard line."
+  ]
+}
+
+

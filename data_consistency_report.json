@@ -1,0 +1,146 @@
+{
+  "report_title": "Gridiron Strategy Data Consistency Analysis",
+  "report_date": "2025-01-01",
+  "analysis_summary": "Found significant inconsistencies between data files for offensive play outcomes",
+  "data_sources_analyzed": [
+    "data/football_strategy_all_mappings.json (main chart)",
+    "data/offense_pro_style.json",
+    "data/offense_ball_control.json",
+    "data/offense_aerial_style.json",
+    "data/plays/O_PRO_POWER_UP_MIDDLE.json (card data)"
+  ],
+  "key_findings": {
+    "summary": "Multiple data files contain different values for the same play vs defense combinations",
+    "total_discrepancies_found": "Multiple across several plays",
+    "most_affected_plays": ["Run/Pass Option", "Long Bomb", "Power Up Middle"],
+    "data_source_reliability": "Unclear - files contradict each other"
+  },
+  "specific_discrepancies": [
+    {
+      "play": "Power Up Middle",
+      "defense": "Goal Line (A)",
+      "main_chart_value": "-2",
+      "pro_style_value": "-2",
+      "ball_control_value": "-2",
+      "aerial_style_value": "-2",
+      "card_data_value": "Y-2",
+      "user_reported_value": "-1",
+      "status": "User reports card shows -1, but all data files show -2"
+    },
+    {
+      "play": "Run/Pass Option",
+      "defense": "Goal Line (A)",
+      "main_chart_value": "PENALTY",
+      "pro_style_value": "PENALTY",
+      "ball_control_value": "PENALTY -15",
+      "aerial_style_value": "FUMBLE",
+      "status": "Major inconsistency - Ball Control and Aerial Style differ from Pro Style"
+    },
+    {
+      "play": "Run/Pass Option",
+      "defense": "Short Yardage (B)",
+      "main_chart_value": "Complete +13 O/B",
+      "pro_style_value": "Complete +13 O/B",
+      "ball_control_value": "Complete +13 O/B",
+      "aerial_style_value": "Complete +15 O/B",
+      "status": "Minor inconsistency - Aerial Style differs by +2 yards"
+    },
+    {
+      "play": "Run/Pass Option",
+      "defense": "Short Yardage (C)",
+      "main_chart_value": "+5 O/B",
+      "pro_style_value": "+5 O/B",
+      "ball_control_value": "+5 O/B",
+      "aerial_style_value": "+4",
+      "status": "Minor inconsistency - Aerial Style differs by 1 yard"
+    },
+    {
+      "play": "Run/Pass Option",
+      "defense": "Passing (G)",
+      "main_chart_value": "INTERCEPT Def -25",
+      "pro_style_value": "INTERCEPT Def -25",
+      "ball_control_value": "INTERCEPT Def -25",
+      "aerial_style_value": "INTERCEPT Def -30",
+      "status": "Inconsistency in interception return yards"
+    },
+    {
+      "play": "Long Bomb",
+      "defense": "Inside Blitz (C)",
+      "main_chart_value": "+3 O/B",
+      "pro_style_value": "+3 O/B",
+      "ball_control_value": "Incomplete",
+      "aerial_style_value": "+5 O/B",
+      "status": "Major inconsistency - Ball Control and Aerial Style differ significantly"
+    },
+    {
+      "play": "Long Bomb",
+      "defense": "Prevent (I)",
+      "main_chart_value": "PENALTY +30 1st Down",
+      "pro_style_value": "PENALTY +30 1st Down",
+      "ball_control_value": "PENALTY +25 1st Down",
+      "aerial_style_value": "PENALTY +35 1st Down",
+      "status": "Inconsistency in penalty yardage (+25 vs +30 vs +35)"
+    },
+    {
+      "play": "Long Bomb",
+      "defense": "Prevent Deep (J)",
+      "main_chart_value": "INTERCEPT Def -30",
+      "pro_style_value": "INTERCEPT Def -30",
+      "ball_control_value": "INTERCEPT Def -20",
+      "aerial_style_value": "INTERCEPT Def -35",
+      "status": "Inconsistency in interception return yards (-20 vs -30 vs -35)"
+    }
+  ],
+  "formatting_inconsistencies": [
+    {
+      "issue": "INTERCEPT formatting",
+      "examples": [
+        "INTERCEPT Def -25",
+        "INTERCEPT Def +7",
+        "INTERCEPT Def -30"
+      ],
+      "consistent": "Yes - format is consistent",
+      "notes": "Space between INTERCEPT and Def, negative return yards"
+    },
+    {
+      "issue": "Complete with O/B notation",
+      "examples": [
+        "Complete +13 O/B",
+        "Complete +35 O/B",
+        "Complete +25"
+      ],
+      "consistent": "Mostly - some entries lack O/B notation",
+      "notes": "Most entries use O/B, but some don't"
+    }
+  ],
+  "recommendations": {
+    "immediate_actions": [
+      "Verify actual card images against data files",
+      "Determine which data source is authoritative (cards vs data files)",
+      "Update all inconsistent data files to match authoritative source"
+    ],
+    "data_quality_improvements": [
+      "Establish single source of truth for play outcomes",
+      "Implement automated validation across all data files",
+      "Add data source attribution to each file",
+      "Create data consistency tests"
+    ],
+    "validation_needed": [
+      "User verification of actual card values",
+      "Cross-reference with any other data sources",
+      "Determine if differences are intentional (style variations) or errors"
+    ]
+  },
+  "files_requiring_attention": [
+    "data/offense_ball_control.json",
+    "data/offense_aerial_style.json",
+    "data/football_strategy_all_mappings.json (main chart)",
+    "data/plays/O_PRO_POWER_UP_MIDDLE.json"
+  ],
+  "impact_assessment": {
+    "gameplay_impact": "HIGH - Different outcomes for same play/defense combinations affect game balance",
+    "ai_decision_making": "HIGH - AI uses these values to make decisions",
+    "user_experience": "MEDIUM - Players may notice inconsistent results",
+    "data_integrity": "HIGH - Multiple conflicting data sources reduce trust"
+  }
+}

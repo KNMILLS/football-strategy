@@ -32,6 +32,15 @@ CI/Tests:
 - TS-only runtime boot: `index.html` loads `src/index.ts` directly. Legacy `main.js` and `src/legacy/*` are removed.
 - The runtime exposes a typed API on `window.GS` for UI, tests, and dev tools.
 
+**Module Structure**: The codebase uses facade/barrel patterns for clean separation of concerns:
+- `src/flow/GameFlow.ts` - Central game orchestration with delegation to specialized modules
+- `src/data/loaders/tables.ts` - Unified data loading API with backward-compatible shims
+- `src/ui/Field.ts` - UI field rendering functions from `ui/field/*` modules
+- `src/qa/Harness.ts` - Testing harness thin facade
+- `src/workers/ValidationWorker.ts` - Worker-based validation with progress reporting
+- `src/ai/Playcall.ts` - AI decision-making exports from `ai/decisions/*` and `ai/tendencies/*`
+- `src/sim/Simulator.ts` - Simulation and validation APIs from `sim/run/*` and `sim/validation/*`
+
 ### Determinism & Tests
 - Do not use `Math.random()` directly. Consume an injected `rng()`.
 - Golden tests remain for legacy parity. New runtime tests boot via `src/index.ts` and assert core UI appears and `window.GS` API shape.

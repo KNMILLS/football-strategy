@@ -50,7 +50,18 @@ async function loadDom(): Promise<JSDOM> {
 }
 
 async function bootRuntime(dom: JSDOM) {
-  await import('../../src/index.ts');
+  const mod = await import('../../src/index.ts');
+  // Bridge the module's global GS onto this local jsdom window
+  (dom.window as any).GS = (globalThis as any).GS;
+  // Stub fetch to load local JSON tables
+  const fs = await import('node:fs/promises');
+  const path = await import('node:path');
+  (globalThis as any).fetch = async (url: string) => {
+    const p = url.replace(/^\/?/, '');
+    const abs = path.resolve(process.cwd(), p);
+    const body = await fs.readFile(abs, 'utf8');
+    return { ok: true, status: 200, json: async () => JSON.parse(body) } as any;
+  };
   await (dom.window as any).GS.start();
 }
 
@@ -124,7 +135,7 @@ describe('Game invariants (jsdom)', () => {
   it('no defensive penalty ends the game; untimed down is scheduled', async () => {
     const dom = await loadDom();
     dom.window.Math.random = createLCG(1);
-    await evalMainJs(dom);
+    await bootRuntime(dom);
     // Start a test setup at end of Q4 with clock near 0; we rely on built-in test controls API path
     // Fallback: directly simulate One Game and ensure we can find an "Untimed down" message iff penalty at 0 occurs.
     const GS2 = (dom.window as any).GS;

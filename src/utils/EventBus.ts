@@ -78,8 +78,10 @@ export type EventMap = {
   };
   'qa:runAutoGame': { seed?: number; playerPAT?: 'auto'|'kick'|'two' };
   'qa:runBatch': { seeds: number[]; playerPAT?: 'auto'|'kick'|'two' };
+  'qa:runValidatedBatch': { seeds: number[]; playerPAT?: 'auto'|'kick'|'two'; chunkSize?: number };
   'qa:copyLog': {};
   'qa:downloadDebug': {};
+  'qa:debug': { text: string };
 };
 
 type Handler<T> = (payload: T) => void;

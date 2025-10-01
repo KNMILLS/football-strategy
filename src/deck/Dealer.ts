@@ -19,7 +19,7 @@ export function createShuffledPile(deck: OffenseCardDef[], rng: RNG): string[] {
 	const arr = ids.slice();
 	for (let i = arr.length - 1; i > 0; i--) {
 		const j = Math.floor(rng() * (i + 1));
-		const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+		const tmp = arr[i]!; arr[i] = arr[j]!; arr[j] = tmp;
 	}
 	return arr;
 }
@@ -45,11 +45,11 @@ export function drawToFull(state: HandState, cfg: Partial<DealConfig>, rng: RNG)
 			discardPile = [];
 			for (let i = all.length - 1; i > 0; i--) {
 				const j = Math.floor(rng() * (i + 1));
-				const tmp = all[i]; all[i] = all[j]; all[j] = tmp;
+				const tmp = all[i]!; all[i] = all[j]!; all[j] = tmp;
 			}
 			drawPile = all;
 		}
-		const next = drawPile[0];
+		const next = drawPile[0]!;
 		drawPile = drawPile.slice(1);
 		hand = hand.concat([next]);
 		drew.push(next);
@@ -66,16 +66,30 @@ export function playCard(state: HandState, cardId: string): HandState {
 }
 
 export function recycleIfNeeded(state: HandState, cfg: Partial<DealConfig>, rng: RNG, deck: OffenseCardDef[]): HandState {
-	const { reshuffleOnEmpty } = { ...DEFAULT_CFG, ...cfg };
+	const { reshuffleOnEmpty, handSize } = { ...DEFAULT_CFG, ...cfg };
 	if (!reshuffleOnEmpty) return { drawPile: state.drawPile.slice(), discardPile: state.discardPile.slice(), hand: state.hand.slice() };
-	if (state.drawPile.length > 0 || state.discardPile.length === 0) {
+	// If draw pile is empty and discard has cards, reshuffle discard into new draw pile
+	if (state.drawPile.length > 0) {
+		return { drawPile: state.drawPile.slice(), discardPile: state.discardPile.slice(), hand: state.hand.slice() };
+	}
+	// If draw is empty and discard is empty but hand has more than handSize, trim extras back into draw
+	if (state.discardPile.length === 0 && state.hand.length > handSize) {
+		const keep = state.hand.slice(0, handSize);
+		let extras = state.hand.slice(handSize);
+		for (let i = extras.length - 1; i > 0; i--) {
+			const j = Math.floor(rng() * (i + 1));
+			const tmp = extras[i]!; extras[i] = extras[j]!; extras[j] = tmp;
+		}
+		return { drawPile: extras, discardPile: [], hand: keep };
+	}
+	if (state.discardPile.length === 0) {
 		return { drawPile: state.drawPile.slice(), discardPile: state.discardPile.slice(), hand: state.hand.slice() };
 	}
 	// shuffle discard into new draw
 	const ids = state.discardPile.slice();
 	for (let i = ids.length - 1; i > 0; i--) {
 		const j = Math.floor(rng() * (i + 1));
-		const tmp = ids[i]; ids[i] = ids[j]; ids[j] = tmp;
+		const tmp = ids[i]!; ids[i] = ids[j]!; ids[j] = tmp;
 	}
 	return { drawPile: ids, discardPile: [], hand: state.hand.slice() };
 }

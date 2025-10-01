@@ -1,1 +1,0 @@
-class n{listeners={};on(r,t){const s=this.listeners[r]||=[];return s.push(t),()=>{const e=s.indexOf(t);e>=0&&s.splice(e,1)}}emit(r,t){const s=this.listeners[r];if(s)for(const e of s)e(t)}}export{n as EventBus};

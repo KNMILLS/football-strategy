@@ -28,6 +28,10 @@ export interface PuntOutcome {
   possessionFlips: boolean;
   fumbleRecoveredByKickingTeam: boolean;
   touchback: boolean;
+  // Optional narration aids
+  distance?: number;
+  returnYards?: number;
+  returnType?: 'LG'|'FC'|'YDS';
 }
 
 export function rollD6(rng: RNG): number { return Math.floor(rng() * 6) + 1; }
@@ -43,7 +47,7 @@ export function resolvePunt(ctx: PuntContext, rng: RNG, resolveLongGain: (rng: R
     const receiving = puntingIsPlayer ? 'ai' : 'player';
     // Inline to avoid circular imports if any; mirrors Spots.puntTouchback
     const tbBallOn = receiving === 'player' ? 20 : 80;
-    return { ballOn: tbBallOn, possessionFlips: true, fumbleRecoveredByKickingTeam: false, touchback: true };
+    return { ballOn: tbBallOn, possessionFlips: true, fumbleRecoveredByKickingTeam: false, touchback: true, distance: puntDistance, returnYards: 0, returnType: 'YDS' };
   }
   // In play: resolve return
   const retRoll = rollD6(rng) + rollD6(rng);
@@ -52,6 +56,7 @@ export function resolvePunt(ctx: PuntContext, rng: RNG, resolveLongGain: (rng: R
   let fumbleTurnover = false;
   if (ret.type === 'FC') {
     returnYards = 0;
+    // Fair catch: no fumble chance
   } else if (ret.type === 'LG') {
     returnYards = resolveLongGain(rng);
   } else {
@@ -66,7 +71,7 @@ export function resolvePunt(ctx: PuntContext, rng: RNG, resolveLongGain: (rng: R
   ballOn = Math.max(0, Math.min(100, ballOn));
   if (fumbleTurnover) {
     // Kicking team recovers: possession does not flip
-    return { ballOn, possessionFlips: false, fumbleRecoveredByKickingTeam: true, touchback: false };
+    return { ballOn, possessionFlips: false, fumbleRecoveredByKickingTeam: true, touchback: false, distance: puntDistance, returnYards, returnType: ret.type ? ret.type : 'YDS' };
   }
-  return { ballOn, possessionFlips: true, fumbleRecoveredByKickingTeam: false, touchback: false };
+  return { ballOn, possessionFlips: true, fumbleRecoveredByKickingTeam: false, touchback: false, distance: puntDistance, returnYards, returnType: ret.type ? ret.type : 'YDS' };
 }

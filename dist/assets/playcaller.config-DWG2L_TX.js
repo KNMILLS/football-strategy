@@ -1,0 +1,2 @@
+const s=.6,t=.55,a=.02,n=.2,_=.3,e="normal",r=.65,o={aggressiveness_offense:.6,aggressiveness_defense:.55,trick_play_rate:.02,blitz_rate_base:.2,deception_bias:.3,tempo_preference:e,risk_tolerance_late:.65};export{t as aggressiveness_defense,s as aggressiveness_offense,n as blitz_rate_base,_ as deception_bias,o as default,r as risk_tolerance_late,e as tempo_preference,a as trick_play_rate};
+//# sourceMappingURL=playcaller.config-DWG2L_TX.js.map

@@ -2,7 +2,7 @@ import type { GameState } from '../domain/GameState';
 import type { RNG } from '../sim/RNG';
 import { determineOutcomeFromCharts } from './Charts';
 import type { Outcome } from './ResultParsing';
-import { parseResultString } from './ResultParsing';
+// import { parseResultString } from './ResultParsing';
 import { timeOffWithTwoMinute } from './Timekeeping';
 import { administerPenalty } from './PenaltyAdmin';
 import { isInEndZone, isThroughEndZone, interceptionTouchback } from './Spots';

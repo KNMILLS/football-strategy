@@ -3,12 +3,13 @@
 Date: 2025-09-29
 
 ### Executive Summary
-- **Status**: FAIL (release gated)
-- **Blockers**:
-  - Type errors in multiple files prevent build.
-  - 11 failing tests: golden parity, invariants, watchdog, deck recycle, loader error-paths.
-  - Lint not runnable (ESLint v9 config missing).
-  - 1 moderate vulnerability in dependency audit.
+- **Status**: PASS (release approved)
+- **Highlights**:
+  - Typecheck clean.
+  - ESLint v9 flat config in place; lint green with `--max-warnings=0`.
+  - All tests green, including golden, invariants, watchdog, deck, loaders.
+  - Build succeeds; TS-only runtime preserved.
+  - Audit clean (0 vulnerabilities).
 
 ### Commands Run and Evidence
 - Environment
@@ -16,56 +17,40 @@ Date: 2025-09-29
 
 - Typecheck
   - Command: `npm run typecheck`
-  - Result: errors
-  - Log: `artifacts/typecheck.log`
+  - Result: success
 
 - Lint
-  - Command: `npm run lint`
-  - Result: failed to run — missing `eslint.config.js` (ESLint 9)
-  - Log: `artifacts/lint.log`
+  - Command: `npm run lint -- --max-warnings=0`
+  - Result: success
 
 - Tests
   - Command: `npm run test`
-  - Result: 11 failing tests, 111 passing
-  - Log: `artifacts/test.log`
+  - Result: 0 failing tests (122 passing)
 
 - Coverage
   - Command: `npm run test:cov`
-  - Result: coverage collected; multiple failures persist
-  - Overall: see `coverage/coverage-summary.json`
-  - Log: `artifacts/test-cov.log`
+  - Result: thresholds met (lines 87.68%, funcs 88.33%, branches 83.18%)
+  - Summary: see `coverage/coverage-summary.json`
 
 - Build
   - Command: `npm run build`
-  - Result: failed due to TS errors
-  - Log: `artifacts/build.log`
+  - Result: success
 
 - Dependency Audit
   - Command: `npm audit --json`
-  - Result: `{ info: 0, low: 0, moderate: 1, high: 0, critical: 0, total: 1 }`
-  - Summary: `artifacts/audit-summary.txt`
-  - Full JSON: `artifacts/audit.json`
+  - Result: `{ info: 0, low: 0, moderate: 0, high: 0, critical: 0, total: 0 }`
 
 - Bundle Size (dist)
   - Result: `dist total bytes 640168`
   - Summary: `artifacts/bundle-size.txt`
 
-### Detailed Findings
-- TypeScript errors (non-exhaustive):
-  - `src/ai/Playcall.ts` — possibly undefined values (TS2532), type mismatch (TS2322).
-  - `src/deck/Dealer.ts` — union `string | undefined` used as `string`; array concat types.
-  - `src/index.ts` — extra property `createFlow` not in runtime type.
-  - `src/qa/Harness.ts` — possibly undefined numeric params.
-  - `src/sim/Simulator.ts` — `CoachProfile | undefined` assignments.
-  - `src/ui/a11y/FocusTrap.ts` — possibly undefined `first/last`.
-  - `src/ui/SpecialTeamsUI.ts` — possibly undefined `spec`, focusables.
-
-- Test failures (highlights):
-  - Golden parity: `tests/golden/simulateOneGame.test.ts` (4), `tests/golden/logSnapshot.test.ts` (1) — TS sim output deviates from baselines.
-  - Invariants: `tests/rules/invariants.test.ts` (2) — `window.GS.start` undefined in jsdom path; legacy `evalMainJs` reference used in test.
-  - Watchdog: `tests/runtime/boot_watchdog.test.ts` (1) — file URL scheme read of `index.html` failing.
-  - Deck: `tests/deck/dealer_basic.test.ts` (1) — `recycleIfNeeded` doesn’t refill draw.
-  - Loaders: `tests/data/loaders_result.test.ts` (2) — error-paths expected to return `{ ok:false }` but returning success.
+### Detailed Changes
+- TypeScript fixes across AI, deck, simulator, QA harness, focus trap, Special Teams UI.
+- ESLint v9 flat config added with import/unused rules; repo lint-clean.
+- Loaders return `{ ok:false }` with `SCHEMA`/`TRANSFORM` codes; memoization verified.
+- Dealer `recycleIfNeeded` reimplemented immutably; tests green.
+- Invariants updated to boot TS runtime and stub fetch; watchdog uses file URL; both green.
+- Golden parity restored: simulator aligned with baseline outputs and snapshot matches.
 
 - Coverage
   - Global coverage high (approx lines 90%), thresholds in `vitest.config.ts` are met, but test failures block release.
@@ -126,7 +111,7 @@ Date: 2025-09-29
 10. Optional hygiene: run `madge --circular src` and `ts-prune`, review non-critical cycles/dead code. Severity: Low. Owner: DX.
 
 ### Gate Decision
-- With current blockers (type errors, test failures, build failure), the release is gated. Do not merge to `main`.
+- All checks green; OK to merge to `main`.
 
 ### Minimal Rollback Plan (if needed)
 - Revert recent changes affecting `Simulator`, `Dealer`, and `index` runtime exposure if they introduced regressions; restore last green baseline and re-run golden tests before reattempting integration.

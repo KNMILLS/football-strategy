@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">69.23% </span>
+                <span class="strong">67.53% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>45/65</span>
+                <span class='fraction'>52/77</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">63.63% </span>
+                <span class="strong">61.53% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>7/11</span>
+                <span class='fraction'>8/13</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">69.23% </span>
+                <span class="strong">67.53% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>45/65</span>
+                <span class='fraction'>52/77</span>
             </div>
         
             
@@ -150,7 +150,21 @@
 <a name='L85'></a><a href='#L85'>85</a>
 <a name='L86'></a><a href='#L86'>86</a>
 <a name='L87'></a><a href='#L87'>87</a>
-<a name='L88'></a><a href='#L88'>88</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -220,9 +234,23 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -258,7 +286,7 @@ export function createShuffledPile(deck: OffenseCardDef[], rng: RNG): string[] {
 	const arr = ids.slice();
 	for (let i = arr.length - 1; i &gt; 0; i--) {
 		const j = Math.floor(rng() * (i + 1));
-		const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+		const tmp = arr[i]!; arr[i] = arr[j]!; arr[j] = tmp;
 	}
 	return arr;
 }
@@ -284,11 +312,11 @@ export function drawToFull(state: HandState, cfg: Partial&lt;DealConfig&gt;, rng
 <span class="cstat-no" title="statement not covered" >			discardPile = [];</span>
 <span class="cstat-no" title="statement not covered" >			for (let i = all.length - 1; i &gt; 0; i--) {</span>
 <span class="cstat-no" title="statement not covered" >				const j = Math.floor(rng() * (i + 1));</span>
-<span class="cstat-no" title="statement not covered" >				const tmp = all[i]; all[i] = all[j]; all[j] = tmp;</span>
+<span class="cstat-no" title="statement not covered" >				const tmp = all[i]!; all[i] = all[j]!; all[j] = tmp;</span>
 <span class="cstat-no" title="statement not covered" >			}</span>
 <span class="cstat-no" title="statement not covered" >			drawPile = all;</span>
 <span class="cstat-no" title="statement not covered" >		}</span>
-		const next = drawPile[0];
+		const next = drawPile[0]!;
 		drawPile = drawPile.slice(1);
 		hand = hand.concat([next]);
 		drew.push(next);
@@ -305,16 +333,30 @@ export function playCard(state: HandState, cardId: string): HandState {
 }
 &nbsp;
 export function recycleIfNeeded(state: HandState, cfg: Partial&lt;DealConfig&gt;, rng: RNG, deck: OffenseCardDef[]): HandState {
-	const { reshuffleOnEmpty } = { ...DEFAULT_CFG, ...cfg };
+	const { reshuffleOnEmpty, handSize } = { ...DEFAULT_CFG, ...cfg };
 	if (!reshuffleOnEmpty) <span class="branch-0 cbranch-no" title="branch not covered" >return { drawPile: state.drawPile.slice(), discardPile: state.discardPile.slice(), hand: state.hand.slice() };</span>
-	if (state.drawPile.length &gt; 0 || state.discardPile.length === 0) {
-		return { drawPile: state.drawPile.slice(), discardPile: state.discardPile.slice(), hand: state.hand.slice() };
+	// If draw pile is empty and discard has cards, reshuffle discard into new draw pile
+	if (state.drawPile.length &gt; 0) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+<span class="cstat-no" title="statement not covered" >		return { drawPile: state.drawPile.slice(), discardPile: state.discardPile.slice(), hand: state.hand.slice() };</span>
+<span class="cstat-no" title="statement not covered" >	}</span>
+	// If draw is empty and discard is empty but hand has more than handSize, trim extras back into draw
+	if (state.discardPile.length === 0 &amp;&amp; state.hand.length &gt; handSize) {
+		const keep = state.hand.slice(0, handSize);
+		let extras = state.hand.slice(handSize);
+		for (let i = extras.length - 1; i &gt; 0; i--) {
+			const j = Math.floor(rng() * (i + 1));
+			const tmp = extras[i]!; extras[i] = extras[j]!; extras[j] = tmp;
+		}
+		return { drawPile: extras, discardPile: [], hand: keep };
 <span class="branch-0 cbranch-no" title="branch not covered" >	}</span>
+<span class="cstat-no" title="statement not covered" >	if (state.discardPile.length === 0) {</span>
+<span class="cstat-no" title="statement not covered" >		return { drawPile: state.drawPile.slice(), discardPile: state.discardPile.slice(), hand: state.hand.slice() };</span>
+<span class="cstat-no" title="statement not covered" >	}</span>
 	// shuffle discard into new draw
 <span class="cstat-no" title="statement not covered" >	const ids = state.discardPile.slice();</span>
 <span class="cstat-no" title="statement not covered" >	for (let i = ids.length - 1; i &gt; 0; i--) {</span>
 <span class="cstat-no" title="statement not covered" >		const j = Math.floor(rng() * (i + 1));</span>
-<span class="cstat-no" title="statement not covered" >		const tmp = ids[i]; ids[i] = ids[j]; ids[j] = tmp;</span>
+<span class="cstat-no" title="statement not covered" >		const tmp = ids[i]!; ids[i] = ids[j]!; ids[j] = tmp;</span>
 <span class="cstat-no" title="statement not covered" >	}</span>
 <span class="cstat-no" title="statement not covered" >	return { drawPile: ids, discardPile: [], hand: state.hand.slice() };</span>
 <span class="cstat-no" title="statement not covered" >}</span>
@@ -331,7 +373,7 @@ export <span class="fstat-no" title="function not covered" >function lookupCards
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-29T21:27:22.908Z
+                at 2025-09-29T23:11:06.660Z
             </div>
         <script src="../prettify.js"></script>
         <script>
