@@ -28,8 +28,9 @@ const DEFAULT_FLAGS: FeatureFlags = {
  */
 export function getFeatureFlag<T extends keyof FeatureFlags>(key: T): FeatureFlags[T] {
   // Check environment variables first (for CI/deployment control)
+  // Note: process is only available in Node.js, not in browsers
   const envKey = `GRIDIRON_${String(key).toUpperCase()}`;
-  const envValue = process.env[envKey];
+  const envValue = (typeof process !== 'undefined' && process.env) ? process.env[envKey] : undefined;
 
   if (envValue !== undefined) {
     if (key === 'engine') {

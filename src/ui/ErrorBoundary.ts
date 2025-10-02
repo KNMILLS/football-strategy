@@ -57,7 +57,7 @@ export class ErrorBoundary {
       onError: config.onError || this.defaultErrorHandler,
       isolate: config.isolate ?? true,
       componentName: config.componentName || 'UnknownComponent',
-      showErrorDetails: config.showErrorDetails ?? (process.env.NODE_ENV === 'development')
+      showErrorDetails: config.showErrorDetails ?? (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development')
     };
   }
 
