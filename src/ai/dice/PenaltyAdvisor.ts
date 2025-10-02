@@ -40,6 +40,13 @@ export interface PenaltyContext {
   scoreDifferential: number;
   /** Coach profile for personality-based adjustments */
   coachProfile: CoachProfile;
+  /** Base outcome from dice roll (for EV calculation) */
+  baseOutcome?: {
+    yards: number;
+    clock: 10 | 20 | 30;
+    tags: string[];
+    oob?: boolean;
+  };
 }
 
 /**
@@ -77,8 +84,14 @@ export class PenaltyAdvisor {
    * Calculate expected value if penalty is accepted
    */
   private calculateEVIfAccepted(context: PenaltyContext): number {
-    const { gameState, penaltyInfo, fieldPosition, penaltyYards, isSpotFoul } = context;
+    const { gameState, penaltyInfo, fieldPosition, penaltyYards, isSpotFoul, baseOutcome } = context;
 
+    // If we have a base outcome, use it for more accurate EV calculation
+    if (baseOutcome) {
+      return this.calculateEVWithBaseOutcome(context, baseOutcome, 'accept');
+    }
+
+    // Fallback to field position-based calculation
     let newFieldPosition = fieldPosition;
     if (penaltyInfo.side === 'offense') {
       // Penalty against defense - move ball forward
@@ -104,8 +117,55 @@ export class PenaltyAdvisor {
    * Calculate expected value if penalty is declined
    */
   private calculateEVIfDeclined(context: PenaltyContext): number {
-    // Current position with current down/distance
+    const { baseOutcome } = context;
+
+    // If we have a base outcome, use it for more accurate EV calculation
+    if (baseOutcome) {
+      return this.calculateEVWithBaseOutcome(context, baseOutcome, 'decline');
+    }
+
+    // Fallback to field position-based calculation
     return this.calculateFieldPositionEV(context);
+  }
+
+  /**
+   * Calculate EV using base outcome from dice roll (Phase C2 requirement)
+   */
+  private calculateEVWithBaseOutcome(
+    context: PenaltyContext,
+    baseOutcome: { yards: number; clock: 10 | 20 | 30; tags: string[]; oob?: boolean },
+    decision: 'accept' | 'decline'
+  ): number {
+    const { gameState, penaltyInfo, fieldPosition, penaltyYards } = context;
+
+    let finalYards = baseOutcome.yards;
+    let finalClock = baseOutcome.clock;
+
+    if (decision === 'accept') {
+      // Apply penalty modification to base outcome
+      if (penaltyInfo.side === 'offense') {
+        // Penalty against defense - add penalty yards to base outcome
+        finalYards += penaltyYards;
+      } else {
+        // Penalty against offense - subtract penalty yards from base outcome
+        finalYards -= penaltyYards;
+      }
+
+      // Clock is affected by penalty acceptance
+      finalClock = (Math.max(10, finalClock - 5) as 10 | 20 | 30); // Penalty acceptance slightly reduces clock
+    }
+    // For decline, use base outcome as-is
+
+    // Calculate field position after yards change
+    const newFieldPosition = Math.max(0, Math.min(100, fieldPosition + finalYards));
+
+    // Calculate EV based on final field position and down state
+    return this.calculateFieldPositionEV({
+      ...context,
+      fieldPosition: newFieldPosition,
+      down: gameState.down, // Keep current down for now (could be enhanced)
+      toGo: gameState.toGo
+    });
   }
 
   /**

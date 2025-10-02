@@ -19,7 +19,7 @@ export interface FeatureFlags {
  * Default feature flag configuration
  */
 const DEFAULT_FLAGS: FeatureFlags = {
-  engine: 'deterministic', // Default to deterministic for safety
+  engine: 'dice', // Default to new dice engine
   NEW_ENGINE_V1: true, // Enable new dice engine by default in dev
 };
 

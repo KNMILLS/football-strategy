@@ -9,6 +9,8 @@ export interface ButtonCard extends PlaybookCard {
   isSelected?: boolean;
   isDisabled?: boolean;
   isHovered?: boolean;
+  // Risk level for UI display (1-5 scale)
+  riskLevel?: 1 | 2 | 3 | 4 | 5;
   // Accessibility properties
   ariaLabel?: string;
   // Styling properties

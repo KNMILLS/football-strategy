@@ -1,0 +1,369 @@
+{
+  "version": "1.0.0",
+  "off_card": "Four Verticals",
+  "def_card": "Prevent",
+  "dice": "2d20",
+  "entries": {
+    "3": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "pressure"
+      ]
+    },
+    "4": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "pressure"
+      ]
+    },
+    "5": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "pressure"
+      ]
+    },
+    "6": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep",
+        "prevent"
+      ]
+    },
+    "7": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep",
+        "prevent"
+      ]
+    },
+    "8": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep",
+        "prevent"
+      ]
+    },
+    "9": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep",
+        "prevent"
+      ]
+    },
+    "10": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep",
+        "prevent"
+      ]
+    },
+    "11": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep",
+        "prevent"
+      ]
+    },
+    "12": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep",
+        "prevent"
+      ]
+    },
+    "13": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep",
+        "prevent"
+      ]
+    },
+    "14": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep",
+        "prevent"
+      ]
+    },
+    "15": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep",
+        "prevent"
+      ]
+    },
+    "16": {
+      "yards": 2,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate",
+        "prevent"
+      ]
+    },
+    "17": {
+      "yards": 5,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate",
+        "prevent"
+      ]
+    },
+    "18": {
+      "yards": 7,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate",
+        "prevent"
+      ]
+    },
+    "19": {
+      "yards": 10,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate",
+        "prevent"
+      ]
+    },
+    "20": {
+      "yards": 12,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate",
+        "prevent"
+      ]
+    },
+    "21": {
+      "yards": 15,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate",
+        "prevent"
+      ]
+    },
+    "22": {
+      "yards": 17,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate",
+        "prevent"
+      ]
+    },
+    "23": {
+      "yards": 20,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate",
+        "prevent"
+      ]
+    },
+    "24": {
+      "yards": 22,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate",
+        "prevent"
+      ]
+    },
+    "25": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate",
+        "prevent"
+      ]
+    },
+    "26": {
+      "yards": 19,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    },
+    "27": {
+      "yards": 23,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    },
+    "28": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    },
+    "29": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    },
+    "30": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    },
+    "31": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    },
+    "32": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    },
+    "33": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    },
+    "34": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    },
+    "35": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    },
+    "36": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    },
+    "37": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    },
+    "38": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    },
+    "39": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep",
+        "prevent"
+      ]
+    }
+  },
+  "doubles": {
+    "1": {
+      "result": "DEF_TD"
+    },
+    "20": {
+      "result": "OFF_TD"
+    },
+    "2-19": {
+      "penalty_table_ref": "penalty_table_v1"
+    }
+  },
+  "meta": {
+    "oob_bias": false,
+    "field_pos_clamp": true,
+    "risk_profile": "high",
+    "explosive_start_sum": 25
+  }
+}

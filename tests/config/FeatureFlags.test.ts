@@ -82,7 +82,7 @@ describe('FeatureFlags', () => {
       localStorageMock.getItem.mockReturnValue(null);
 
       const engine = getFeatureFlag('engine');
-      expect(engine).toBe('deterministic'); // default value
+      expect(engine).toBe('dice'); // default value
 
       // Restore environment variable
       process.env = originalEnv;

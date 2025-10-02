@@ -41,8 +41,10 @@ export class ResultDisplay {
       this.bus.on('ui:diceResult', (payload: {
         diceResult: { d1: number; d2: number; sum: number; isDoubles: boolean };
         outcome: DiceResolutionResult;
+        offensiveCard?: { label: string; type: string };
+        defensiveCard?: { label: string };
       }) => {
-        this.showResult(payload.diceResult, payload.outcome);
+        this.showResult(payload.diceResult, payload.outcome, payload.offensiveCard, payload.defensiveCard);
       });
 
       // Listen for result display events
@@ -112,7 +114,9 @@ export class ResultDisplay {
 
   private showResult(
     diceResult: { d1: number; d2: number; sum: number; isDoubles: boolean },
-    outcome: DiceResolutionResult
+    outcome: DiceResolutionResult,
+    offensiveCard?: { label: string; type: string },
+    defensiveCard?: { label: string }
   ): void {
     if (!this.resultContainer) return;
 
@@ -128,22 +132,63 @@ export class ResultDisplay {
     }
 
     // Show dice roll animation
-    this.showDiceAnimation(diceResult, outcome);
+    this.showDiceAnimation(diceResult, outcome, offensiveCard, defensiveCard);
 
     // Announce result to screen readers
     if (this.config.accessibility.announceResults) {
+      const cardInfo = [];
+      if (offensiveCard) cardInfo.push(`Offensive play: ${offensiveCard.label}`);
+      if (defensiveCard) cardInfo.push(`Defensive play: ${defensiveCard.label}`);
+
       this.announceToScreenReader(
-        `Dice roll: ${diceResult.d1} and ${diceResult.d2}, total ${diceResult.sum}. ${outcome.tags.join(', ')}.`
+        `Dice roll: ${diceResult.d1} and ${diceResult.d2}, total ${diceResult.sum}. ${cardInfo.join('. ')}. ${outcome.tags.join(', ')}.`
       );
     }
   }
 
-  private showDiceAnimation(diceResult: { d1: number; d2: number; sum: number; isDoubles: boolean }, outcome: DiceResolutionResult): void {
+  private showDiceAnimation(
+    diceResult: { d1: number; d2: number; sum: number; isDoubles: boolean },
+    outcome: DiceResolutionResult,
+    offensiveCard?: { label: string; type: string },
+    defensiveCard?: { label: string }
+  ): void {
     const diceContainer = this.resultContainer?.querySelector('#dice-result-dice') as HTMLElement;
     if (!diceContainer) return;
 
     // Clear previous dice
     diceContainer.innerHTML = '';
+
+    // Create cards display if cards are provided
+    if (offensiveCard || defensiveCard) {
+      const cardsDisplay = document.createElement('div');
+      cardsDisplay.className = 'dice-cards-display';
+
+      if (offensiveCard) {
+        const offCard = document.createElement('div');
+        offCard.className = 'dice-card-preview offensive';
+        offCard.innerHTML = `
+          <div class="dice-card-label">${offensiveCard.label}</div>
+          <div class="dice-card-type">${offensiveCard.type.toUpperCase()}</div>
+        `;
+        cardsDisplay.appendChild(offCard);
+      }
+
+      const vs = document.createElement('div');
+      vs.className = 'dice-vs';
+      vs.textContent = 'VS';
+
+      if (defensiveCard) {
+        const defCard = document.createElement('div');
+        defCard.className = 'dice-card-preview defensive';
+        defCard.innerHTML = `
+          <div class="dice-card-label">${defensiveCard.label}</div>
+        `;
+        cardsDisplay.appendChild(defCard);
+      }
+
+      cardsDisplay.appendChild(vs);
+      diceContainer.appendChild(cardsDisplay);
+    }
 
     // Create dice display
     const diceDisplay = document.createElement('div');
@@ -169,6 +214,15 @@ export class ResultDisplay {
     const total = document.createElement('div');
     total.className = `die-total ${diceResult.isDoubles ? 'doubles' : ''}`;
     total.textContent = diceResult.sum.toString();
+
+    // Add doubles badge if applicable
+    if (diceResult.isDoubles) {
+      const doublesBadge = document.createElement('div');
+      doublesBadge.className = 'dice-doubles-badge';
+      doublesBadge.textContent = 'DOUBLES!';
+      doublesBadge.setAttribute('aria-label', 'Doubles - special outcome');
+      diceDisplay.appendChild(doublesBadge);
+    }
 
     diceDisplay.appendChild(die1);
     diceDisplay.appendChild(separator);
@@ -237,6 +291,7 @@ export class ResultDisplay {
     yardsInfo.innerHTML = `
       <span class="dice-detail-label">Yards:</span>
       <span class="dice-detail-value ${this.getYardsClass(outcome)}">${this.formatYards(outcome)}</span>
+      ${outcome.oob ? '<span class="dice-oob-badge" aria-label="Out of bounds">OOB</span>' : ''}
     `;
 
     const clockInfo = document.createElement('div');
@@ -359,7 +414,10 @@ export class ResultDisplay {
   }
 
   private formatClockRunoff(clockRunoff: 10 | 20 | 30): string {
-    return `${clockRunoff} seconds`;
+    // For now, assume clock runs unless specified otherwise
+    // In a full implementation, this would check the game state
+    const clockState = 'running'; // or 'stopped'
+    return `${clockRunoff} seconds (${clockState})`;
   }
 
   private announceToScreenReader(message: string): void {

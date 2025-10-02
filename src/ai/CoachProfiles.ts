@@ -21,13 +21,13 @@ export const COACH_PROFILES: Record<string, CoachProfile> = {
     passBias: 0.15,
     twoPointAggressiveLate: true,
     onsideAggressive: true,
-    // Aggressive playbook preferences - favors explosive passing attacks
+    // Reid → Air Raid/Spread bias (as per Phase C requirements)
     playbookPreferences: {
-      'West Coast': 0.7,    // Balanced but pass-oriented
-      'Spread': 0.9,        // High tempo, explosive
-      'Air Raid': 0.95,     // Maximum aggression, deep shots
-      'Smashmouth': 0.4,    // Conservative ground game
-      'Wide Zone': 0.8      // Zone running with play action
+      'West Coast': 0.6,    // Secondary option
+      'Spread': 0.95,       // Primary - high tempo, explosive
+      'Air Raid': 0.9,      // Primary - deep shots, aggression
+      'Smashmouth': 0.3,    // Minimal ground game focus
+      'Wide Zone': 0.7      // Secondary zone option
     },
     riskTolerance: 0.8,    // High risk tolerance - willing to go for big plays
     clockManagementAggression: 0.9  // Very aggressive clock management
@@ -39,13 +39,13 @@ export const COACH_PROFILES: Record<string, CoachProfile> = {
     passBias: 0.05,
     twoPointAggressiveLate: false,
     onsideAggressive: false,
-    // Balanced playbook preferences - traditional football
+    // Madden → West Coast/Smashmouth balance (as per Phase C requirements)
     playbookPreferences: {
-      'West Coast': 0.8,    // Classic balanced offense
-      'Spread': 0.6,        // Moderate tempo
-      'Air Raid': 0.3,      // Conservative on deep shots
-      'Smashmouth': 0.9,     // Strong running game focus
-      'Wide Zone': 0.7       // Zone scheme with balance
+      'West Coast': 0.9,    // Primary - classic balanced offense
+      'Spread': 0.5,        // Moderate tempo
+      'Air Raid': 0.4,      // Conservative on deep shots
+      'Smashmouth': 0.85,   // Primary - strong running game focus
+      'Wide Zone': 0.8      // Secondary zone scheme with balance
     },
     riskTolerance: 0.5,    // Moderate risk tolerance
     clockManagementAggression: 0.5  // Balanced clock management
@@ -57,13 +57,13 @@ export const COACH_PROFILES: Record<string, CoachProfile> = {
     passBias: -0.05,
     twoPointAggressiveLate: false,
     onsideAggressive: false,
-    // Conservative playbook preferences - situational football
+    // Belichick → Wide Zone/Smashmouth bias (as per Phase C requirements)
     playbookPreferences: {
-      'West Coast': 0.9,    // Efficient, low-risk passing
-      'Spread': 0.3,        // Conservative tempo
+      'West Coast': 0.8,    // Primary - efficient, low-risk passing
+      'Spread': 0.2,        // Minimal tempo
       'Air Raid': 0.1,      // Minimal deep shots
-      'Smashmouth': 0.8,     // Strong running focus
-      'Wide Zone': 0.6       // Zone running for efficiency
+      'Smashmouth': 0.9,    // Primary - strong running focus
+      'Wide Zone': 0.95     // Primary - zone running for efficiency
     },
     riskTolerance: 0.2,    // Low risk tolerance - conservative decisions
     clockManagementAggression: 0.3  // Conservative clock management

@@ -1,117 +1,23 @@
 import type { EventBus } from '../../utils/EventBus';
 import type { ButtonCard, ButtonDefensiveCard, PlaybookSelectionState, DefensiveSelectionState, DiceUIConfig } from './types';
+import { CardCatalogAccessor } from '../../data/cards/CardCatalog';
 
-// Playbook card data (this would come from the game data in a real implementation)
-const PLAYBOOK_CARDS: Record<string, Omit<ButtonCard, 'id' | 'playbook'>[]> = {
-  'West Coast': [
-    { label: 'Quick Slant', type: 'pass', description: 'Short, quick pass over the middle' },
-    { label: 'Screen Pass', type: 'pass', description: 'Lateral pass behind the line of scrimmage' },
-    { label: 'Draw Play', type: 'run', description: 'Fake pass, run up the middle' },
-    { label: 'RB Screen', type: 'pass', description: 'Screen pass to the running back' },
-    { label: 'TE Seam', type: 'pass', description: 'Tight end down the seam' },
-    { label: 'HB Slip Screen', type: 'pass', description: 'Halfback screen after initial move' },
-    { label: 'WR Out', type: 'pass', description: 'Wide receiver out route' },
-    { label: 'Zone Read', type: 'run', description: 'QB reads defense, keeps or hands off' },
-    { label: 'PA Bootleg', type: 'pass', description: 'Play action, QB rolls out' },
-    { label: 'Dig Route', type: 'pass', description: 'Cross field pass route' },
-    { label: 'Inside Zone', type: 'run', description: 'Offensive line zones block' },
-    { label: 'Slants', type: 'pass', description: 'Multiple receivers run slant routes' },
-    { label: 'Counter Trey', type: 'run', description: 'Misdirection run play' },
-    { label: 'TE Corner', type: 'pass', description: 'Tight end corner route' },
-    { label: 'Power O', type: 'run', description: 'Power running scheme' },
-    { label: 'WR Screen', type: 'pass', description: 'Wide receiver screen pass' },
-    { label: 'Outside Zone', type: 'run', description: 'Stretch zone run to the edge' },
-    { label: 'Stick Route', type: 'pass', description: 'Short stick route combination' },
-    { label: 'Trap Play', type: 'run', description: 'Trap blocking scheme' },
-    { label: 'Flood Concept', type: 'pass', description: 'Three level flood routes' }
+// Tier-1 play mappings (only show these in the UI for MVP)
+const TIER_1_PLAYS: Record<string, string[]> = {
+  'WEST_COAST': [
+    'wc-quick-slant', 'wc-screen-pass', 'wc-stick-route', 'wc-slants', 'wc-rb-screen', 'wc-flood-concept'
   ],
-  'Spread': [
-    { label: 'Air Raid', type: 'pass', description: 'Four verticals concept' },
-    { label: 'Mesh Concept', type: 'pass', description: 'Crossing routes underneath' },
-    { label: 'RPO Bubble', type: 'pass', description: 'Run-pass option with bubble' },
-    { label: 'Smash Route', type: 'pass', description: 'Corner and hitch combination' },
-    { label: 'Zone Read', type: 'run', description: 'QB reads edge defender' },
-    { label: 'Levels Concept', type: 'pass', description: 'Multiple levels of routes' },
-    { label: 'Y-Stick', type: 'pass', description: 'Y receiver stick route' },
-    { label: 'Power Read', type: 'run', description: 'Power scheme with read option' },
-    { label: 'Drive Concept', type: 'pass', description: 'Drive routes to intermediate zone' },
-    { label: 'Counter', type: 'run', description: 'Counter run against spread defense' },
-    { label: 'Spot Concept', type: 'pass', description: 'Spot routes underneath' },
-    { label: 'Arrow Route', type: 'pass', description: 'Quick arrow route' },
-    { label: 'Outside Zone', type: 'run', description: 'Stretch zone to the perimeter' },
-    { label: 'Bender', type: 'pass', description: 'Bender route combination' },
-    { label: 'Inside Zone', type: 'run', description: 'Inside zone running scheme' },
-    { label: 'Curl-Flat', type: 'pass', description: 'Curl and flat route combo' },
-    { label: 'Trap', type: 'run', description: 'Trap block run play' },
-    { label: 'Post-Wheel', type: 'pass', description: 'Post and wheel combination' },
-    { label: 'Power', type: 'run', description: 'Power gap scheme' },
-    { label: 'Slants', type: 'pass', description: 'Multiple slant routes' }
+  'SPREAD': [
+    'spread-mesh-concept', 'spread-smash-route', 'spread-air-raid', 'spread-rpo-bubble', 'spread-zone-read', 'spread-rpo-bubble'
   ],
-  'Air Raid': [
-    { label: 'Four Verticals', type: 'pass', description: 'Four receivers run vertical routes' },
-    { label: 'Mesh', type: 'pass', description: 'Crossing mesh routes' },
-    { label: 'Y-Stick', type: 'pass', description: 'Y-stick route concept' },
-    { label: 'Spot', type: 'pass', description: 'Spot routes underneath' },
-    { label: 'Drive', type: 'pass', description: 'Drive routes to intermediate' },
-    { label: 'Smash', type: 'pass', description: 'Smash route combination' },
-    { label: 'Curl-Flat', type: 'pass', description: 'Curl and flat routes' },
-    { label: 'Post-Corner', type: 'pass', description: 'Post and corner routes' },
-    { label: 'Levels', type: 'pass', description: 'Multiple level routes' },
-    { label: 'Triangle', type: 'pass', description: 'Triangle route concept' },
-    { label: 'Bender', type: 'pass', description: 'Bender route combination' },
-    { label: 'Slants', type: 'pass', description: 'Slant route concept' },
-    { label: 'Arrow', type: 'pass', description: 'Arrow route underneath' },
-    { label: 'Wheel', type: 'pass', description: 'Wheel route combination' },
-    { label: 'Flood', type: 'pass', description: 'Flood route concept' },
-    { label: 'Out', type: 'pass', description: 'Out route combination' },
-    { label: 'Dig', type: 'pass', description: 'Dig route across field' },
-    { label: 'Cross', type: 'pass', description: 'Crosser route concept' },
-    { label: 'Post', type: 'pass', description: 'Post route downfield' },
-    { label: 'Corner', type: 'pass', description: 'Corner route downfield' }
+  'AIR_RAID': [
+    'AIR_RAID_FOUR_VERTS', 'AIR_RAID_MILLS', 'ar-spot', 'AIR_RAID_PA_DEEP_SHOT', 'ar-y-stick', 'ar-spot'
   ],
-  'Smashmouth': [
-    { label: 'Power O', type: 'run', description: 'Power gap scheme' },
-    { label: 'Counter', type: 'run', description: 'Counter run play' },
-    { label: 'Trap', type: 'run', description: 'Trap blocking scheme' },
-    { label: 'Inside Zone', type: 'run', description: 'Inside zone runs' },
-    { label: 'Outside Zone', type: 'run', description: 'Outside zone runs' },
-    { label: 'Pull Sweep', type: 'run', description: 'Pulling guards for sweep' },
-    { label: 'Toss', type: 'run', description: 'Toss sweep to perimeter' },
-    { label: 'Lead', type: 'run', description: 'Lead blocking run' },
-    { label: 'PA Pass', type: 'pass', description: 'Play action pass' },
-    { label: 'Bootleg', type: 'pass', description: 'Quarterback bootleg' },
-    { label: 'Counter Pass', type: 'pass', description: 'Counter pass action' },
-    { label: 'TE Seam', type: 'pass', description: 'Tight end seam route' },
-    { label: 'HB Flat', type: 'pass', description: 'Halfback flat route' },
-    { label: 'WR Out', type: 'pass', description: 'Wide receiver out route' },
-    { label: 'FB Dive', type: 'run', description: 'Fullback dive play' },
-    { label: 'Iso', type: 'run', description: 'Isolation run play' },
-    { label: 'Wham', type: 'run', description: 'Wham blocking scheme' },
-    { label: 'Power Sweep', type: 'run', description: 'Power sweep play' },
-    { label: 'Draw', type: 'run', description: 'Draw play' },
-    { label: 'Screen', type: 'pass', description: 'Screen pass' }
+  'SMASHMOUTH': [
+    'sm-power-o', 'sm-counter', 'sm-iso', 'sm-toss', 'sm-bootleg', 'sm-te-seam'
   ],
-  'Wide Zone': [
-    { label: 'Wide Zone', type: 'run', description: 'Wide zone running scheme' },
-    { label: 'Stretch Zone', type: 'run', description: 'Stretch zone to perimeter' },
-    { label: 'Inside Zone', type: 'run', description: 'Inside zone runs' },
-    { label: 'Counter', type: 'run', description: 'Counter misdirection' },
-    { label: 'Power', type: 'run', description: 'Power gap scheme' },
-    { label: 'Trap', type: 'run', description: 'Trap blocking' },
-    { label: 'Toss Sweep', type: 'run', description: 'Toss to perimeter' },
-    { label: 'Pull Sweep', type: 'run', description: 'Pulling for sweep' },
-    { label: 'RPO', type: 'pass', description: 'Run-pass option' },
-    { label: 'Play Action', type: 'pass', description: 'Play action pass' },
-    { label: 'Bootleg', type: 'pass', description: 'QB bootleg' },
-    { label: 'TE Route', type: 'pass', description: 'Tight end route' },
-    { label: 'Screen', type: 'pass', description: 'Screen pass' },
-    { label: 'HB Flat', type: 'pass', description: 'HB flat route' },
-    { label: 'WR Out', type: 'pass', description: 'WR out route' },
-    { label: 'Lead Block', type: 'run', description: 'Lead blocking run' },
-    { label: 'Cutback', type: 'run', description: 'Cutback lane run' },
-    { label: 'Gap Scheme', type: 'run', description: 'Gap blocking' },
-    { label: 'Zone Read', type: 'run', description: 'Zone read option' },
-    { label: 'Sprint Out', type: 'pass', description: 'Sprint out pass' }
+  'WIDE_ZONE': [
+    'wz-wide-zone', 'wz-inside-zone', 'wz-counter', 'wz-bootleg', 'wz-play-action', 'wz-toss-sweep'
   ]
 };
 
@@ -330,7 +236,24 @@ export class CardSelector {
     finally { this.isBroadcasting = false; }
   }
 
-  private applyPlaybookSelection(playbook: string): void {
+  private mapRiskLevel(riskLevel: string): 1 | 2 | 3 | 4 | 5 {
+    switch (riskLevel) {
+      case 'low': return 2;
+      case 'medium': return 3;
+      case 'high': return 4;
+      case 'very-high': return 5;
+      default: return 3;
+    }
+  }
+
+  private getRiskText(riskLevel: 1 | 2 | 3 | 4 | 5): string {
+    if (riskLevel <= 2) return 'Low risk';
+    if (riskLevel <= 3) return 'Medium risk';
+    if (riskLevel <= 4) return 'High risk';
+    return 'Very high risk';
+  }
+
+  private async applyPlaybookSelection(playbook: string): Promise<void> {
     if (!this.playbookState.availablePlaybooks.includes(playbook)) {
       console.warn(`Invalid playbook selected: ${playbook}`);
       return;
@@ -338,24 +261,45 @@ export class CardSelector {
 
     this.playbookState.selectedPlaybook = playbook;
 
-    // Update cards for selected playbook
-    const cards = PLAYBOOK_CARDS[playbook] || [];
-    this.playbookState.cards = cards.map((card, index) => ({
-      ...card,
-      id: `${playbook.toLowerCase().replace(' ', '-')}-card-${index}`,
-      playbook: playbook as any,
-      isSelected: false,
-      isDisabled: false,
-      isHovered: false,
-      ariaLabel: `${card.label}: ${card.description}`,
-      variant: 'primary' as const
-    }));
+    try {
+      // Get all cards for this playbook from the catalog
+      const allCards = await CardCatalogAccessor.getPlaybookCards(playbook as any);
 
-    this.renderPlaybookCards();
+      // Filter to only Tier-1 plays
+      const tier1PlayIds = TIER_1_PLAYS[playbook] || [];
+      const tier1Cards = allCards.filter(card => tier1PlayIds.includes(card.id));
 
-    // Announce selection for screen readers
-    if (this.config.accessibility.announceCardSelections) {
-      this.announceToScreenReader(`Playbook changed to ${playbook}`);
+      // Map to button cards with risk information
+      this.playbookState.cards = tier1Cards.map((card, index) => {
+        const riskLevel = this.mapRiskLevel(card.riskLevel);
+        const riskText = this.getRiskText(riskLevel);
+
+        return {
+          label: card.label,
+          type: card.type,
+          description: card.description,
+          riskLevel,
+          id: `${playbook.toLowerCase().replace(' ', '-')}-card-${index}`,
+          playbook: playbook as any,
+          isSelected: false,
+          isDisabled: false,
+          isHovered: false,
+          ariaLabel: `${card.label}: ${card.description}. Risk level: ${riskText}`,
+          variant: 'primary' as const
+        };
+      });
+
+      this.renderPlaybookCards();
+
+      // Announce selection for screen readers
+      if (this.config.accessibility.announceCardSelections) {
+        this.announceToScreenReader(`Playbook changed to ${playbook}. ${tier1Cards.length} plays available`);
+      }
+    } catch (error) {
+      console.error('Failed to load playbook cards:', error);
+      // Fallback to empty cards
+      this.playbookState.cards = [];
+      this.renderPlaybookCards();
     }
   }
 
@@ -395,6 +339,26 @@ export class CardSelector {
     const type = document.createElement('div');
     type.className = `dice-card-type dice-card-type-${card.type}`;
     type.textContent = card.type.toUpperCase();
+
+    // Add risk indicator if available
+    if (card.riskLevel) {
+      const riskIndicator = document.createElement('div');
+      riskIndicator.className = 'dice-card-risk';
+      riskIndicator.setAttribute('aria-label', `Risk level: ${this.getRiskText(card.riskLevel)}`);
+
+      // Create visual risk bar
+      const riskBar = document.createElement('div');
+      riskBar.className = 'dice-card-risk-bar';
+
+      for (let i = 1; i <= 5; i++) {
+        const riskDot = document.createElement('span');
+        riskDot.className = `dice-card-risk-dot ${i <= card.riskLevel ? 'filled' : 'empty'}`;
+        riskBar.appendChild(riskDot);
+      }
+
+      riskIndicator.appendChild(riskBar);
+      button.appendChild(riskIndicator);
+    }
 
     button.appendChild(title);
     button.appendChild(description);

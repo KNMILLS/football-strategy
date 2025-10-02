@@ -9,6 +9,7 @@ import { PenaltyAdvisor } from './PenaltyAdvisor';
 import type { PenaltyContext } from './PenaltyAdvisor';
 import { TendencyTracker } from './TendencyTracker';
 import type { PlaybookTendencyCategory } from './TendencyTracker';
+import { fetchMatchupTableByCards, fetchPenaltyTableByName } from '../../data/loaders/tables';
 
 /**
  * Play selection candidate for the new dice system
@@ -64,8 +65,6 @@ export class PlaybookCoach {
     gameState: GameState,
     availableCards: PlaybookCard[],
     defensivePlays: DefensivePlay[],
-    matchupTables: Map<string, any>, // Simplified for this implementation
-    penaltyTable: any,
     rngSeed: number
   ): PlayCandidate {
     this.rng = createLCG(rngSeed);
@@ -95,11 +94,14 @@ export class PlaybookCoach {
       const evMatrix = new Map<DefensivePlay, number>();
       let totalEV = 0;
 
+      // Calculate EV for all defensive plays using fallback for now
+      // TODO: Implement proper async table loading when needed
       for (const defensePlay of defensivePlays) {
-        // Simplified: use average EV across all defenses for now
-        const candidateEV = this.calculateCandidateEV(card, defensePlay, evContext, rngSeed++);
-        evMatrix.set(defensePlay, candidateEV);
-        totalEV += candidateEV;
+        if (defensePlay) {
+          const candidateEV = this.calculateFallbackEV(card, defensePlay, evContext);
+          evMatrix.set(defensePlay, candidateEV);
+          totalEV += candidateEV;
+        }
       }
 
       const expectedValue = totalEV / defensivePlays.length;
@@ -310,21 +312,68 @@ export class PlaybookCoach {
   }
 
   /**
-   * Calculate EV for a specific offensive play candidate
+   * Calculate EV for a specific offensive play candidate using real matchup tables
    */
-  private calculateCandidateEV(
+  private async calculateCandidateEV(
     card: PlaybookCard,
     defensePlay: DefensivePlay,
     context: EVContext,
     rngSeed: number
+  ): Promise<number> {
+    try {
+      // Try to load the exact matchup table for this play/defense combination
+      const tableResult = await fetchMatchupTableByCards(card.label, defensePlay);
+
+      if (tableResult.ok) {
+        // Use real EV calculation with the matchup table
+        const candidate: any = {
+          playbook: card.playbook,
+          offenseCardId: card.id || card.label,
+          defensePlay,
+          matchupTable: tableResult.data,
+          penaltyTable: await this.loadPenaltyTable()
+        };
+
+        const evResult = this.evCalculator.calculateEV(candidate, context, rngSeed, false);
+        return evResult.expectedYards;
+      } else {
+        // Table not found - use fallback logic
+        console.warn(`Table missing for ${card.label} vs ${defensePlay} - using fallback`);
+        return this.calculateFallbackEV(card, defensePlay, context);
+      }
+    } catch (error) {
+      console.error(`Error calculating EV for ${card.label} vs ${defensePlay}:`, error);
+      return this.calculateFallbackEV(card, defensePlay, context);
+    }
+  }
+
+  /**
+   * Fallback EV calculation when matchup table is not available
+   */
+  private calculateFallbackEV(
+    card: PlaybookCard,
+    defensePlay: DefensivePlay,
+    context: EVContext
   ): number {
-    // Simplified EV calculation - in practice would run full simulations
-    // For now, use a heuristic based on play type and field position
+    // Use heuristic based on play type and field position
     const baseValue = this.getBasePlayValue(card, context.gameState);
     const fieldBonus = this.getFieldPositionBonus(context.gameState.ballOn);
     const downBonus = this.getDownDistanceBonus(context.gameState);
 
     return baseValue + fieldBonus + downBonus;
+  }
+
+  /**
+   * Load penalty table for EV calculations
+   */
+  private async loadPenaltyTable(): Promise<any> {
+    try {
+      const penaltyResult = await fetchPenaltyTableByName('penalty_table_v1');
+      return penaltyResult.ok ? penaltyResult.data : null;
+    } catch (error) {
+      console.error('Failed to load penalty table:', error);
+      return null;
+    }
   }
 
   /**

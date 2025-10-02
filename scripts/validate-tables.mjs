@@ -3,7 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { validateTableSet } from '../dist/data/validators/MatchupTableValidator.js';
+import { validateTableSet } from '../src/data/validators/MatchupTableValidator.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

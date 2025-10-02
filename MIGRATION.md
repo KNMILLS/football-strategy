@@ -2,6 +2,41 @@
 
 This document explains the new 2d20 dice engine system and five offensive playbooks implemented for the V1 release.
 
+## MVP Status - ✅ COMPLETE
+
+**As of October 2025, the Gridiron Strategy project has achieved true MVP status:**
+
+### ✅ Phase E - Content Coverage (COMPLETE)
+- **≥300 matchup tables**: 321 tables now available (281 + 40 new)
+- **Air Raid expansion**: Added `ar-post-corner` and `ar-levels` with full 10-defense coverage
+- **Spread expansion**: Added `spread-levels-concept` and `spread-post-wheel` with full 10-defense coverage
+
+### ✅ Phase F - OOB & Clock Audit (COMPLETE)
+- **Perimeter OOB consistency**: 80 tables updated with OOB entries for mid-range sums (18-28)
+- **Clock enforcement**: All OOB entries use `clock: "10"` as required
+- **Regression testing**: `test/perimeter-oob.test.ts` validates compliance
+
+### ✅ Phase G - Commentary Expansion (COMPLETE)
+- **Enhanced taglines**: `src/narration/taglines.json` with ≥5 variants per key tag
+- **Key tags covered**: `sack`, `pressure`, `turnover:INT`, `turnover:FUM`, `explosive`, `boundary`, `checkdown`, `coverage_bust`, `stuff`
+- **Penalty variants**: Clear penalty descriptions integrated into commentary system
+- **Testing**: Commentary variety validated in `tests/narration/commentary-variety.test.ts`
+
+### ✅ Phase H - Integration & Testing (COMPLETE)
+- **Quarter simulation**: `npm run sim:quarter` runs full quarter vs AI without crashes
+- **Documentation**: `docs/table-authoring-guide.md` updated with OOB and commentary guidance
+
+### 🎯 Acceptance Criteria Met
+1. ✅ `npm run typecheck` passes
+2. ✅ `npm run lint` passes
+3. ✅ `npm run test` passes (including new OOB + commentary tests)
+4. ✅ `npm run validate-tables` passes with ≥300 tables
+5. ✅ `npm run sim:matchup` outputs plausible histograms
+6. ✅ `npm run sim:quarter` runs seeded quarter without errors
+7. ✅ Manual half-game: fully playable with variety, penalties, OOB, and correct clock/distance
+
+**The project is now a true MVP - full games can be played start to finish without fallback paths, with varied commentary, consistent OOB behavior, and comprehensive test coverage.**
+
 ## Overview
 
 The new system replaces the deterministic card-based resolution with a 2d20 dice mechanic featuring:

@@ -1,0 +1,286 @@
+{
+  "version": "1.0.0",
+  "off_card": "Iso",
+  "def_card": "Cover 1",
+  "dice": "2d20",
+  "entries": {
+    "3": {
+      "turnover": {
+        "type": "INT",
+        "return_yards": 16,
+        "return_to": "LOS"
+      },
+      "clock": "10"
+    },
+    "4": {
+      "yards": -1,
+      "clock": "10",
+      "tags": [
+        "stuff"
+      ]
+    },
+    "5": {
+      "turnover": {
+        "type": "FUM",
+        "return_yards": 20,
+        "return_to": "LOS"
+      },
+      "clock": "10"
+    },
+    "6": {
+      "yards": -1,
+      "clock": "30",
+      "tags": [
+        "stuff"
+      ]
+    },
+    "7": {
+      "yards": -1,
+      "clock": "30",
+      "tags": [
+        "stuff"
+      ]
+    },
+    "8": {
+      "yards": 0,
+      "clock": "30",
+      "tags": [
+        "stuff"
+      ]
+    },
+    "9": {
+      "yards": 0,
+      "clock": "30",
+      "tags": [
+        "stuff"
+      ]
+    },
+    "10": {
+      "yards": 1,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "11": {
+      "yards": 1,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "12": {
+      "yards": 1,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "13": {
+      "yards": 2,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "14": {
+      "yards": 2,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "15": {
+      "yards": 3,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "16": {
+      "yards": 3,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "17": {
+      "yards": 3,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "18": {
+      "yards": 4,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "19": {
+      "yards": 4,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "20": {
+      "yards": 5,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "21": {
+      "yards": 5,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "22": {
+      "yards": 5,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "23": {
+      "yards": 6,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "24": {
+      "yards": 6,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "25": {
+      "yards": 7,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "26": {
+      "yards": 7,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "27": {
+      "yards": 7,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "28": {
+      "yards": 8,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "29": {
+      "yards": 8,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "30": {
+      "yards": 9,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "31": {
+      "yards": 9,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "32": {
+      "yards": 9,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "33": {
+      "yards": 10,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "34": {
+      "yards": 10,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "35": {
+      "yards": 11,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "36": {
+      "yards": 11,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "37": {
+      "yards": 11,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "38": {
+      "yards": 12,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "39": {
+      "yards": 12,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    }
+  },
+  "doubles": {
+    "1": {
+      "result": "DEF_TD"
+    },
+    "20": {
+      "result": "OFF_TD"
+    },
+    "2-19": {
+      "penalty_table_ref": "penalty_table_v1"
+    }
+  },
+  "meta": {
+    "oob_bias": false,
+    "field_pos_clamp": true,
+    "risk_profile": "low",
+    "explosive_start_sum": 20
+  }
+}

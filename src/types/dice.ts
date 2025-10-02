@@ -58,6 +58,8 @@ export interface DiceResolutionResult {
   clockRunoff: 10 | 20 | 30;
   // Tags for UI and commentary
   tags: string[];
+  // Out of bounds flag
+  oob?: boolean;
 }
 
 // Enhanced game state for dice system

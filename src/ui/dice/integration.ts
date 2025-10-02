@@ -170,11 +170,18 @@ export class DiceUIIntegration {
    */
   showDiceResult(
     diceResult: { d1: number; d2: number; sum: number; isDoubles: boolean },
-    outcome: DiceResolutionResult
+    outcome: DiceResolutionResult,
+    offensiveCard?: { label: string; type: string },
+    defensiveCard?: { label: string }
   ): void {
     if (!this.isEnabled || !this.diceUI) return;
 
-    this.bus.emit('ui:diceResult', { diceResult, outcome });
+    this.bus.emit('ui:diceResult', {
+      diceResult,
+      outcome,
+      offensiveCard,
+      defensiveCard
+    } as any);
   }
 
   /**

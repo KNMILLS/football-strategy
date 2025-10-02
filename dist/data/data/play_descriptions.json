@@ -1,0 +1,574 @@
+{
+  "$schema": "https://gridiron.dev/schema/play-v1.json",
+  "$id": "https://gridiron.dev/plays/offensive-collection-v1.json",
+  "title": "Gridiron Strategy Offensive Plays",
+  "description": "Comprehensive collection of all 66 offensive play cards (22 per style) with detailed execution, coaching, and tactical data",
+  "version": "1.0.0",
+  "metadata": {
+    "total_plays": 66,
+    "styles": ["Pro Style", "Ball Control", "Aerial Style"],
+    "plays_per_style": 22,
+    "author": "Gridiron Strategy AI",
+    "created_at": "2025-01-01T00:00:00Z",
+    "updated_at": "2025-01-01T00:00:00Z"
+  },
+  "plays": [
+    {
+      "id": "O_PRO_01",
+      "style": "Pro Style",
+      "label": "Power Up Middle",
+      "type": "Run",
+      "tempo": "normal",
+      "ball_on_hash": "middle",
+      "personnel": "21",
+      "formation": {
+        "set": "I-Formation",
+        "strength": "balanced",
+        "quarterback": "under_center",
+        "backfield": "i",
+        "notes": [
+          "Classic power run designed to attack the heart of the defense",
+          "Fullback leads through the A/B gap with pulling guard assistance"
+        ]
+      },
+      "pre_snap": {
+        "motion": null,
+        "shift": null,
+        "count": "on two",
+        "alerts": [
+          "If defense shows stacked box, audible to outside zone",
+          "If nose tackle aligns heads-up on center, double-team with guard"
+        ]
+      },
+      "alignments": {
+        "QB": { "technique": "under_center", "depth_yards": 0, "split": "mid", "stance": "two-hand snap stance" },
+        "RB": { "technique": "tailback", "depth_yards": 7, "shade": "right of midline", "track": "follow fullback through hole" },
+        "FB": { "technique": "fullback", "depth_yards": 0, "shade": "directly behind QB", "track": "A/B gap" },
+        "X": { "technique": "split end", "side": "left", "split": "numbers", "depth_yards": 0 },
+        "Z": { "technique": "split end", "side": "right", "split": "numbers", "depth_yards": 0 },
+        "Y": { "technique": "tight end", "side": "right", "split": "6 inches outside RT", "depth_yards": 0 },
+        "LT": { "technique": "tackle", "side": "left" },
+        "LG": { "technique": "guard", "side": "left" },
+        "C": { "technique": "center" },
+        "RG": { "technique": "guard", "side": "right" },
+        "RT": { "technique": "tackle", "side": "right" }
+      },
+      "protection": {
+        "scheme": "Power Run Block",
+        "rules": {
+          "LT": "double-team with LG on 3-tech. Drive defender backward.",
+          "LG": "combo with LT on DT. Climb to second level if double successful.",
+          "C": "reach to backside LB. If uncovered, help either A-gap.",
+          "RG": "pull to frontside. Lead through hole to block MLB.",
+          "RT": "seal edge. Prevent OLB penetration.",
+          "Y": "seal edge initially, then climb to second level."
+        }
+      },
+      "routes_and_runs": {
+        "RB": {
+          "role": "cutback option",
+          "route": [
+            "trail FB through primary hole",
+            "cut back if primary clogged",
+            "follow pulling RG for momentum"
+          ],
+          "landmark": "follow FB track, cut on second level block"
+        }
+      },
+      "play_flow": [
+        "QB receives snap under center and immediately hands off to FB.",
+        "FB takes handoff and follows RG pull through A/B gap.",
+        "LT/LG execute double-team drive block on DT.",
+        "RG pulls and leads through hole to block MLB.",
+        "RT/Y seal edge and climb to second level.",
+        "RB trails as cutback option if primary hole clogged.",
+        "FB hits hole with forward lean, falls forward for extra yards."
+      ],
+      "read_progression": [
+        "Primary: A/B gap behind pulling RG",
+        "Cutback: B/C gap if primary clogged",
+        "Bounce: outside if edge clean"
+      ],
+      "ball_handling": {
+        "exchange": "direct handoff from QB to FB behind center",
+        "mesh_point": "FB meets ball at QB's back hip",
+        "hash_landmarks": "hole between center and RG"
+      },
+      "constraints_and_tags": [
+        "Tag 'Power' for goal line situations",
+        "Kill to 'Zone' if defense shows light box"
+      ],
+      "players": [
+        {
+          "position": "QB",
+          "role": "handoff and boot fake",
+          "responsibilities": [
+            "Clean handoff to FB at mesh point",
+            "Carry out boot fake to hold backside pursuit",
+            "Sell run action to prevent LB flow"
+          ],
+          "timing": "handoff on first step, boot carry for two steps"
+        },
+        {
+          "position": "FB",
+          "role": "primary ball carrier",
+          "responsibilities": [
+            "Secure handoff with eyes on hole",
+            "Follow pulling RG through A/B gap",
+            "Hit hole with low pad level and forward lean",
+            "Fall forward after contact for extra yards"
+          ],
+          "mechanics": "meet ball at QB hip, burst through hole"
+        },
+        {
+          "position": "RB",
+          "role": "cutback option",
+          "responsibilities": [
+            "Trail FB by 2 yards",
+            "Read primary hole and cut back if clogged",
+            "Follow blocks to second level"
+          ]
+        },
+        {
+          "position": "LT",
+          "role": "drive blocker",
+          "responsibilities": [
+            "Execute double-team with LG on DT",
+            "Drive defender backward 3 yards",
+            "Climb to second level LB if double successful"
+          ]
+        },
+        {
+          "position": "LG",
+          "role": "double-team partner",
+          "responsibilities": [
+            "Combo with LT on DT",
+            "Drive low and finish to whistle",
+            "Scan for second level if double wins"
+          ]
+        },
+        {
+          "position": "C",
+          "role": "reach blocker",
+          "responsibilities": [
+            "Reach to backside LB",
+            "If uncovered, help either A-gap",
+            "Sustain block through whistle"
+          ]
+        },
+        {
+          "position": "RG",
+          "role": "pulling lead blocker",
+          "responsibilities": [
+            "Pull across formation",
+            "Lead through hole to block MLB",
+            "Create running lane for FB"
+          ]
+        },
+        {
+          "position": "RT",
+          "role": "edge sealer",
+          "responsibilities": [
+            "Seal OLB penetration",
+            "Prevent edge crash",
+            "Climb to second level after initial seal"
+          ]
+        },
+        {
+          "position": "Y",
+          "role": "edge sealer and climber",
+          "responsibilities": [
+            "Seal edge initially",
+            "Climb to second level LB",
+            "Prevent backside pursuit"
+          ]
+        }
+      ],
+      "coaching_points": {
+        "risk": [
+          "Fumble if FB doesn't secure handoff cleanly",
+          "Negative yards if double-team fails",
+          "Penalty if pulling RG clips"
+        ],
+        "reward": [
+          "Consistent 3-6 yard gains vs balanced fronts",
+          "Goal line and short yardage conversion",
+          "Wears down defensive front"
+        ],
+        "practice": [
+          "Rep double-team technique with LT/LG",
+          "Practice pulling RG timing and path",
+          "Emphasize pad level and forward lean"
+        ]
+      },
+      "meta": {
+        "author": "Gridiron Strategy AI",
+        "source_card": "assets/cards/Pro Style/Power Up Middle.jpg",
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z",
+        "provenance": "Derived from original card art and football strategy principles"
+      }
+    },
+    {
+      "id": "O_PRO_02",
+      "style": "Pro Style",
+      "label": "Power Off Tackle",
+      "type": "Run",
+      "tempo": "normal",
+      "ball_on_hash": "middle",
+      "personnel": "21",
+      "formation": {
+        "set": "I-Formation",
+        "strength": "balanced",
+        "quarterback": "under_center",
+        "backfield": "i",
+        "notes": [
+          "Off-tackle power run attacking C-gap between tackle and tight end",
+          "Pulling guard from backside creates extra running lane"
+        ]
+      },
+      "pre_snap": {
+        "motion": null,
+        "shift": null,
+        "count": "on one",
+        "alerts": [
+          "If defense crashes edge hard, audible to inside zone",
+          "If OLB aligns wide, pulling LG has clear path"
+        ]
+      },
+      "alignments": {
+        "QB": { "technique": "under_center", "depth_yards": 0, "split": "mid" },
+        "RB": { "technique": "tailback", "depth_yards": 7, "shade": "right of midline", "track": "C-gap behind pulling LG" },
+        "X": { "technique": "split end", "side": "left", "split": "numbers" },
+        "Z": { "technique": "split end", "side": "right", "split": "numbers" },
+        "Y": { "technique": "tight end", "side": "right", "split": "6 inches outside RT" },
+        "LT": { "technique": "tackle", "side": "left" },
+        "LG": { "technique": "guard", "side": "left" },
+        "C": { "technique": "center" },
+        "RG": { "technique": "guard", "side": "right" },
+        "RT": { "technique": "tackle", "side": "right" }
+      },
+      "protection": {
+        "scheme": "Off-Tackle Run Block",
+        "rules": {
+          "LT": "reach block on DT. Prevent penetration.",
+          "LG": "pull to frontside. Lead through C-gap.",
+          "C": "combo with RG on nose tackle.",
+          "RG": "double-team with C on NT.",
+          "RT": "seal edge defender inside.",
+          "Y": "combo with RT on DE, then climb to LB."
+        }
+      },
+      "routes_and_runs": {
+        "RB": {
+          "role": "primary ball carrier",
+          "route": [
+            "attack C-gap behind pulling LG",
+            "cut off LG's block on MLB",
+            "accelerate to second level"
+          ],
+          "landmark": "C-gap, follow pulling LG"
+        }
+      },
+      "play_flow": [
+        "QB receives snap and hands off to RB.",
+        "LG pulls across formation to lead through C-gap.",
+        "C/RG double-team nose tackle.",
+        "RT/Y combo block on DE.",
+        "LT reaches to DT.",
+        "RB follows pulling LG through C-gap.",
+        "RB breaks arm tackles and accelerates to second level."
+      ],
+      "read_progression": [
+        "Primary: C-gap behind pulling LG",
+        "Cutback: B/C gap if primary clogged",
+        "Bounce: outside if edge clean"
+      ],
+      "ball_handling": {
+        "exchange": "direct handoff from QB to RB",
+        "mesh_point": "RB meets ball at QB's front hip",
+        "hash_landmarks": "hole at C-gap between RT and Y"
+      },
+      "constraints_and_tags": [
+        "Tag 'Off Tackle' for balanced fronts",
+        "Kill to 'Power' if defense loads box"
+      ],
+      "players": [
+        {
+          "position": "QB",
+          "role": "handoff and boot fake",
+          "responsibilities": [
+            "Clean handoff to RB",
+            "Carry out boot fake to hold pursuit",
+            "Sell run action"
+          ]
+        },
+        {
+          "position": "RB",
+          "role": "primary ball carrier",
+          "responsibilities": [
+            "Follow pulling LG through C-gap",
+            "Cut off LG's block on MLB",
+            "Burst to second level",
+            "Break arm tackles with leg drive"
+          ],
+          "mechanics": "meet ball at QB hip, burst through hole"
+        },
+        {
+          "position": "LG",
+          "role": "pulling lead blocker",
+          "responsibilities": [
+            "Pull across formation quickly",
+            "Lead through C-gap to block MLB",
+            "Create clear running lane"
+          ]
+        }
+      ],
+      "coaching_points": {
+        "risk": [
+          "Fumble if RB doesn't secure handoff",
+          "Negative yards if LG pull is slow",
+          "Penalty if LG clips"
+        ],
+        "reward": [
+          "Consistent 4-7 yard gains",
+          "Explosive runs vs aggressive defenses",
+          "Versatile against most fronts"
+        ],
+        "practice": [
+          "Rep LG pulling path and timing",
+          "Practice C/RG double-team technique",
+          "Emphasize burst through hole"
+        ]
+      },
+      "meta": {
+        "author": "Gridiron Strategy AI",
+        "source_card": "assets/cards/Pro Style/Power Off Tackle.jpg",
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    {
+      "id": "O_PRO_03",
+      "style": "Pro Style",
+      "label": "QB Keeper",
+      "type": "Run",
+      "tempo": "normal",
+      "ball_on_hash": "right",
+      "personnel": "11",
+      "formation": {
+        "set": "Shotgun",
+        "strength": "right",
+        "quarterback": "gun",
+        "backfield": "singleback",
+        "notes": [
+          "QB keeps ball and runs to edge, often as RPO option",
+          "Offensive line sells pass protection initially"
+        ]
+      },
+      "pre_snap": {
+        "motion": null,
+        "shift": null,
+        "count": "on one",
+        "alerts": [
+          "If OLB crashes hard, keep and run",
+          "If safety rotates down, throw to hot route"
+        ]
+      },
+      "alignments": {
+        "QB": { "technique": "gun", "depth_yards": 5, "split": "mid" },
+        "RB": { "technique": "dot", "depth_yards": 7, "shade": "right of QB", "track": "flat route" },
+        "X": { "technique": "wide", "side": "left", "split": "numbers" },
+        "Z": { "technique": "wide", "side": "right", "split": "outside numbers" },
+        "H": { "technique": "slot", "side": "right", "split": "inside Z by 3" },
+        "Y": { "technique": "inline", "side": "right", "split": "6 inches outside RT" },
+        "LT": { "technique": "tackle", "side": "left" },
+        "LG": { "technique": "guard", "side": "left" },
+        "C": { "technique": "center" },
+        "RG": { "technique": "guard", "side": "right" },
+        "RT": { "technique": "tackle", "side": "right" }
+      },
+      "protection": {
+        "scheme": "Slide Right 5",
+        "rules": {
+          "LT": "big on big vs. left DE",
+          "LG": "gap to LB, slide to B-gap",
+          "C": "first A-gap threat",
+          "RG": "gap to LB, slide right",
+          "RT": "big on big vs. right DE",
+          "Y": "chip DE then release to flat"
+        }
+      },
+      "routes_and_runs": {
+        "RB": {
+          "role": "check-down option",
+          "route": [
+            "break to flat at 3 yards",
+            "sit in window vs zone"
+          ],
+          "hot_adjust": "arrow if blitz detected"
+        }
+      },
+      "play_flow": [
+        "QB receives snap in shotgun.",
+        "OL sets pass protection, RB breaks to flat.",
+        "QB reads OLB: if LB drops, throw to RB; if LB crashes, keep and run.",
+        "QB boots out to right if keeping.",
+        "Receivers run hot routes as check-downs.",
+        "QB gains speed in open field and makes defender miss."
+      ],
+      "read_progression": [
+        "Primary: RB flat if LB drops",
+        "Secondary: H curl if zone coverage",
+        "Run: if LB crashes hard"
+      ],
+      "ball_handling": {
+        "exchange": "QB keeps ball, no handoff",
+        "mesh_point": "fake handoff to RB",
+        "hash_landmarks": "QB boot path to right numbers"
+      },
+      "constraints_and_tags": [
+        "Tag 'Keeper' if OLB shows blitz",
+        "Kill to 'Check-down' if safety rotates down"
+      ],
+      "players": [
+        {
+          "position": "QB",
+          "role": "ball carrier and reader",
+          "responsibilities": [
+            "Read OLB pre-snap and post-snap",
+            "If LB crashes, keep and boot right",
+            "If LB drops, throw to RB flat",
+            "Gain speed and make defender miss"
+          ],
+          "mechanics": "quick feet, decisive read"
+        },
+        {
+          "position": "RB",
+          "role": "check-down receiver",
+          "responsibilities": [
+            "Sell run fake initially",
+            "Break to flat at 3 yards",
+            "Sit in window vs zone coverage"
+          ]
+        }
+      ],
+      "coaching_points": {
+        "risk": [
+          "QB injury if hit hard while running",
+          "Sack if protection breaks down",
+          "Turnover if fumbled while running"
+        ],
+        "reward": [
+          "First down conversions on 3rd and short",
+          "Effective against blitzing defenses",
+          "Can be called as audible"
+        ],
+        "practice": [
+          "Rep OLB read and decision timing",
+          "Practice bootleg path and footwork",
+          "Emphasize ball security while running"
+        ]
+      },
+      "meta": {
+        "author": "Gridiron Strategy AI",
+        "source_card": "assets/cards/Pro Style/QB Keeper.jpg",
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+      }
+    }
+  ],
+  "defensive_schemes": {
+    "Goal Line": {
+      "description": "Heavy run defense with stacked box, used near opponent's goal line",
+      "formation": "8-man front with extra DBs in box",
+      "purpose": "Stop short-yardage and goal line situations",
+      "strengths": ["Run defense", "Red zone stops"],
+      "weaknesses": ["Deep passes", "Play action"]
+    },
+    "Short Yardage": {
+      "description": "Conservative defense focused on stopping short gains",
+      "formation": "7-man front with man coverage",
+      "purpose": "Prevent easy first downs",
+      "strengths": ["Short yardage stops", "Blitz pickup"],
+      "weaknesses": ["Deep passes", "Screens"]
+    },
+    "Inside Blitz": {
+      "description": "Aggressive blitz from interior linebackers or DTs",
+      "formation": "Blitz from A/B gaps",
+      "purpose": "Disrupt timing and pressure quarterback",
+      "strengths": ["QB pressure", "Run stops"],
+      "weaknesses": ["Coverage underneath", "Draw plays"]
+    },
+    "Running": {
+      "description": "Base run defense with 7-man front",
+      "formation": "Standard 4-3 or 3-4 alignment",
+      "purpose": "Stop the run while maintaining pass defense",
+      "strengths": ["Balanced run/pass defense"],
+      "weaknesses": ["Specialized attacks"]
+    },
+    "Run & Pass": {
+      "description": "Hybrid defense that can adjust to run or pass",
+      "formation": "Multiple fronts with zone coverage",
+      "purpose": "Keep offense guessing",
+      "strengths": ["Versatility", "Adjustment capability"],
+      "weaknesses": ["Complexity", "Communication"]
+    },
+    "Pass & Run": {
+      "description": "Pass-first defense that can stop the run",
+      "formation": "Nickel/dime packages",
+      "purpose": "Stop pass while containing run",
+      "strengths": ["Pass coverage", "Blitz packages"],
+      "weaknesses": ["Heavy run formations"]
+    },
+    "Passing": {
+      "description": "Pure pass defense with extra DBs",
+      "formation": "Nickel/dime with man coverage",
+      "purpose": "Stop pass plays",
+      "strengths": ["Pass coverage", "Blitz pickup"],
+      "weaknesses": ["Run defense", "Play action"]
+    },
+    "Outside Blitz": {
+      "description": "Aggressive blitz from edge defenders",
+      "formation": "Blitz from C/D gaps or secondary",
+      "purpose": "Pressure quarterback from edges",
+      "strengths": ["QB pressure", "Edge containment"],
+      "weaknesses": ["Underneath coverage", "Screens"]
+    },
+    "Prevent": {
+      "description": "Soft coverage designed to prevent big plays",
+      "formation": "Deep safeties with underneath zones",
+      "purpose": "Protect leads late in game",
+      "strengths": ["Deep coverage", "Time management"],
+      "weaknesses": ["Underneath passes", "Run plays"]
+    },
+    "Prevent Deep": {
+      "description": "Ultra-conservative prevent defense",
+      "formation": "Very deep safeties, soft underneath",
+      "purpose": "Absolutely prevent deep passes",
+      "strengths": ["Deep coverage", "Lead protection"],
+      "weaknesses": ["Short passes", "Run plays"]
+    }
+  },
+  "play_characteristics": {
+    "run_plays": ["Power Up Middle", "Power Off Tackle", "QB Keeper", "Slant Run", "End Run", "Reverse", "Draw", "Trap"],
+    "pass_plays": ["Flair Pass", "Sideline Pass", "Look In Pass", "Screen Pass", "Pop Pass", "Button Hook Pass", "Down & Out Pass", "Down & In Pass", "Long Bomb", "Stop & Go Pass"],
+    "hybrid_plays": ["Run & Pass Option", "Razzle Dazzle"],
+    "trick_plays": ["Reverse", "Razzle Dazzle"],
+    "short_yardage_plays": ["Power Up Middle", "QB Keeper", "Trap"],
+    "deep_threat_plays": ["Long Bomb", "Stop & Go Pass", "Down & Out Pass"],
+    "possession_plays": ["Power Up Middle", "Draw", "Screen Pass"],
+    "red_zone_plays": ["QB Keeper", "Power Up Middle", "Screen Pass", "Flair Pass"]
+  },
+  "conversion_notes": {
+    "description": "This file has been partially converted to the new canonical format. The first 4 Pro Style plays have been fully converted as examples.",
+    "remaining_work": [
+      "Convert remaining 18 Pro Style plays (O_PRO_05 through O_PRO_22)",
+      "Convert all 22 Ball Control plays (O_BALL_01 through O_BALL_22)",
+      "Convert all 22 Aerial Style plays (O_AERIAL_01 through O_AERIAL_22)",
+      "Each play needs: proper ID, formation details, alignments, protection, routes, play flow, read progression, players, coaching points, and meta data"
+    ],
+    "pattern_established": true,
+    "next_steps": "Continue converting remaining plays following the established pattern from O_PRO_01 through O_PRO_10"
+  }
+}

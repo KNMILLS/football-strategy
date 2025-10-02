@@ -1,0 +1,346 @@
+{
+  "version": "1.0.0",
+  "off_card": "Y-Stick",
+  "def_card": "Cover 2",
+  "dice": "2d20",
+  "entries": {
+    "3": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "pressure"
+      ]
+    },
+    "4": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "pressure"
+      ]
+    },
+    "5": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "pressure"
+      ]
+    },
+    "6": {
+      "yards": 2,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short"
+      ]
+    },
+    "7": {
+      "yards": 3,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short"
+      ]
+    },
+    "8": {
+      "yards": 4,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short"
+      ]
+    },
+    "9": {
+      "yards": 5,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short"
+      ]
+    },
+    "10": {
+      "yards": 6,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short"
+      ]
+    },
+    "11": {
+      "yards": 6,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short"
+      ]
+    },
+    "12": {
+      "yards": 7,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short"
+      ]
+    },
+    "13": {
+      "yards": 8,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short"
+      ]
+    },
+    "14": {
+      "yards": 9,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short"
+      ]
+    },
+    "15": {
+      "yards": 10,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "16": {
+      "yards": 10,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "17": {
+      "yards": 11,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "18": {
+      "yards": 12,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "19": {
+      "yards": 13,
+      "clock": "10",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "20": {
+      "yards": 14,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "21": {
+      "yards": 14,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "22": {
+      "yards": 15,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "23": {
+      "yards": 16,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "24": {
+      "yards": 17,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "25": {
+      "yards": 18,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "26": {
+      "yards": 18,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "27": {
+      "yards": 19,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "28": {
+      "yards": 20,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "29": {
+      "yards": 21,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "30": {
+      "yards": 22,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "31": {
+      "yards": 22,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "32": {
+      "yards": 23,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "33": {
+      "yards": 24,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "34": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "35": {
+      "yards": 26,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "36": {
+      "yards": 26,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "37": {
+      "yards": 27,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "38": {
+      "yards": 28,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    },
+    "39": {
+      "yards": 29,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "short",
+        "first_down"
+      ]
+    }
+  },
+  "doubles": {
+    "1": {
+      "result": "DEF_TD"
+    },
+    "20": {
+      "result": "OFF_TD"
+    },
+    "2-19": {
+      "penalty_table_ref": "penalty_table_v1"
+    }
+  },
+  "meta": {
+    "oob_bias": false,
+    "field_pos_clamp": true,
+    "risk_profile": "medium",
+    "explosive_start_sum": 20
+  }
+}

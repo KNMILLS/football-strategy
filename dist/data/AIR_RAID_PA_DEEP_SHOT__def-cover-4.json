@@ -1,0 +1,335 @@
+{
+  "version": "1.0.0",
+  "off_card": "PA Deep Shot",
+  "def_card": "Cover 4",
+  "dice": "2d20",
+  "entries": {
+    "3": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "pressure"
+      ]
+    },
+    "4": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "pressure"
+      ]
+    },
+    "5": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "pressure"
+      ]
+    },
+    "6": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep"
+      ]
+    },
+    "7": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep"
+      ]
+    },
+    "8": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep"
+      ]
+    },
+    "9": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep"
+      ]
+    },
+    "10": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep"
+      ]
+    },
+    "11": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep"
+      ]
+    },
+    "12": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep"
+      ]
+    },
+    "13": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep"
+      ]
+    },
+    "14": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep"
+      ]
+    },
+    "15": {
+      "yards": -2,
+      "clock": "10",
+      "tags": [
+        "incompletion",
+        "deep"
+      ]
+    },
+    "16": {
+      "yards": 2,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate"
+      ]
+    },
+    "17": {
+      "yards": 5,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate"
+      ]
+    },
+    "18": {
+      "yards": 7,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate"
+      ]
+    },
+    "19": {
+      "yards": 10,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate"
+      ]
+    },
+    "20": {
+      "yards": 12,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate"
+      ]
+    },
+    "21": {
+      "yards": 15,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate"
+      ]
+    },
+    "22": {
+      "yards": 17,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate"
+      ]
+    },
+    "23": {
+      "yards": 20,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate"
+      ]
+    },
+    "24": {
+      "yards": 22,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate"
+      ]
+    },
+    "25": {
+      "yards": 25,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "intermediate"
+      ]
+    },
+    "26": {
+      "yards": 19,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    },
+    "27": {
+      "yards": 23,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    },
+    "28": {
+      "yards": 27,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    },
+    "29": {
+      "yards": 31,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    },
+    "30": {
+      "yards": 35,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    },
+    "31": {
+      "yards": 39,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    },
+    "32": {
+      "yards": 43,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    },
+    "33": {
+      "yards": 47,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    },
+    "34": {
+      "yards": 51,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    },
+    "35": {
+      "yards": 55,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    },
+    "36": {
+      "yards": 59,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    },
+    "37": {
+      "yards": 63,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    },
+    "38": {
+      "yards": 67,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    },
+    "39": {
+      "yards": 71,
+      "clock": "20",
+      "tags": [
+        "completion",
+        "explosive",
+        "deep"
+      ]
+    }
+  },
+  "doubles": {
+    "1": {
+      "result": "DEF_TD"
+    },
+    "20": {
+      "result": "OFF_TD"
+    },
+    "2-19": {
+      "penalty_table_ref": "penalty_table_v1"
+    }
+  },
+  "meta": {
+    "oob_bias": false,
+    "field_pos_clamp": true,
+    "risk_profile": "high",
+    "explosive_start_sum": 25
+  }
+}

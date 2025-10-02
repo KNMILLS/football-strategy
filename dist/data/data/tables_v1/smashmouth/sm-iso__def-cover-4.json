@@ -1,0 +1,314 @@
+{
+  "version": "1.0.0",
+  "off_card": "Iso",
+  "def_card": "Cover 4",
+  "dice": "2d20",
+  "entries": {
+    "3": {
+      "yards": -1,
+      "clock": "10",
+      "tags": [
+        "stuff"
+      ]
+    },
+    "4": {
+      "yards": -1,
+      "clock": "10",
+      "tags": [
+        "stuff"
+      ]
+    },
+    "5": {
+      "yards": -1,
+      "clock": "10",
+      "tags": [
+        "stuff"
+      ]
+    },
+    "6": {
+      "yards": 1,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "7": {
+      "yards": 2,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "8": {
+      "yards": 2,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "9": {
+      "yards": 3,
+      "clock": "30",
+      "tags": [
+        "gain"
+      ]
+    },
+    "10": {
+      "yards": 4,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "11": {
+      "yards": 4,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "12": {
+      "yards": 5,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "13": {
+      "yards": 5,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "14": {
+      "yards": 6,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "15": {
+      "yards": 7,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "16": {
+      "yards": 7,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "17": {
+      "yards": 8,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "18": {
+      "yards": 8,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "19": {
+      "yards": 9,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "20": {
+      "yards": 10,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "21": {
+      "yards": 10,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "22": {
+      "yards": 11,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "23": {
+      "yards": 11,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "24": {
+      "yards": 12,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "25": {
+      "yards": 13,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "26": {
+      "yards": 13,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "27": {
+      "yards": 14,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "28": {
+      "yards": 14,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "29": {
+      "yards": 15,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "30": {
+      "yards": 16,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "31": {
+      "yards": 16,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "32": {
+      "yards": 17,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "33": {
+      "yards": 17,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "34": {
+      "yards": 18,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "35": {
+      "yards": 19,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "36": {
+      "yards": 19,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "37": {
+      "yards": 20,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "38": {
+      "yards": 20,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    },
+    "39": {
+      "yards": 21,
+      "clock": "30",
+      "tags": [
+        "gain",
+        "solid"
+      ]
+    }
+  },
+  "doubles": {
+    "1": {
+      "result": "DEF_TD"
+    },
+    "20": {
+      "result": "OFF_TD"
+    },
+    "2-19": {
+      "penalty_table_ref": "penalty_table_v1"
+    }
+  },
+  "meta": {
+    "oob_bias": false,
+    "field_pos_clamp": true,
+    "risk_profile": "low",
+    "explosive_start_sum": 20
+  }
+}

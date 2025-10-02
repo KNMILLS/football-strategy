@@ -1,6 +1,12 @@
 import type { RNG } from '../../sim/RNG';
 import type { PenaltyTable } from '../../data/schemas/MatchupTable';
 import type { DiceTag, TagContext } from './TagMapper';
+// Import taglines data for enhanced commentary variants
+import * as fs from 'fs';
+import * as path from 'path';
+
+const taglinesPath = path.join(__dirname, '..', 'taglines.json');
+const taglinesData = JSON.parse(fs.readFileSync(taglinesPath, 'utf8'));
 
 // Template phrase variants for different commentary situations
 export interface CommentaryTemplate {
@@ -230,7 +236,138 @@ export const ANALYST_TEMPLATES: CommentaryTemplate[] = [
       'Protection broke down at the worst time.',
       'Quarterback had no chance against that pressure.',
       'Defensive coordinator dialed up the perfect blitz.',
-      'Edge rusher won that matchup.'
+      'Edge rusher won that matchup.',
+      'Offensive line got overwhelmed.',
+      'Pressure came from an unexpected gap.',
+      'Quarterback couldn\'t step up in the pocket.',
+      'Defensive front dominated that snap.',
+      'Blitz timing was perfect.'
+    ]
+  },
+
+  // Sack templates (Phase D requirement - ≥5 variants)
+  {
+    tags: ['sack'],
+    priority: 15,
+    variants: [
+      'Sack! Quarterback goes down for a loss.',
+      'Defense brings him down behind the line.',
+      'Pocket collapses and the QB takes a sack.',
+      'Pass rush gets home for the takedown.',
+      'Quarterback sacked for ${yards} yards.',
+      'Offensive line couldn\'t hold the block.',
+      'Edge rusher beats his man for the sack.',
+      'Interior pressure forces the quarterback down.',
+      'Protection scheme breaks down completely.',
+      'Quarterback has no escape from the rush.'
+    ]
+  },
+
+  // Turnover templates (Phase D requirement - ≥5 variants)
+  {
+    tags: ['turnover'],
+    priority: 20,
+    variants: [
+      'Turnover! Ball changes hands.',
+      'Defense forces the turnover.',
+      'Offense gives it away.',
+      'Interception! Defense takes over.',
+      'Fumble! Loose ball recovered.',
+      'Critical turnover at a bad time.',
+      'Defense capitalizes on the mistake.',
+      'Offense shoots itself in the foot.',
+      'Turnover swings momentum.',
+      'Ball security issues cost the offense.'
+    ]
+  },
+
+  // Explosive play templates (Phase D requirement - ≥5 variants)
+  {
+    tags: ['explosive'],
+    priority: 18,
+    variants: [
+      'Explosive play! Big gain downfield.',
+      'Chunk yardage on that play.',
+      'Defense gets burned for a big gain.',
+      'Offensive playmaker breaks loose.',
+      'Vertical route goes for a huge gain.',
+      'Coverage breaks down for the big play.',
+      'Receiver gets behind the secondary.',
+      'Quarterback finds the seam for yards.',
+      'Offense strikes for the long gain.',
+      'Defense can\'t contain the play.'
+    ]
+  },
+
+  // Boundary play templates (Phase D requirement - ≥5 variants)
+  {
+    tags: ['boundary'],
+    priority: 8,
+    variants: [
+      'Play goes to the boundary.',
+      'Receiver works the sideline.',
+      'Ball thrown to the perimeter.',
+      'Out route to the boundary.',
+      'Play develops along the sideline.',
+      'Receiver uses the sideline as protection.',
+      'Quarterback targets the boundary receiver.',
+      'Play stays within the field boundaries.',
+      'Ball carrier hugs the sideline.',
+      'Action moves to the edge of the field.'
+    ]
+  },
+
+  // Checkdown templates (Phase D requirement - ≥5 variants)
+  {
+    tags: ['checkdown'],
+    priority: 6,
+    variants: [
+      'Quarterback checks down to the underneath route.',
+      'Safe throw underneath the coverage.',
+      'Quarterback takes what the defense gives.',
+      'Checkdown route finds the open receiver.',
+      'Conservative throw to avoid the blitz.',
+      'Quarterback reads the coverage and dumps it off.',
+      'Underneath route becomes the bailout option.',
+      'Smart decision to take the short gain.',
+      'Quarterback avoids pressure with the checkdown.',
+      'Defense forces the conservative throw.'
+    ]
+  },
+
+  // Coverage bust templates (Phase D requirement - ≥5 variants)
+  {
+    tags: ['coverage_bust'],
+    priority: 14,
+    variants: [
+      'Coverage bust! Receiver wide open.',
+      'Defensive breakdown creates the opening.',
+      'Secondary loses track of the receiver.',
+      'Coverage assignment error leads to the gain.',
+      'Defender takes the wrong angle.',
+      'Defensive coordinator\'s scheme fails.',
+      'Receiver finds the soft spot in coverage.',
+      'Secondary communication breaks down.',
+      'Defender gets caught peeking in the backfield.',
+      'Coverage rotation leaves the receiver open.'
+    ]
+  },
+
+  // Stuff templates (Phase D requirement - ≥5 variants)
+  {
+    tags: ['stuff'],
+    priority: 10,
+    variants: [
+      'Run gets stuffed at the line.',
+      'Defense stops the run cold.',
+      'Offensive line gets no push.',
+      'Run play goes nowhere.',
+      'Defense wins at the point of attack.',
+      'Running back meets immediate resistance.',
+      'Defensive front dominates the gap.',
+      'Run gets blown up in the backfield.',
+      'Offense can\'t generate any movement.',
+      'Defense stacks the box perfectly.'
     ]
   },
   {
@@ -304,6 +441,19 @@ export function generateCommentary(
   rng: RNG,
   type: 'pbp' | 'analyst' = 'pbp'
 ): string {
+// Check if we have enhanced taglines for key tags (Phase G requirement)
+for (const tag of tags) {
+  const tagKey = tag as keyof typeof taglinesData.commentary_variants;
+  if (taglinesData.commentary_variants[tagKey]) {
+    // Use tagline variant with deterministic selection for testing
+    const variants = taglinesData.commentary_variants[tagKey].variants;
+    const variantIndex = Math.floor(rng() * variants.length);
+    const variant = variants[variantIndex];
+    return interpolate(variant, context);
+  }
+}
+
+  // Fall back to existing template system
   const templates = type === 'pbp' ? COMMENTARY_TEMPLATES : ANALYST_TEMPLATES;
 
   // Try to find the best matching template
@@ -350,19 +500,27 @@ export function generatePenaltyCommentary(
     const penaltyLabel = penaltyInfo.label;
     const penaltyYards = penaltyInfo.yards || 0;
 
-    if (penaltyInfo.side === 'offense') {
-      pbp = `Offensive penalty: ${penaltyLabel}. Loss of ${penaltyYards} yards.`;
-      analyst = 'Discipline is key; that penalty stalls the drive.';
-    } else if (penaltyInfo.side === 'defense') {
-      pbp = `Defensive penalty: ${penaltyLabel}. ${penaltyYards > 0 ? `Gain of ${penaltyYards} yards.` : 'No yardage change.'}`;
-      if (penaltyInfo.auto_first_down) {
-        pbp += ' Automatic first down.';
-      }
-      analyst = 'That penalty extends the drive; defense needs to be smarter.';
+    // Use enhanced penalty variants (Phase G requirement)
+    const penaltyKey = penaltyLabel.toLowerCase().replace(/[^a-z]/g, '') as keyof typeof taglinesData.penalty_variants;
+    if (taglinesData.penalty_variants[penaltyKey]) {
+      const variants = taglinesData.penalty_variants[penaltyKey].variants;
+      const variantIndex = Math.floor(rng() * variants.length);
+      pbp = variants[variantIndex];
     } else {
-      pbp = `Offsetting penalties: ${penaltyLabel}. Play will be replayed.`;
-      analyst = 'Both sides get flagged; we\'ll run it again.';
+      // Fallback to generic penalty commentary
+      if (penaltyInfo.side === 'offense') {
+        pbp = `Offensive penalty: ${penaltyLabel}. Loss of ${penaltyYards} yards.`;
+      } else if (penaltyInfo.side === 'defense') {
+        pbp = `Defensive penalty: ${penaltyLabel}. ${penaltyYards > 0 ? `Gain of ${penaltyYards} yards.` : 'No yardage change.'}`;
+        if (penaltyInfo.auto_first_down) {
+          pbp += ' Automatic first down.';
+        }
+      } else {
+        pbp = `Offsetting penalties: ${penaltyLabel}. Play will be replayed.`;
+      }
     }
+
+    analyst = 'Discipline is key; that penalty stalls the drive.';
   } else {
     pbp = `Penalty declined. ${generateCommentary(tags.filter(t => !penaltyTags.includes(t)), context, rng, 'pbp')}`;
     analyst = 'Smart decision to decline; better field position.';

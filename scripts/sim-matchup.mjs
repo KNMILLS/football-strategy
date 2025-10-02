@@ -3,7 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createLCG } from '../dist/sim/RNG.js';
+import { createLCG } from '../src/sim/RNG.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,14 +12,33 @@ const __dirname = path.dirname(__filename);
  * Load matchup table from fixtures
  */
 function loadMatchupTable(offCardId, defCardId) {
-  const tablePath = path.join(__dirname, '..', 'fixtures', 'tables_v1', `${offCardId}__${defCardId}.json`);
+  // Use absolute paths from the project root
+  const projectRoot = 'C:/Gridiron-TS/Gridiron/gridiron_full_game';
+  const possiblePaths = [
+    path.join(projectRoot, 'data', 'tables_v1', offCardId + '__' + defCardId + '.json'),
+    path.join(projectRoot, 'fixtures', 'tables_v1', offCardId + '__' + defCardId + '.json'),
+    path.join(projectRoot, 'data', 'tables_v1', 'west_coast', offCardId + '__' + defCardId + '.json'),
+    path.join(projectRoot, 'data', 'tables_v1', 'spread', offCardId + '__' + defCardId + '.json'),
+    path.join(projectRoot, 'data', 'tables_v1', 'air_raid', offCardId + '__' + defCardId + '.json'),
+    path.join(projectRoot, 'data', 'tables_v1', 'smashmouth', offCardId + '__' + defCardId + '.json'),
+    path.join(projectRoot, 'data', 'tables_v1', 'wide_zone', offCardId + '__' + defCardId + '.json'),
+    // Try case-insensitive matches
+    path.join(projectRoot, 'data', 'tables_v1', 'air_raid', offCardId + '__' + defCardId.toLowerCase() + '.json'),
+    path.join(projectRoot, 'data', 'tables_v1', 'air_raid', offCardId + '__def-' + defCardId.toLowerCase().replace('def_', '').replace('DEF_', '') + '.json')
+  ];
 
-  try {
-    const content = fs.readFileSync(tablePath, 'utf8');
-    return JSON.parse(content);
-  } catch (error) {
-    throw new Error(`Failed to load matchup table ${offCardId}__${defCardId}: ${error.message}`);
+  for (const tablePath of possiblePaths) {
+    try {
+      if (fs.existsSync(tablePath)) {
+        const content = fs.readFileSync(tablePath, 'utf8');
+        return JSON.parse(content);
+      }
+    } catch (error) {
+      // Continue to next path
+    }
   }
+
+  throw new Error(`Failed to load matchup table ${offCardId}__${defCardId}: not found in any expected location`);
 }
 
 /**
@@ -202,7 +221,9 @@ function printResults(results) {
  * Main function
  */
 function main() {
+  console.log('Starting simulation script...');
   const args = process.argv.slice(2);
+  console.log('Arguments:', args);
 
   if (args.length < 2) {
     console.error('Usage: npm run sim:matchup <offCardId> <defCardId> [--rolls N]');
@@ -213,6 +234,8 @@ function main() {
   const offCardId = args[0];
   const defCardId = args[1];
   let rolls = 100000; // Default
+
+  console.log(`Parsed: offCardId=${offCardId}, defCardId=${defCardId}`);
 
   // Parse optional --rolls argument
   for (let i = 2; i < args.length; i++) {
@@ -225,17 +248,20 @@ function main() {
     }
   }
 
+  console.log(`Running simulation with ${rolls} rolls`);
+
   try {
     const results = runSimulation(offCardId, defCardId, rolls);
     printResults(results);
+    process.exit(0);
   } catch (error) {
     console.error(`❌ Simulation failed: ${error.message}`);
     process.exit(1);
   }
 }
 
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Run if called directly as a script (not imported)
+if (process.argv[1] && process.argv[1].includes('sim-matchup.mjs')) {
   main();
 }
 

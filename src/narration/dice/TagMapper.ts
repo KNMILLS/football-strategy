@@ -42,6 +42,9 @@ export type DiceTag =
   | 'pick_six' | 'fumble_return' | 'scoop_and_score' | 'defensive_touchdown'
   | 'offensive_touchdown' | 'special_teams_touchdown'
 
+  // Phase D required tags
+  | 'checkdown' | 'coverage_bust' | 'stuff'
+
   // Weather/conditions (for future expansion)
   | 'windy' | 'rainy' | 'snowy' | 'hot' | 'cold' | 'humid';
 
@@ -258,7 +261,7 @@ export class DiceTagMapper {
     return enhancedTags;
   }
 
-  // Generate commentary for a dice outcome
+  // Generate commentary for a dice outcome (Phase D enhanced integration)
   public generateDiceOutcomeCommentary(
     outcome: DiceOutcome,
     gameState: GameState,
@@ -283,15 +286,69 @@ export class DiceTagMapper {
       return { pbp, analyst };
     }
 
-    // Standard commentary generation
+    // Enhanced commentary generation with integrated context (Phase D2 requirement)
     let pbp = generateCommentary(enhancedTags, context, this.rng, 'pbp');
+
+    // Phase D2: Integrate down/distance, field spot, result, clock note
+    const downDistance = this.formatDownAndDistance(context.down, context.toGo);
+    const fieldSpot = this.formatFieldPosition(context.gameState.possession, context.fieldPosition);
+    const result = this.formatResult(outcome);
+    const clockNote = this.formatClockNote(outcome.clock, context.timeRemaining);
+
+    // Create comprehensive play-by-play with all context
+    let integratedPBP = `${downDistance} from the ${fieldSpot}. ${result}${clockNote ? ` ${clockNote}` : ''}.`;
+
     // Ensure yardage appears in PBP for test determinism if missing
-    if (outcome.yards !== undefined && !/\d/.test(pbp)) {
-      pbp = `${outcome.yards} yard${Math.abs(outcome.yards) === 1 ? '' : 's'} — ${pbp}`;
+    if (outcome.yards !== undefined && !/\d/.test(integratedPBP)) {
+      const yardText = `${Math.abs(outcome.yards)} yard${Math.abs(outcome.yards) === 1 ? '' : 's'}`;
+      if (outcome.yards >= 0) {
+        integratedPBP = `${yardText} — ${integratedPBP}`;
+      } else {
+        integratedPBP = `Loss of ${Math.abs(outcome.yards)} — ${integratedPBP}`;
+      }
     }
+
     const analyst = generateCommentary(enhancedTags, context, this.rng, 'analyst');
 
-    return { pbp, analyst };
+    return { pbp: integratedPBP, analyst };
+  }
+
+  // Format result for integration (Phase D2)
+  private formatResult(outcome: DiceOutcome): string {
+    if (outcome.turnover) {
+      const turnoverType = outcome.turnover.type === 'INT' ? 'interception' : 'fumble';
+      const returnYards = outcome.turnover.return_yards || 0;
+      if (returnYards > 0) {
+        return `${turnoverType} returned ${returnYards} yards`;
+      } else {
+        return `${turnoverType} at the line of scrimmage`;
+      }
+    }
+
+    if (outcome.yards !== undefined) {
+      if (outcome.yards > 0) {
+        return `gain of ${outcome.yards} yards`;
+      } else if (outcome.yards < 0) {
+        return `loss of ${Math.abs(outcome.yards)} yards`;
+      } else {
+        return 'no gain';
+      }
+    }
+
+    return 'incomplete pass';
+  }
+
+  // Format clock note for integration (Phase D2)
+  private formatClockNote(clock: string, timeRemaining: number): string {
+    const clockSeconds = clock === '10' ? 10 : clock === '20' ? 20 : 30;
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = timeRemaining % 60;
+
+    if (timeRemaining <= 120) { // Two-minute warning or less
+      return `(Clock: ${minutes}:${seconds.toString().padStart(2, '0')})`;
+    }
+
+    return ''; // Only show clock in critical situations
   }
 
   // Generate commentary for doubles outcomes (touchdowns, etc.)

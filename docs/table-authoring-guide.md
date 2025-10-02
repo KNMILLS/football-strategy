@@ -36,6 +36,39 @@ node scripts/import-csv-tables.mjs data.csv --validate-only --preview-chart
 node scripts/import-csv-tables.mjs sheets_export.csv --output-dir custom_tables/
 ```
 
+### OOB Bias for Perimeter Plays
+
+For plays with perimeter characteristics (tagged with "perimeter" in play definitions), ensure proper OOB (out of bounds) behavior:
+
+- **Mid-range sums (18-28)**: Add `oob: true` for ≥30% of these entries
+- **Clock enforcement**: When `oob: true`, use `clock: "10"` (10-second runoff)
+- **Boundary tagging**: Include `"boundary"` tag for OOB plays
+
+Example OOB entry:
+```json
+"25": {
+  "yards": 30,
+  "clock": "10",
+  "oob": true,
+  "tags": [
+    "completion",
+    "explosive",
+    "deep",
+    "boundary"
+  ]
+}
+```
+
+### Commentary Tag Variants
+
+Enhanced commentary system uses taglines for key game situations:
+
+- **Taglines file**: `src/narration/taglines.json` contains ≥5 variants per key tag
+- **Key tags**: `sack`, `pressure`, `turnover:INT`, `turnover:FUM`, `explosive`, `boundary`, `checkdown`, `coverage_bust`, `stuff`
+- **Penalty variants**: Clear penalty descriptions like "Holding, 10 yards, replay the down"
+
+The system automatically selects variants for enhanced commentary variety while maintaining deterministic behavior in tests.
+
 ### Analyzing Distributions
 
 Preview and analyze table balance:

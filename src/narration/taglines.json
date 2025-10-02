@@ -1,0 +1,211 @@
+{
+  "commentary_variants": {
+    "sack": {
+      "description": "Quarterback sack situations",
+      "variants": [
+        "Sacked! Loss of ${yards} yards.",
+        "Quarterback goes down in the backfield.",
+        "Sack brings down the quarterback.",
+        "Defensive line gets home for the sack.",
+        "QB dropped for a loss.",
+        "Blitz gets through for the takedown.",
+        "Pass protection breaks down completely.",
+        "Quarterback can't escape the pressure.",
+        "Defensive front overwhelms the offensive line.",
+        "Sack disrupts the drive momentum.",
+        "Defense brings the quarterback down hard.",
+        "Offensive line collapses under pressure.",
+        "Quarterback sacked in his own territory.",
+        "Pass rush overwhelms the protection scheme.",
+        "Sack forces a change of possession.",
+        "Defensive end beats his blocker cleanly.",
+        "Interior pressure forces the takedown.",
+        "Quarterback can't step up in the pocket.",
+        "Pass protection fails at the worst moment.",
+        "Sack brings up a difficult down and distance."
+      ]
+    },
+    "pressure": {
+      "description": "Defensive pressure situations",
+      "variants": [
+        "Heavy pressure forces a quick release.",
+        "Quarterback feels the heat from the blitz.",
+        "Defensive pressure affects the throw.",
+        "Pass rush gets close to the quarterback.",
+        "Offensive line struggles with the blitz.",
+        "Quarterback has to hurry the throw.",
+        "Pressure in the face of the passer.",
+        "Defensive front applies constant pressure.",
+        "Blitz creates chaos in the backfield.",
+        "Pass protection is tested severely."
+      ]
+    },
+    "turnover_INT": {
+      "description": "Interception situations",
+      "variants": [
+        "Intercepted! Defense takes over.",
+        "Pick! Turnover in the secondary.",
+        "Interception! Ball changes hands.",
+        "Defensive back makes the grab.",
+        "Turnover! Intercepted by the defense.",
+        "Quarterback's pass is picked off.",
+        "Secondary reads the route perfectly.",
+        "Defensive back jumps the pattern.",
+        "Interception halts the drive.",
+        "Ball goes the other way on the pick."
+      ]
+    },
+    "turnover_FUM": {
+      "description": "Fumble situations",
+      "variants": [
+        "Fumble! Ball is loose.",
+        "Coughs up the football.",
+        "Fumble recovered by the defense.",
+        "Turnover! Ball hits the ground.",
+        "Loose ball recovered by the defense.",
+        "Ball carrier loses control of the football.",
+        "Defense pounces on the loose ball.",
+        "Fumble creates a turnover opportunity.",
+        "Ball bounces free from the runner.",
+        "Defense scoops up the fumble."
+      ]
+    },
+    "explosive": {
+      "description": "Explosive play situations",
+      "variants": [
+        "Explosive play! ${yards} yards.",
+        "Chunk play moves the ball.",
+        "Big gain keeps the drive alive.",
+        "Explodes for ${yards} yards.",
+        "Breakaway speed for a long gain.",
+        "Home run swing connects for ${yards}.",
+        "Massive gain changes field position.",
+        "Explosive play stretches the defense.",
+        "Huge chunk of yards on that play.",
+        "Breakthrough gain for ${yards} yards.",
+        "Receiver breaks free for a huge gain.",
+        "Offense catches the defense napping.",
+        "Vertical route goes for a monster gain.",
+        "Big play offense! ${yards} yards.",
+        "Defense can't contain the speed.",
+        "Perfect timing leads to explosive play.",
+        "Receiver finds daylight downfield.",
+        "Quarterback threads the needle deep.",
+        "Offensive explosion moves the chains.",
+        "Massive chunk play extends the drive."
+      ]
+    },
+    "boundary": {
+      "description": "Boundary/out of bounds situations",
+      "variants": [
+        "Play goes out of bounds near the sideline.",
+        "Ball carrier steps out at the boundary.",
+        "Pass sails out of bounds.",
+        "Receiver can't keep both feet in bounds.",
+        "Play ends at the sideline marker.",
+        "Ball bounces out near the boundary.",
+        "Receiver toes the sideline perfectly.",
+        "Play ruled out of bounds.",
+        "Ball carrier touches the line.",
+        "Pass incomplete near the boundary."
+      ]
+    },
+    "checkdown": {
+      "description": "Checkdown pass situations",
+      "variants": [
+        "Checkdown option finds the receiver.",
+        "Quarterback goes to the safety valve.",
+        "Short checkdown keeps the drive alive.",
+        "Underneath route as a checkdown.",
+        "Safety valve receiver makes the catch.",
+        "Checkdown pass moves the chains.",
+        "Quarterback checks down to the back.",
+        "Short completion on the checkdown.",
+        "Checkdown option converts the third down.",
+        "Underneath throw as planned checkdown."
+      ]
+    },
+    "coverage_bust": {
+      "description": "Coverage bust situations",
+      "variants": [
+        "Coverage bust! Wide open receiver.",
+        "Defensive breakdown creates easy completion.",
+        "Secondary loses track of the receiver.",
+        "Busted coverage leads to big gain.",
+        "Defensive miscommunication exploited.",
+        "Coverage scheme breaks down completely.",
+        "Receiver finds a huge hole in coverage.",
+        "Defensive back loses his assignment.",
+        "Busted play in the secondary.",
+        "Coverage error gifts easy yards."
+      ]
+    },
+    "stuff": {
+      "description": "Run stuff situations",
+      "variants": [
+        "Run stuffed at the line of scrimmage.",
+        "Defense stops the run cold.",
+        "No gain on the ground play.",
+        "Defensive front shuts down the run.",
+        "Run play goes nowhere fast.",
+        "Offensive line can't create a hole.",
+        "Defense wins the battle at the line.",
+        "Run stopped for no gain.",
+        "Defensive tackle penetrates for the stuff.",
+        "Ground game hits a wall."
+      ]
+    }
+  },
+  "penalty_variants": {
+    "holding": {
+      "description": "Holding penalty situations",
+      "variants": [
+        "Holding, 10 yards, replay the down.",
+        "Offensive holding penalty called.",
+        "Holding infraction moves it back.",
+        "Yellow flag for holding on the offense.",
+        "Holding penalty assessed against the offense."
+      ]
+    },
+    "false_start": {
+      "description": "False start penalty situations",
+      "variants": [
+        "False start, 5 yards, replay the down.",
+        "Offensive player jumps early.",
+        "False start penalty called.",
+        "Movement before the snap penalized.",
+        "False start sets the offense back."
+      ]
+    },
+    "pass_interference": {
+      "description": "Pass interference penalty situations",
+      "variants": [
+        "Pass interference, automatic first down.",
+        "Defensive pass interference called.",
+        "Contact downfield draws a flag.",
+        "Pass interference penalty enforced.",
+        "Defensive back interferes with the receiver."
+      ]
+    },
+    "offsides": {
+      "description": "Offsides penalty situations",
+      "variants": [
+        "Offsides, 5 yards, replay the down.",
+        "Defensive offsides penalty.",
+        "Player jumps across the line early.",
+        "Offsides infraction called.",
+        "Neutral zone infraction penalized."
+      ]
+    },
+    "roughing": {
+      "description": "Roughing penalty situations",
+      "variants": [
+        "Roughing the passer, automatic first down.",
+        "Late hit on the quarterback.",
+        "Roughing penalty called on the defense.",
+        "Unnecessary roughness after the pass.",
+        "Defensive player hits the QB late."
+      ]
+    }
+  }
+}
