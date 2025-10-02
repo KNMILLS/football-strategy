@@ -271,11 +271,23 @@ export class ProgressiveCardSystem {
 
       // Fallback to Canvas if SVG fails
       if (this.featureSupport.canvas) {
+        // Emit fallback events when primary renderer is unavailable
+        (this.bus as any).emit('cards:renderFallback', {
+          cardId,
+          originalError: 'renderer-unavailable: svg'
+        });
+        (this.bus as any).emit('renderFallback', { cardId });
         return this.renderCardToCanvas(card);
       }
 
       // Final fallback to text
       if (this.featureSupport.textFallback) {
+        // Emit fallback events when both SVG and Canvas are unavailable
+        (this.bus as any).emit('cards:renderFallback', {
+          cardId,
+          originalError: 'renderer-unavailable: canvas'
+        });
+        (this.bus as any).emit('renderFallback', { cardId });
         return this.renderCardAsText(card);
       }
 
