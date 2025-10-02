@@ -123,20 +123,17 @@ export function determineClockRunoff(
 }
 
 /**
- * Roll a d20 using the underlying LCG integer state to ensure deterministic mapping.
- * Given rng() returns r = (s - 1) / 2147483646 for next state s, recover s and map via modulo.
+ * Roll a d20 using the new LCG-derived RNG value r in [0,1): face = floor(r * 20) + 1
  */
 export function rollD20(rng: RNG): number {
   const r = rng();
-  const s = Math.floor(r * 2147483646) + 1;
-  return (s % 20) + 1;
+  return Math.floor(r * 20) + 1;
 }
 
 /**
- * Roll a d10 using the underlying LCG integer state to ensure deterministic mapping.
+ * Roll a d10 using the new LCG-derived RNG value r in [0,1): face = floor(r * 10) + 1
  */
 export function rollD10(rng: RNG): number {
   const r = rng();
-  const s = Math.floor(r * 2147483646) + 1;
-  return (s % 10) + 1;
+  return Math.floor(r * 10) + 1;
 }

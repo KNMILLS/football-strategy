@@ -4,7 +4,7 @@ import {
   DesperationPlayScenario,
   type ScenarioConfig,
   type ScenarioResult
-} from './ScenarioFramework.test';
+} from './ScenarioFramework';
 import type { GameState } from '../../../src/domain/GameState';
 
 /**

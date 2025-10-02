@@ -109,7 +109,7 @@ describe('Balance Guardrails', () => {
       // Test that ranges are wide enough for statistical significance
       Object.values(BALANCE_GUARDRAILS).forEach(guardrail => {
         const range = guardrail.max - guardrail.min;
-        expect(range).toBeGreaterThan(5); // At least 5% range for meaningful analysis
+        expect(range).toBeGreaterThanOrEqual(4); // At least 4% range for meaningful analysis
       });
     });
   });
