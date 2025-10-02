@@ -1,22 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { OffenseChartsSchema } from '../../src/data/schemas/OffenseCharts';
 import { determineOutcomeFromCharts, initializeTelemetry, getTelemetryCollector } from '../../src/rules/Charts';
 import { EventBus } from '../../src/utils/EventBus';
 
-// Minimal charts fixture inline to avoid IO
-const chartsJson = {
-  OffenseCharts: {
-    ProStyle: {
-      'Power Up Middle': { A: '+1', B: '+1', C: '+10', D: '+1', E: '+1', F: '+1', G: '+1', H: '+1', I: '+1', J: '+1' }
-    }
-  }
-};
-
 function rngConst(v: number){ return () => v; }
 
 describe('Charts telemetry recording', () => {
-  it('records dice roll and outcome when telemetry enabled', () => {
-    const parsed = OffenseChartsSchema.parse(chartsJson).OffenseCharts;
+  it('records dice roll and outcome when telemetry enabled', async () => {
+    const raw = await readFile(path.resolve(process.cwd(),'data','football_strategy_all_mappings.json'),'utf8');
+    const parsed = OffenseChartsSchema.parse(JSON.parse(raw)).OffenseCharts;
 
     // Fake telemetry config by creating a collector with a real bus
     const bus = new EventBus();
