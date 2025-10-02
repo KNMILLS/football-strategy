@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>10/10</span>
+                <span class='fraction'>0/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>10/10</span>
+                <span class='fraction'>0/10</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -82,40 +82,40 @@
 <a name='L17'></a><a href='#L17'>17</a>
 <a name='L18'></a><a href='#L18'>18</a>
 <a name='L19'></a><a href='#L19'>19</a>
-<a name='L20'></a><a href='#L20'>20</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L20'></a><a href='#L20'>20</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { z } from 'zod';
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { z } from 'zod';<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
 &nbsp;
 // Normalized schema: { "2": { PAT: 'NG', '1-12': 'NG', ... }, ... }
-export const PlaceKickRowSchema = z.record(z.string(), z.enum(['G','NG']));
-export const PlaceKickTableNormalizedSchema = z.record(z.string().regex(/^\d+$/), PlaceKickRowSchema);
+<span class="cstat-no" title="statement not covered" >export const PlaceKickRowSchema = z.record(z.string(), z.enum(['G','NG']));</span>
+<span class="cstat-no" title="statement not covered" >export const PlaceKickTableNormalizedSchema = z.record(z.string().regex(/^\d+$/), PlaceKickRowSchema);</span>
 &nbsp;
 // Rich schema: matches data/place_kicking.json
-export const PlaceKickRichSchema = z.object({
-  name: z.string(),
-  dice: z.string(),
-  columns: z.array(z.object({ range: z.string(), min: z.number().nullable().optional(), max: z.number().nullable().optional() })),
-  results: z.array(z.record(z.string(), z.union([z.string(), z.number(), z.null()]))),
-});
+<span class="cstat-no" title="statement not covered" >export const PlaceKickRichSchema = z.object({</span>
+<span class="cstat-no" title="statement not covered" >  name: z.string(),</span>
+<span class="cstat-no" title="statement not covered" >  dice: z.string(),</span>
+<span class="cstat-no" title="statement not covered" >  columns: z.array(z.object({ range: z.string(), min: z.number().nullable().optional(), max: z.number().nullable().optional() })),</span>
+<span class="cstat-no" title="statement not covered" >  results: z.array(z.record(z.string(), z.union([z.string(), z.number(), z.null()]))),</span>
+<span class="cstat-no" title="statement not covered" >});</span>
 &nbsp;
-export const PlaceKickTableSchema = z.union([PlaceKickTableNormalizedSchema, PlaceKickRichSchema]);
+<span class="cstat-no" title="statement not covered" >export const PlaceKickTableSchema = z.union([PlaceKickTableNormalizedSchema, PlaceKickRichSchema]);</span>
 &nbsp;
 export type PlaceKickTable = z.infer&lt;typeof PlaceKickTableSchema&gt;;
 &nbsp;
@@ -127,7 +127,7 @@ export type PlaceKickTable = z.infer&lt;typeof PlaceKickTableSchema&gt;;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-02T00:30:21.178Z
+                at 2025-10-02T12:41:59.869Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

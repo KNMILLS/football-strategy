@@ -10,12 +10,13 @@ import {
   resetFeatureFlags,
 } from '../../src/config/FeatureFlags';
 
-// Mock localStorage
+// Mock localStorage with simple in-memory behavior
+const store: Record<string, string> = {};
 const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
+  getItem: vi.fn((key: string) => (key in store ? store[key] : null)),
+  setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
+  removeItem: vi.fn((key: string) => { delete store[key]; }),
+  clear: vi.fn(() => { Object.keys(store).forEach(k => delete store[k]); }),
 };
 
 let originalEnv: any;
@@ -24,6 +25,7 @@ describe('FeatureFlags', () => {
   beforeEach(() => {
     // Reset all mocks
     vi.clearAllMocks();
+    localStorageMock.clear();
 
     // Setup localStorage mock
     Object.defineProperty(window, 'localStorage', {

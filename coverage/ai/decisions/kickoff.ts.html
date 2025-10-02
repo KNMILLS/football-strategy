@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>0/14</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.66% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>8/12</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>0/14</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -90,21 +90,21 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { RNG } from '../../sim/RNG';
@@ -112,21 +112,21 @@ import type { CoachProfile } from '../CoachProfiles';
 import type { GameState } from '../../domain/GameState';
 import type { KickoffDecision } from './shared';
 &nbsp;
-export function chooseKickoff(ai: { state: GameState; coach: CoachProfile; rng: RNG }): KickoffDecision {
-	const { state, coach, rng } = ai;
-	const offenseScore = state.score[(state.possession === 'player') ? <span class="branch-0 cbranch-no" title="branch not covered" >'player' : 'ai']</span>;
-	const defenseScore = state.score[(state.possession === 'player') ? <span class="branch-0 cbranch-no" title="branch not covered" >'ai' : 'player']</span>;
-	const trailing = offenseScore &lt; defenseScore; // kicking team is offense after a score or start; assume this function used at kickoff time
-	const lateQ4Tight = state.quarter === 4 &amp;&amp; state.clock &lt;= 2 * 60;
-	const downBigLate = state.quarter === 4 &amp;&amp; state.clock &lt;= 4 * 60 &amp;&amp; (defenseScore - offenseScore) &gt;= 9;
+<span class="cstat-no" title="statement not covered" >export function chooseKickoff(ai: { state: GameState; coach: CoachProfile; rng: RNG }): KickoffDecision {</span>
+<span class="cstat-no" title="statement not covered" >	const { state, coach, rng } = ai;</span>
+<span class="cstat-no" title="statement not covered" >	const offenseScore = state.score[(state.possession === 'player') ? 'player' : 'ai'];</span>
+<span class="cstat-no" title="statement not covered" >	const defenseScore = state.score[(state.possession === 'player') ? 'ai' : 'player'];</span>
+<span class="cstat-no" title="statement not covered" >	const trailing = offenseScore &lt; defenseScore; // kicking team is offense after a score or start; assume this function used at kickoff time</span>
+<span class="cstat-no" title="statement not covered" >	const lateQ4Tight = state.quarter === 4 &amp;&amp; state.clock &lt;= 2 * 60;</span>
+<span class="cstat-no" title="statement not covered" >	const downBigLate = state.quarter === 4 &amp;&amp; state.clock &lt;= 4 * 60 &amp;&amp; (defenseScore - offenseScore) &gt;= 9;</span>
 &nbsp;
-	let onsideProb = 0;
-	if (trailing &amp;&amp; (<span class="branch-0 cbranch-no" title="branch not covered" >lateQ4Tight || downBigLate)) {</span>
-		onsideProb = coach.onsideAggressive ? <span class="branch-0 cbranch-no" title="branch not covered" >0.7 : 0.3;</span>
-	}
-	const pickOnside = rng() &lt; onsideProb;
-	return { kind: 'kickoff', type: pickOnside ? 'onside' : 'normal' };
-}
+<span class="cstat-no" title="statement not covered" >	let onsideProb = 0;</span>
+<span class="cstat-no" title="statement not covered" >	if (trailing &amp;&amp; (lateQ4Tight || downBigLate)) {</span>
+<span class="cstat-no" title="statement not covered" >		onsideProb = coach.onsideAggressive ? 0.7 : 0.3;</span>
+<span class="cstat-no" title="statement not covered" >	}</span>
+<span class="cstat-no" title="statement not covered" >	const pickOnside = rng() &lt; onsideProb;</span>
+<span class="cstat-no" title="statement not covered" >	return { kind: 'kickoff', type: pickOnside ? 'onside' : 'normal' };</span>
+<span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 &nbsp;
 &nbsp;</pre></td></tr></table></pre>
@@ -136,7 +136,7 @@ export function chooseKickoff(ai: { state: GameState; coach: CoachProfile; rng: 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-02T00:30:21.178Z
+                at 2025-10-02T12:41:59.869Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>24/32</span>
+                <span class='fraction'>0/32</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>9/10</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>24/32</span>
+                <span class='fraction'>0/32</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -106,28 +106,13 @@
 <a name='L41'></a><a href='#L41'>41</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -136,38 +121,53 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
-<span class="cline-any cline-yes">262x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { GameState, TeamSide } from '../../domain/GameState';
 import type { FlowEvent } from '../types';
 &nbsp;
-export function resolveSafetyRestart(
-  state: GameState,
-  conceding: TeamSide,
-  deps: {
+<span class="cstat-no" title="statement not covered" >export function resolveSafetyRestart(</span>
+<span class="cstat-no" title="statement not covered" >  state: GameState,</span>
+<span class="cstat-no" title="statement not covered" >  conceding: TeamSide,</span>
+<span class="cstat-no" title="statement not covered" >  deps: {</span>
     chooseSafetyFreeKick?: (ctx: { leading: boolean }) =&gt; 'kickoff+25'|'puntFrom20';
     isLeading: (side: TeamSide, score: GameState['score']) =&gt; boolean;
   }
-): { state: GameState; events: FlowEvent[] } {
-  const events: FlowEvent[] = [];
-  let next = { ...state } as GameState;
-  const leading = deps.isLeading(conceding === 'player' ? 'ai' : 'player', next.score);
-  const choice = deps.chooseSafetyFreeKick?.({ leading }) ?? 'kickoff+25';
-  const kicking: TeamSide = conceding;
-  if (choice === 'kickoff+25') {
-    const receiver: TeamSide = kicking === 'player' ? 'ai' : 'player';
-    const abs = receiver === 'player' ? 25 : 75;
-    next.possession = receiver;
-    next.ballOn = abs;
-    const dd = { down: 1, toGo: 10 } as const;
-    next.down = dd.down; next.toGo = dd.toGo;
-    events.push({ type: 'kickoff', payload: { onside: false } });
-<span class="branch-0 cbranch-no" title="branch not covered" >  } else {</span>
+<span class="cstat-no" title="statement not covered" >): { state: GameState; events: FlowEvent[] } {</span>
+<span class="cstat-no" title="statement not covered" >  const events: FlowEvent[] = [];</span>
+<span class="cstat-no" title="statement not covered" >  let next = { ...state } as GameState;</span>
+<span class="cstat-no" title="statement not covered" >  const leading = deps.isLeading(conceding === 'player' ? 'ai' : 'player', next.score);</span>
+<span class="cstat-no" title="statement not covered" >  const choice = deps.chooseSafetyFreeKick?.({ leading }) ?? 'kickoff+25';</span>
+<span class="cstat-no" title="statement not covered" >  const kicking: TeamSide = conceding;</span>
+<span class="cstat-no" title="statement not covered" >  if (choice === 'kickoff+25') {</span>
+<span class="cstat-no" title="statement not covered" >    const receiver: TeamSide = kicking === 'player' ? 'ai' : 'player';</span>
+<span class="cstat-no" title="statement not covered" >    const abs = receiver === 'player' ? 25 : 75;</span>
+<span class="cstat-no" title="statement not covered" >    next.possession = receiver;</span>
+<span class="cstat-no" title="statement not covered" >    next.ballOn = abs;</span>
+<span class="cstat-no" title="statement not covered" >    const dd = { down: 1, toGo: 10 } as const;</span>
+<span class="cstat-no" title="statement not covered" >    next.down = dd.down; next.toGo = dd.toGo;</span>
+<span class="cstat-no" title="statement not covered" >    events.push({ type: 'kickoff', payload: { onside: false } });</span>
+<span class="cstat-no" title="statement not covered" >  } else {</span>
 <span class="cstat-no" title="statement not covered" >    const receiver: TeamSide = kicking === 'player' ? 'ai' : 'player';</span>
 <span class="cstat-no" title="statement not covered" >    const abs = receiver === 'player' ? 35 : 65;</span>
 <span class="cstat-no" title="statement not covered" >    next.possession = receiver;</span>
@@ -176,11 +176,11 @@ export function resolveSafetyRestart(
 <span class="cstat-no" title="statement not covered" >    next.down = dd.down; next.toGo = dd.toGo;</span>
 <span class="cstat-no" title="statement not covered" >    events.push({ type: 'kickoff', payload: { onside: false } });</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
-  events.push({ type: 'hud', payload: {
-    quarter: next.quarter, clock: next.clock, down: next.down, toGo: next.toGo, ballOn: next.ballOn, possession: next.possession, score: { player: next.score.player, ai: next.score.ai }
-  } });
-  return { state: next, events };
-}
+<span class="cstat-no" title="statement not covered" >  events.push({ type: 'hud', payload: {</span>
+<span class="cstat-no" title="statement not covered" >    quarter: next.quarter, clock: next.clock, down: next.down, toGo: next.toGo, ballOn: next.ballOn, possession: next.possession, score: { player: next.score.player, ai: next.score.ai }</span>
+<span class="cstat-no" title="statement not covered" >  } });</span>
+<span class="cstat-no" title="statement not covered" >  return { state: next, events };</span>
+<span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 &nbsp;
 &nbsp;</pre></td></tr></table></pre>
@@ -190,7 +190,7 @@ export function resolveSafetyRestart(
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-02T00:30:21.178Z
+                at 2025-10-02T12:41:59.869Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

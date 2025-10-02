@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.21% </span>
+                <span class="strong">61.82% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>196/296</span>
+                <span class='fraction'>183/296</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.66% </span>
+                <span class="strong">67.56% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>26/39</span>
+                <span class='fraction'>25/37</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.21% </span>
+                <span class="strong">61.82% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>196/296</span>
+                <span class='fraction'>183/296</span>
             </div>
         
             
@@ -749,34 +749,34 @@
 <span class="cline-any cline-yes">50x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">50x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">50x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">50x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -922,7 +922,7 @@
  * and provides detailed compliance reports with actionable recommendations.
  */
 &nbsp;
-import { BALANCE_GUARDRAILS, PLAYBOOK_IDENTITY_GUARDRAILS, DISTRIBUTION_GUARDRAILS, STATISTICAL_THRESHOLDS } from './Guardrails';
+import { BALANCE_GUARDRAILS, PLAYBOOK_IDENTITY_GUARDRAILS, DISTRIBUTION_GUARDRAILS } from './Guardrails';
 import type { TableAnalysis } from './StatisticalAnalyzer';
 &nbsp;
 export interface GuardrailViolation {
@@ -979,7 +979,7 @@ export class GuardrailChecker {
     this.checkGuardrail(
       'explosivePassRate',
       analysis.explosiveRate,
-      BALANCE_GUARDRAILS.explosivePassRate,
+      BALANCE_GUARDRAILS.explosivePassRate!,
       analysis,
       violations,
       warnings,
@@ -990,7 +990,7 @@ export class GuardrailChecker {
     this.checkGuardrail(
       'sackRate',
       analysis.sackRate,
-      BALANCE_GUARDRAILS.sackRate,
+      BALANCE_GUARDRAILS.sackRate!,
       analysis,
       violations,
       warnings,
@@ -1001,7 +1001,7 @@ export class GuardrailChecker {
     this.checkGuardrail(
       'turnoverRate',
       analysis.turnoverRate,
-      BALANCE_GUARDRAILS.turnoverRate,
+      BALANCE_GUARDRAILS.turnoverRate!,
       analysis,
       violations,
       warnings,
@@ -1012,7 +1012,7 @@ export class GuardrailChecker {
     this.checkGuardrail(
       'penaltyRate',
       analysis.penaltyRate,
-      BALANCE_GUARDRAILS.penaltyRate,
+      BALANCE_GUARDRAILS.penaltyRate!,
       analysis,
       violations,
       warnings,
@@ -1026,7 +1026,7 @@ export class GuardrailChecker {
     this.checkGuardrail(
       'redZoneEfficiency',
       analysis.redZoneEfficiency,
-      BALANCE_GUARDRAILS.redZoneEfficiency,
+      BALANCE_GUARDRAILS.redZoneEfficiency!,
       analysis,
       violations,
       warnings,
@@ -1188,21 +1188,21 @@ export class GuardrailChecker {
         description: `${guardrail.name} is ${actual.toFixed(1)}%, below minimum ${min}% (${context})`,
         recommendation: `Increase ${guardrail.name.toLowerCase()} by adjusting outcome distributions`
       });
-    } else if (actual &gt; max) {
-      const deviation = actual - max;
-      const severity: GuardrailViolation['severity'] =
-        deviation &gt; (max - min) * 0.5 ? <span class="branch-0 cbranch-no" title="branch not covered" >'high' : 'medium';</span>
+    } else if (actual &gt; max) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+<span class="cstat-no" title="statement not covered" >      const deviation = actual - max;</span>
+<span class="cstat-no" title="statement not covered" >      const severity: GuardrailViolation['severity'] =</span>
+<span class="cstat-no" title="statement not covered" >        deviation &gt; (max - min) * 0.5 ? 'high' : 'medium';</span>
 &nbsp;
-      (severity === 'high' ? <span class="branch-0 cbranch-no" title="branch not covered" >violations : warnings).p</span>ush({
-        guardrail: guardrailName,
-        severity,
-        actual,
-        expected: { min, max },
-        deviation,
-        description: `${guardrail.name} is ${actual.toFixed(1)}%, above maximum ${max}% (${context})`,
-        recommendation: `Decrease ${guardrail.name.toLowerCase()} by adjusting outcome distributions`
-      });
-    }
+<span class="cstat-no" title="statement not covered" >      (severity === 'high' ? violations : warnings).push({</span>
+<span class="cstat-no" title="statement not covered" >        guardrail: guardrailName,</span>
+<span class="cstat-no" title="statement not covered" >        severity,</span>
+<span class="cstat-no" title="statement not covered" >        actual,</span>
+<span class="cstat-no" title="statement not covered" >        expected: { min, max },</span>
+<span class="cstat-no" title="statement not covered" >        deviation,</span>
+<span class="cstat-no" title="statement not covered" >        description: `${guardrail.name} is ${actual.toFixed(1)}%, above maximum ${max}% (${context})`,</span>
+<span class="cstat-no" title="statement not covered" >        recommendation: `Decrease ${guardrail.name.toLowerCase()} by adjusting outcome distributions`</span>
+<span class="cstat-no" title="statement not covered" >      });</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
   }
 &nbsp;
   /**
@@ -1348,7 +1348,7 @@ export class GuardrailChecker {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-02T00:30:21.178Z
+                at 2025-10-02T12:41:59.869Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

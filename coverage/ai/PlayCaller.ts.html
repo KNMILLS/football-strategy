@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">1.32% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>3/226</span>
+                <span class='fraction'>0/226</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
-                <span class="quiet">Functions</span>
-                <span class='fraction'>0/5</span>
-            </div>
-        
-            
-            <div class='fl pad1y space-right2'>
-                <span class="strong">1.32% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>3/226</span>
+                <span class='fraction'>0/226</span>
             </div>
         
             
@@ -357,13 +357,10 @@
 <a name='L292'></a><a href='#L292'>292</a>
 <a name='L293'></a><a href='#L293'>293</a>
 <a name='L294'></a><a href='#L294'>294</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -382,6 +379,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -417,7 +417,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -650,10 +650,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { RNG } from '../sim/RNG';
-import { createLCG } from '../sim/RNG';
+<span class="cstat-no" title="statement not covered" >import { createLCG } from '../sim/RNG';</span>
 import type { GameState } from '../domain/GameState';
 import type { OffenseCharts } from '../data/schemas/OffenseCharts';
-import { OpponentModel, categorizeDefenseLabel, categorizeOffenseLabel, toClockPhase, toFieldZone } from './OpponentModel';
+<span class="cstat-no" title="statement not covered" >import { OpponentModel, categorizeDefenseLabel, categorizeOffenseLabel, toClockPhase, toFieldZone } from './OpponentModel';</span>
 &nbsp;
 export type OffenseCall = { deckName: string; playLabel: string };
 export type DefenseCall = { label: string };
@@ -675,9 +675,9 @@ export interface PlayCallerDeps {
   getWhiteSignRestriction(playLabel: string): number | null;
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function clamp(n: number, lo: number, hi: number): number { return Math.max(lo, Math.min(hi, n)); }</span></span>
+<span class="cstat-no" title="statement not covered" >function clamp(n: number, lo: number, hi: number): number { return Math.max(lo, Math.min(hi, n)); }</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function isLegal(playLabel: string, deps: PlayCallerDeps, st: GameState, playerIsHome: boolean): boolean {</span></span>
+<span class="cstat-no" title="statement not covered" >function isLegal(playLabel: string, deps: PlayCallerDeps, st: GameState, playerIsHome: boolean): boolean {</span>
 <span class="cstat-no" title="statement not covered" >  const r = deps.getWhiteSignRestriction(playLabel);</span>
 <span class="cstat-no" title="statement not covered" >  if (r == null) return true;</span>
 <span class="cstat-no" title="statement not covered" >  const offenseIsHome = (st.possession === 'player') === playerIsHome;</span>
@@ -685,7 +685,7 @@ export interface PlayCallerDeps {
 <span class="cstat-no" title="statement not covered" >  return yardsToOpp &gt; r;</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function softmaxPick&lt;T&gt;(rng: RNG, items: Array&lt;{ item: T; util: number }&gt;, temp: number): T {</span></span>
+<span class="cstat-no" title="statement not covered" >function softmaxPick&lt;T&gt;(rng: RNG, items: Array&lt;{ item: T; util: number }&gt;, temp: number): T {</span>
 <span class="cstat-no" title="statement not covered" >  const T = Math.max(0.05, temp);</span>
 <span class="cstat-no" title="statement not covered" >  const weights = items.map(it =&gt; Math.exp(clamp(it.util, -1, 1) / T));</span>
 <span class="cstat-no" title="statement not covered" >  const sum = weights.reduce((s, x) =&gt; s + x, 0) || 1;</span>
@@ -699,7 +699,7 @@ export interface PlayCallerDeps {
 <span class="cstat-no" title="statement not covered" >  return items[items.length - 1]!.item;</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function yardlineText(st: GameState, offenseIsHome: boolean): string {</span></span>
+<span class="cstat-no" title="statement not covered" >function yardlineText(st: GameState, offenseIsHome: boolean): string {</span>
 <span class="cstat-no" title="statement not covered" >  const abs = st.ballOn;</span>
 <span class="cstat-no" title="statement not covered" >  if (offenseIsHome) {</span>
 <span class="cstat-no" title="statement not covered" >    if (abs &lt;= 50) return `OWN ${Math.max(1, abs)}`;</span>
@@ -710,8 +710,8 @@ export interface PlayCallerDeps {
 <span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
-export class PlayCaller <span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >{</span></span>
-<span class="cstat-no" title="statement not covered" >  private rng: RNG = Math.random;</span>
+<span class="cstat-no" title="statement not covered" >export class PlayCaller {</span>
+<span class="cstat-no" title="statement not covered" >  private rng: RNG = createLCG(123456789);</span>
 <span class="cstat-no" title="statement not covered" >  private model = new OpponentModel({ halfLife: 12, alpha: 0.5 });</span>
 <span class="cstat-no" title="statement not covered" >  private lastOffenseCalls: string[] = [];</span>
 <span class="cstat-no" title="statement not covered" >  private lastDefenseCalls: string[] = [];</span>
@@ -799,7 +799,7 @@ export class PlayCaller <span class="fstat-no" title="function not covered" ><sp
 <span class="cstat-no" title="statement not covered" >      const antiRepeat = recentRepeats &gt;= 2 ? -0.5 : (recentRepeats === 1 ? -0.2 : 0);</span>
 &nbsp;
       // Deception: if model is confident (low uncertainty), small boost to off-tendency picks
-<span class="cstat-no" title="statement not covered" >      const surprise = (1 - predDef.uncertainty) * this.personality.deception_bias * (Math.random() &lt; 0.5 ? 1 : -1) * 0.1;</span>
+<span class="cstat-no" title="statement not covered" >      const surprise = (1 - predDef.uncertainty) * this.personality.deception_bias * (this.rng() &lt; 0.5 ? 1 : -1) * 0.1;</span>
 &nbsp;
       // Risk penalty for deep/gadget when leading late
 <span class="cstat-no" title="statement not covered" >      const offScore = state.score[(state.possession === 'player') ? 'player' : 'ai'];</span>
@@ -949,7 +949,7 @@ export class PlayCaller <span class="fstat-no" title="function not covered" ><sp
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-02T00:30:21.178Z
+                at 2025-10-02T12:41:59.869Z
             </div>
         <script src="../prettify.js"></script>
         <script>

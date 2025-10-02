@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>17/17</span>
+                <span class='fraction'>0/17</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>9/9</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>17/17</span>
+                <span class='fraction'>0/17</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -84,46 +84,46 @@
 <a name='L19'></a><a href='#L19'>19</a>
 <a name='L20'></a><a href='#L20'>20</a>
 <a name='L21'></a><a href='#L21'>21</a>
-<a name='L22'></a><a href='#L22'>22</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L22'></a><a href='#L22'>22</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-yes">15x</span>
-<span class="cline-any cline-yes">15x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { TimeKeepingSchema, type TimeKeeping } from '../schemas/Timekeeping';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { TimeKeepingSchema, type TimeKeeping } from '../schemas/Timekeeping';<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
 import type { Result, Err } from './Result';
-import { fetchJson, getOrFetch, ok, err } from './http';
-import { toTimeKeeping } from '../normalizers/timeKeeping';
+<span class="cstat-no" title="statement not covered" >import { fetchJson, getOrFetch, ok, err } from './http';</span>
+<span class="cstat-no" title="statement not covered" >import { toTimeKeeping } from '../normalizers/timeKeeping';</span>
 &nbsp;
-export async function fetchTimeKeeping(): Promise&lt;Result&lt;TimeKeeping&gt;&gt; {
-  const key = 'data/time_keeping.json';
-  return getOrFetch(key, async () =&gt; {
-    const jsonRes = await fetchJson&lt;unknown&gt;(key);
-    if (!jsonRes.ok) return jsonRes as Err;
-    const tk = toTimeKeeping(jsonRes.data);
-    if (!tk) {
-      const union = TimeKeepingSchema.safeParse(jsonRes.data);
-      if (!union.success) return err('SCHEMA', union.error.message);
-      return err('TRANSFORM', 'failed to normalize timekeeping table');
-    }
-    return ok(tk);
-  });
-}
+<span class="cstat-no" title="statement not covered" >export async function fetchTimeKeeping(): Promise&lt;Result&lt;TimeKeeping&gt;&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const key = 'data/time_keeping.json';</span>
+<span class="cstat-no" title="statement not covered" >  return getOrFetch(key, async () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const jsonRes = await fetchJson&lt;unknown&gt;(key);</span>
+<span class="cstat-no" title="statement not covered" >    if (!jsonRes.ok) return jsonRes as Err;</span>
+<span class="cstat-no" title="statement not covered" >    const tk = toTimeKeeping(jsonRes.data);</span>
+<span class="cstat-no" title="statement not covered" >    if (!tk) {</span>
+<span class="cstat-no" title="statement not covered" >      const union = TimeKeepingSchema.safeParse(jsonRes.data);</span>
+<span class="cstat-no" title="statement not covered" >      if (!union.success) return err('SCHEMA', union.error.message);</span>
+<span class="cstat-no" title="statement not covered" >      return err('TRANSFORM', 'failed to normalize timekeeping table');</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >    return ok(tk);</span>
+<span class="cstat-no" title="statement not covered" >  });</span>
+<span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 &nbsp;
 &nbsp;</pre></td></tr></table></pre>
@@ -133,7 +133,7 @@ export async function fetchTimeKeeping(): Promise&lt;Result&lt;TimeKeeping&gt;&g
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-02T00:30:21.178Z
+                at 2025-10-02T12:41:59.869Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">7.89% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>6/76</span>
+                <span class='fraction'>0/76</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">7.89% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>6/76</span>
+                <span class='fraction'>0/76</span>
             </div>
         
             
@@ -167,12 +167,12 @@
 <a name='L102'></a><a href='#L102'>102</a>
 <a name='L103'></a><a href='#L103'>103</a>
 <a name='L104'></a><a href='#L104'>104</a>
-<a name='L105'></a><a href='#L105'>105</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<a name='L105'></a><a href='#L105'>105</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -271,12 +271,12 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { createInitialGameState, type GameState, type TeamSide } from '../../domain/GameState';
-import { createLCG, type RNG } from '../RNG';
-import { GameFlow, type FlowEvent, type PlayInput } from '../../flow/GameFlow';
-import { loadOffenseCharts, loadTimeKeeping } from '../../data/loaders/tables';
-import { buildPolicy } from '../../ai/policy/NFL2025Policy';
-import { simulateOneGame } from '../run/single';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { createInitialGameState, type GameState, type TeamSide } from '../../domain/GameState';<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
+<span class="cstat-no" title="statement not covered" >import { createLCG, type RNG } from '../RNG';</span>
+<span class="cstat-no" title="statement not covered" >import { GameFlow, type FlowEvent, type PlayInput } from '../../flow/GameFlow';</span>
+<span class="cstat-no" title="statement not covered" >import { loadOffenseCharts, loadTimeKeeping } from '../../data/loaders/tables';</span>
+<span class="cstat-no" title="statement not covered" >import { buildPolicy } from '../../ai/policy/NFL2025Policy';</span>
+<span class="cstat-no" title="statement not covered" >import { simulateOneGame } from '../run/single';</span>
 &nbsp;
 export interface BatchValidationOptions {
   seeds: number[];
@@ -301,7 +301,7 @@ export interface BatchValidationSummary {
   avgAway: number;
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export async function simulateAndValidateBatch(opts: BatchValidationOptions): Promise&lt;{ entries: BatchValidationResultEntry[]; summary: BatchValidationSummary }&gt; {</span></span>
+<span class="cstat-no" title="statement not covered" >export async function simulateAndValidateBatch(opts: BatchValidationOptions): Promise&lt;{ entries: BatchValidationResultEntry[]; summary: BatchValidationSummary }&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  const entries: BatchValidationResultEntry[] = [];</span>
 <span class="cstat-no" title="statement not covered" >  let sumHome = 0; let sumAway = 0;</span>
 <span class="cstat-no" title="statement not covered" >  for (const seed of opts.seeds) {</span>
@@ -382,7 +382,7 @@ export interface BatchValidationSummary {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-02T00:30:21.178Z
+                at 2025-10-02T12:41:59.869Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

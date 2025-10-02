@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">55.55% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>20/36</span>
+                <span class='fraction'>0/36</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>4/8</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/8</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">55.55% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>20/36</span>
+                <span class='fraction'>0/36</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -122,35 +122,35 @@
 <a name='L57'></a><a href='#L57'>57</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -178,54 +178,54 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { OffenseCharts } from '../schemas/OffenseCharts';
 import type { PlaceKickTable } from '../schemas/PlaceKicking';
 import type { TimeKeeping } from '../schemas/Timekeeping';
-import { fetchOffenseCharts } from './offenseCharts';
-import { fetchPlaceKicking } from './placeKicking';
-import { fetchTimeKeeping } from './timeKeeping';
-import { fetchLongGain } from './longGain';
+<span class="cstat-no" title="statement not covered" >import { fetchOffenseCharts } from './offenseCharts';</span>
+<span class="cstat-no" title="statement not covered" >import { fetchPlaceKicking } from './placeKicking';</span>
+<span class="cstat-no" title="statement not covered" >import { fetchTimeKeeping } from './timeKeeping';</span>
+<span class="cstat-no" title="statement not covered" >import { fetchLongGain } from './longGain';</span>
 import type { LongGainTable } from '../normalizers/longGain';
 &nbsp;
 /** @deprecated prefer fetchOffenseCharts which returns Result */
-export async function loadOffenseCharts(): Promise&lt;OffenseCharts | undefined&gt; {
-  const r = await fetchOffenseCharts();
-  return r.ok ? r.<span class="branch-0 cbranch-no" title="branch not covered" >data : undefined;</span>
-}
+<span class="cstat-no" title="statement not covered" >export async function loadOffenseCharts(): Promise&lt;OffenseCharts | undefined&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const r = await fetchOffenseCharts();</span>
+<span class="cstat-no" title="statement not covered" >  return r.ok ? r.data : undefined;</span>
+<span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 /** @deprecated prefer fetchPlaceKicking which returns Result */
-export async function loadPlaceKicking(): Promise&lt;PlaceKickTable | undefined&gt; {
-  const r = await fetchPlaceKicking();
-  return r.ok ? r.<span class="branch-0 cbranch-no" title="branch not covered" >data : undefined;</span>
-}
+<span class="cstat-no" title="statement not covered" >export async function loadPlaceKicking(): Promise&lt;PlaceKickTable | undefined&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const r = await fetchPlaceKicking();</span>
+<span class="cstat-no" title="statement not covered" >  return r.ok ? r.data : undefined;</span>
+<span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 /** @deprecated prefer fetchTimeKeeping which returns Result */
-export async function loadTimeKeeping(): Promise&lt;TimeKeeping | undefined&gt; {
-  const r = await fetchTimeKeeping();
-  return r.ok ? r.<span class="branch-0 cbranch-no" title="branch not covered" >data : undefined;</span>
-}
+<span class="cstat-no" title="statement not covered" >export async function loadTimeKeeping(): Promise&lt;TimeKeeping | undefined&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const r = await fetchTimeKeeping();</span>
+<span class="cstat-no" title="statement not covered" >  return r.ok ? r.data : undefined;</span>
+<span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 /** @deprecated prefer fetchLongGain which returns Result */
-export async function loadLongGain(): Promise&lt;LongGainTable | undefined&gt; {
-  const r = await fetchLongGain();
-  return r.ok ? r.<span class="branch-0 cbranch-no" title="branch not covered" >data : undefined;</span>
-}
+<span class="cstat-no" title="statement not covered" >export async function loadLongGain(): Promise&lt;LongGainTable | undefined&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const r = await fetchLongGain();</span>
+<span class="cstat-no" title="statement not covered" >  return r.ok ? r.data : undefined;</span>
+<span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 // Deprecated helpers for older names retained in original file
 /** @deprecated use fetchOffenseCharts */
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export async function loadOffenseChartsDeprecated(): Promise&lt;OffenseCharts | undefined&gt; {</span></span>
+<span class="cstat-no" title="statement not covered" >export async function loadOffenseChartsDeprecated(): Promise&lt;OffenseCharts | undefined&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  const r = await fetchOffenseCharts();</span>
 <span class="cstat-no" title="statement not covered" >  return r.ok ? r.data : undefined;</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 /** @deprecated use fetchPlaceKicking */
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export async function loadPlaceKickingDeprecated(): Promise&lt;PlaceKickTable | undefined&gt; {</span></span>
+<span class="cstat-no" title="statement not covered" >export async function loadPlaceKickingDeprecated(): Promise&lt;PlaceKickTable | undefined&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  const r = await fetchPlaceKicking();</span>
 <span class="cstat-no" title="statement not covered" >  return r.ok ? r.data : undefined;</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 /** @deprecated use fetchTimeKeeping */
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export async function loadTimeKeepingDeprecated(): Promise&lt;TimeKeeping | undefined&gt; {</span></span>
+<span class="cstat-no" title="statement not covered" >export async function loadTimeKeepingDeprecated(): Promise&lt;TimeKeeping | undefined&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  const r = await fetchTimeKeeping();</span>
 <span class="cstat-no" title="statement not covered" >  return r.ok ? r.data : undefined;</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 /** @deprecated use fetchLongGain */
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export async function loadLongGainDeprecated(): Promise&lt;LongGainTable | undefined&gt; {</span></span>
+<span class="cstat-no" title="statement not covered" >export async function loadLongGainDeprecated(): Promise&lt;LongGainTable | undefined&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  const r = await fetchLongGain();</span>
 <span class="cstat-no" title="statement not covered" >  return r.ok ? r.data : undefined;</span>
 <span class="cstat-no" title="statement not covered" >}</span>
@@ -238,7 +238,7 @@ export async function loadLongGain(): Promise&lt;LongGainTable | undefined&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-02T00:30:21.178Z
+                at 2025-10-02T12:41:59.869Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

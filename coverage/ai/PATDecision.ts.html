@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>0/14</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>13/13</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>0/14</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -101,24 +101,24 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { CoachProfile } from './CoachProfiles';
 import type { RNG } from '../sim/RNG';
 &nbsp;
@@ -129,24 +129,24 @@ export interface PATContext {
   coach: CoachProfile;
 }
 &nbsp;
-export function shouldGoForTwo(ctx: PATContext): boolean {
-  const late = ctx.quarter === 4 &amp;&amp; ctx.clock &lt;= 5 * 60;
+<span class="cstat-no" title="statement not covered" >export function shouldGoForTwo(ctx: PATContext): boolean {</span>
+<span class="cstat-no" title="statement not covered" >  const late = ctx.quarter === 4 &amp;&amp; ctx.clock &lt;= 5 * 60;</span>
   // Go for two when trailing by 1 or 2
-  let go = (ctx.diff &gt; 0 &amp;&amp; ctx.diff &lt;= 2);
+<span class="cstat-no" title="statement not covered" >  let go = (ctx.diff &gt; 0 &amp;&amp; ctx.diff &lt;= 2);</span>
   // Aggressive coaches may go when leading by 1 very late (diff &lt; 0 means AI leads)
-  if (ctx.coach.twoPointAggressiveLate &amp;&amp; ctx.diff &lt; 0 &amp;&amp; ctx.diff === -1 &amp;&amp; late) go = true;
-  return go;
-}
+<span class="cstat-no" title="statement not covered" >  if (ctx.coach.twoPointAggressiveLate &amp;&amp; ctx.diff &lt; 0 &amp;&amp; ctx.diff === -1 &amp;&amp; late) go = true;</span>
+<span class="cstat-no" title="statement not covered" >  return go;</span>
+<span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
-export function performPAT(ctx: PATContext, rng: RNG): { aiPoints: number } {
-  if (shouldGoForTwo(ctx)) {
-    const success = rng() &lt; 0.5;
-    return { aiPoints: success ? 2 : 0 };
-  }
+<span class="cstat-no" title="statement not covered" >export function performPAT(ctx: PATContext, rng: RNG): { aiPoints: number } {</span>
+<span class="cstat-no" title="statement not covered" >  if (shouldGoForTwo(ctx)) {</span>
+<span class="cstat-no" title="statement not covered" >    const success = rng() &lt; 0.5;</span>
+<span class="cstat-no" title="statement not covered" >    return { aiPoints: success ? 2 : 0 };</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
   // XP success heuristic aligned with legacy behavior; 98% success when abstracted
-  const success = rng() &lt; 0.98;
-  return { aiPoints: success ? 1 : 0 };
-}
+<span class="cstat-no" title="statement not covered" >  const success = rng() &lt; 0.98;</span>
+<span class="cstat-no" title="statement not covered" >  return { aiPoints: success ? 1 : 0 };</span>
+<span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -154,7 +154,7 @@ export function performPAT(ctx: PATContext, rng: RNG): { aiPoints: number } {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-02T00:30:21.178Z
+                at 2025-10-02T12:41:59.869Z
             </div>
         <script src="../prettify.js"></script>
         <script>

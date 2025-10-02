@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">2.43% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1/41</span>
+                <span class='fraction'>0/41</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
-                <span class="quiet">Functions</span>
-                <span class='fraction'>0/5</span>
-            </div>
-        
-            
-            <div class='fl pad1y space-right2'>
-                <span class="strong">2.43% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1/41</span>
+                <span class='fraction'>0/41</span>
             </div>
         
             
@@ -144,7 +144,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -178,11 +178,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Move utility functions here to break circular dependency
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function clamp(n: number, min: number, max: number): number {</span></span>
+<span class="cstat-no" title="statement not covered" >function clamp(n: number, min: number, max: number): number {</span>
 <span class="cstat-no" title="statement not covered" >  return Math.max(min, Math.min(max, n));</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function isRedZone(ballOnFromHome: number, playerIsHome: boolean, possession: 'player'|'ai'): boolean {</span></span>
+<span class="cstat-no" title="statement not covered" >function isRedZone(ballOnFromHome: number, playerIsHome: boolean, possession: 'player'|'ai'): boolean {</span>
 <span class="cstat-no" title="statement not covered" >  const offenseIsHomeFlag = (possession === 'player') === playerIsHome;</span>
 <span class="cstat-no" title="statement not covered" >  const yardsToOppGoal = offenseIsHomeFlag ? (100 - ballOnFromHome) : ballOnFromHome;</span>
 <span class="cstat-no" title="statement not covered" >  return yardsToOppGoal &lt; 20;</span>
@@ -190,18 +190,18 @@
 &nbsp;
 export type TendencyDistanceBucket = 'short'|'medium'|'long';
 &nbsp;
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function toDistanceBucket(toGo: number): TendencyDistanceBucket {</span></span>
+<span class="cstat-no" title="statement not covered" >function toDistanceBucket(toGo: number): TendencyDistanceBucket {</span>
 <span class="cstat-no" title="statement not covered" >	if (toGo &lt;= 2) return 'short';</span>
 <span class="cstat-no" title="statement not covered" >	if (toGo &gt;= 8) return 'long';</span>
 <span class="cstat-no" title="statement not covered" >	return 'medium';</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function keyForSituation(down: number, dist: TendencyDistanceBucket, inRedZone: boolean): string {</span></span>
+<span class="cstat-no" title="statement not covered" >function keyForSituation(down: number, dist: TendencyDistanceBucket, inRedZone: boolean): string {</span>
 <span class="cstat-no" title="statement not covered" >	const d = Math.max(1, Math.min(4, down));</span>
 <span class="cstat-no" title="statement not covered" >	return `${d}:${dist}:${inRedZone ? 'RZ' : 'FG'}`;</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
-export class PlayerTendenciesMemory <span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >{</span></span>
+<span class="cstat-no" title="statement not covered" >export class PlayerTendenciesMemory {</span>
 <span class="cstat-no" title="statement not covered" >	private countsByKey: Record&lt;string, { run: number; pass: number }&gt; = Object.create(null);</span>
 <span class="cstat-no" title="statement not covered" >	private global: { run: number; pass: number } = { run: 0, pass: 0 };</span>
 &nbsp;
@@ -241,7 +241,7 @@ export type PlayerTendenciesMemoryConstructor = typeof PlayerTendenciesMemory;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-02T00:30:21.178Z
+                at 2025-10-02T12:41:59.869Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
