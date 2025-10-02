@@ -105,6 +105,7 @@ main#main {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: 0.3rem;
 }
 
 .controls label {
@@ -131,7 +132,7 @@ main#main {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   transition: background 0.2s ease;
   box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
@@ -212,7 +213,7 @@ main#main {
 
 footer#footer {
   background: linear-gradient(180deg, #0a1f38, #081a2e);
-  padding: 0.5rem;
+  padding: 0.3rem;
   border-top: 1px solid #d0dae5;
   overflow-x: auto;
   /* Raise the footer above the field so the hand and hovered cards appear
@@ -224,7 +225,7 @@ footer#footer {
 
 .hand {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.15rem;
   align-items: flex-start;
   /* Position relative so z-index applies; cards sit above the field */
   position: relative;
@@ -332,20 +333,27 @@ footer#footer {
   padding: 0.3rem 0.5rem;
 }
 
+/* Make dice play option buttons extra compact */
+#dice-play-options .btn {
+  font-size: 0.75rem !important;
+  padding: 0.2rem 0.3rem !important;
+  min-height: 28px !important;
+}
+
 /* Update footer styling to accommodate drop zone and cards */
 footer#footer {
   background: #0f2744;
-  padding: 0.4rem;
+  padding: 0.3rem;
   border-top: 2px solid #004080;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
 /* Hand remains flex row but allow overflow */
 #hand {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.15rem;
   align-items: flex-start;
   overflow-x: auto;
 }
@@ -523,8 +531,8 @@ footer#footer {
   position: absolute;
   /* Base size of overlay cards (before scaling). The cards are visually
      scaled up for readability using transform. */
-  width: 90px;
-  height: 140px;
+  width: 30px;
+  height: 47px;
   background-size: cover;
   background-position: center;
   border: 2px solid #ffeb3b;
@@ -535,16 +543,15 @@ footer#footer {
      z-index ensures the temporary play cards appear on top of the field,
      scoreboard and hand. */
   z-index: 200;
-  /* Double the visible size of overlay cards for readability */
-  transform: scale(2);
+  /* Scale up overlay cards for readability since base cards are smaller */
+  transform: scale(3);
   transform-origin: center;
 }
 
-/* Card styling to evoke a Slay the Spire vibe: slightly larger, with
-   ornate borders and deeper shadows. */
+/* Card styling to evoke a Slay the Spire vibe: compact size for better layout */
 .card {
-  width: 100px;
-  height: 150px;
+  width: 33px;
+  height: 50px;
   background: linear-gradient(#2f3b55, #1d2639);
   border: 2px solid #805b2f;
   border-radius: 8px;
@@ -573,9 +580,9 @@ footer#footer {
   right: 0;
   background: rgba(0,0,0,0.65);
   color: #ffeb3b;
-  font-size: 0.7rem;
+  font-size: 0.5rem;
   text-align: center;
-  padding: 0.25rem 0.1rem;
+  padding: 0.15rem 0.05rem;
 }
 .card.no-image {
   background: #2f3b55 url('assets/placeholder_light_gray_block.png') center/cover no-repeat;
@@ -590,8 +597,8 @@ footer#footer {
   bottom: 16%;
   left: 50%;
   transform: translateX(-50%);
-  width: 300px;
-  height: 450px;
+  width: 100px;
+  height: 150px;
   border: 3px solid #ffeb3b;
   border-radius: 8px;
   background-size: cover;
@@ -611,8 +618,8 @@ footer#footer {
   background: rgba(0, 0, 0, 0.65);
   color: #ffeb3b;
   text-align: center;
-  font-size: 1rem;
-  padding: 0.3rem 0.2rem;
+  font-size: 0.6rem;
+  padding: 0.2rem 0.1rem;
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
 }
@@ -648,8 +655,8 @@ footer#footer {
     flex: 0 0 30%;
   }
   .card {
-    width: 80px;
-    height: 120px;
+    width: 27px;
+    height: 40px;
   }
 }
 

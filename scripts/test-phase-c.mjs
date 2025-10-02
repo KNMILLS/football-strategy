@@ -8,9 +8,11 @@ console.log('=' .repeat(50));
 console.log('\n🏈 Phase C Implementation Summary:');
 console.log('✅ C1. EV-based play selection policy');
 console.log('   - Updated CoachProfiles with correct persona mapping:');
-console.log('     * Reid → Air Raid/Spread bias (0.95/0.9 preferences)');
-console.log('     * Belichick → Wide Zone/Smashmouth bias (0.95/0.9 preferences)');
-console.log('     * Madden → West Coast/Smashmouth balance (0.9/0.85 preferences)');
+console.log('     * Reid → Spread bias (0.95 primary preference)');
+console.log('     * Walsh → West Coast focus (0.95 primary preference)');
+console.log('     * Kingsbury → Air Raid focus (0.95 primary preference)');
+console.log('     * Schottenheimer → Smashmouth focus (0.95 primary preference)');
+console.log('     * Shanahan → Wide Zone focus (0.95 primary preference)');
 console.log('   - PlaybookCoach enhanced with Tier-1 table support');
 console.log('   - Fallback logic implemented for missing tables');
 
@@ -40,9 +42,11 @@ console.log('   expected value calculations and coach personalities.');
 
 // Simulate the expected behavior
 console.log('\n📋 Expected Runtime Behavior:');
-console.log('• Andy Reid AI will favor Air Raid and Spread plays');
-console.log('• Bill Belichick AI will favor Wide Zone and Smashmouth plays');
-console.log('• John Madden AI will balance West Coast and Smashmouth plays');
+console.log('• Andy Reid AI will favor Spread plays');
+console.log('• Bill Walsh AI will favor West Coast plays');
+console.log('• Kliff Kingsbury AI will favor Air Raid plays');
+console.log('• Marty Schottenheimer AI will favor Smashmouth plays');
+console.log('• Mike Shanahan AI will favor Wide Zone plays');
 console.log('• Missing tables trigger fallback with logged warnings');
 console.log('• Penalty decisions use base outcome EV for optimal choices');
 

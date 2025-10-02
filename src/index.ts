@@ -546,8 +546,10 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
         // Map opponent to an AI deck style
         let aiDeck: DeckName = 'Pro Style';
         if (opponentName === 'Andy Reid') aiDeck = 'Aerial Style';
-        else if (opponentName === 'Bill Belichick') aiDeck = 'Ball Control';
-        else if (opponentName === 'John Madden') aiDeck = 'Pro Style';
+        else if (opponentName === 'Kliff Kingsbury') aiDeck = 'Aerial Style';
+        else if (opponentName === 'Marty Schottenheimer') aiDeck = 'Ball Control';
+        else if (opponentName === 'Bill Walsh') aiDeck = 'Pro Style';
+        else if (opponentName === 'Mike Shanahan') aiDeck = 'Pro Style';
 
         // Initial state at kickoff
         const initial: import('./domain/GameState').GameState = {
@@ -662,16 +664,63 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
 
         // Keep the hand UI in sync with possession by re-emitting handUpdate on HUD changes
         // When AI has the ball, present defense calls for the human to choose
-        bus.on('hudUpdate', ({ possession }) => {
+        bus.on('hudUpdate', ({ possession, down, toGo, ballOn }) => {
           try {
             const rt: any = (window as any).GS_RUNTIME || {};
+            const { getCurrentEngine } = require('../config/FeatureFlags');
+            const engine = getCurrentEngine();
+
+            console.log('HUD Update:', { possession, down, toGo, ballOn, currentState: rt.state });
+
             if (possession === 'player') {
-              const deckDef = OFFENSE_DECKS[rt.playerDeck as DeckName] || [];
-              const cards = deckDef.map((c: any) => ({ id: c.id, label: c.label, art: c.art, type: c.type }));
-              bus.emit('handUpdate', { cards, isPlayerOffense: true } as any);
+              if (engine === 'dice') {
+                // For dice engine, hide the hand and show dice options
+                try {
+                  const handEl = document.getElementById('hand');
+                  const previewEl = document.getElementById('card-preview');
+                  if (handEl) (handEl as HTMLElement).style.display = 'none';
+                  if (previewEl) (previewEl as HTMLElement).style.display = 'none';
+                } catch {}
+              } else {
+                // For deterministic engine, show legacy offense cards or special teams
+                const showSpecialTeams = down === 4 || toGo > 10;
+                console.log('Player possession, showSpecialTeams:', showSpecialTeams, { down, toGo });
+
+                if (showSpecialTeams) {
+                  // Show special teams plays on 4th down or long yardage
+                  const specialTeamsCards = [
+                    { id: 'punt', label: 'Punt', art: 'assets/cards/Special/punt.jpg', type: 'punt' },
+                    { id: 'field-goal', label: 'Field Goal', art: 'assets/cards/Special/field-goal.jpg', type: 'field-goal' }
+                  ];
+                  console.log('Emitting special teams hand update');
+                  bus.emit('handUpdate', { cards: specialTeamsCards, isPlayerOffense: true } as any);
+                } else {
+                  // Show regular offense cards
+                  const deckDef = OFFENSE_DECKS[rt.playerDeck as DeckName] || [];
+                  const cards = deckDef.map((c: any) => ({ id: c.id, label: c.label, art: c.art, type: c.type }));
+                  console.log('Emitting offense hand update, cards:', cards.length);
+                  bus.emit('handUpdate', { cards, isPlayerOffense: true } as any);
+                }
+              }
             } else {
-              const defCards = DEFENSE_DECK.map((d) => ({ id: (d as any).id, label: (d as any).label, art: `assets/cards/Defense/${(d as any).label}.jpg`, type: 'defense' }));
-              bus.emit('handUpdate', { cards: defCards, isPlayerOffense: false } as any);
+              // AI has possession - show defense cards for human player to select
+              const showSpecialTeams = down === 4 || toGo > 10;
+              console.log('AI possession, showSpecialTeams:', showSpecialTeams, { down, toGo });
+
+              if (showSpecialTeams) {
+                // Show special teams plays for AI on 4th down or long yardage
+                const specialTeamsCards = [
+                  { id: 'punt', label: 'Punt', art: 'assets/cards/Special/punt.jpg', type: 'punt' },
+                  { id: 'field-goal', label: 'Field Goal', art: 'assets/cards/Special/field-goal.jpg', type: 'field-goal' }
+                ];
+                console.log('Emitting AI special teams hand update');
+                bus.emit('handUpdate', { cards: specialTeamsCards, isPlayerOffense: false } as any);
+              } else {
+                // Show regular defense cards
+                const defCards = DEFENSE_DECK.map((d) => ({ id: (d as any).id, label: (d as any).label, art: `assets/cards/Defense/${(d as any).label}.jpg`, type: 'defense' }));
+                console.log('Emitting defense hand update, cards:', defCards.length);
+                bus.emit('handUpdate', { cards: defCards, isPlayerOffense: false } as any);
+              }
             }
           } catch (error) { console.debug('HUD sync failed', error); }
         });
@@ -691,6 +740,42 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
             const useDice = engineNow === 'dice';
 
             if (currentState.possession === 'player') {
+              // Check if this is a special teams play
+              if (cardId === 'punt') {
+                // Handle punt
+                const puntResult = flow.performKickoff(currentState, 'normal', 'player'); // Simplified punt handling
+                const newState = puntResult.state as any;
+                (window as any).GS_RUNTIME.state = newState;
+                bus.emit('hudUpdate', {
+                  quarter: newState.quarter,
+                  clock: newState.clock,
+                  down: newState.down,
+                  toGo: newState.toGo,
+                  ballOn: newState.ballOn,
+                  possession: newState.possession,
+                  score: newState.score,
+                } as any);
+                bus.emit('log', { message: 'Punt - possession changes' });
+                return;
+              } else if (cardId === 'field-goal') {
+                // Handle field goal attempt
+                const fgDistance = 100 - currentState.ballOn; // Distance from current position to goal line
+                const fgResult = flow.attemptFieldGoal(currentState, fgDistance, 'player');
+                const newState = fgResult.state as any;
+                (window as any).GS_RUNTIME.state = newState;
+                bus.emit('hudUpdate', {
+                  quarter: newState.quarter,
+                  clock: newState.clock,
+                  down: newState.down,
+                  toGo: newState.toGo,
+                  ballOn: newState.ballOn,
+                  possession: newState.possession,
+                  score: newState.score,
+                } as any);
+                bus.emit('log', { message: `Field goal attempt from ${fgDistance} yards` });
+                return;
+              }
+
               // Player offense: look up offense card from player's deck
               const playerDeckDef = OFFENSE_DECKS[rt.playerDeck as DeckName] || [];
               const legacyCard = playerDeckDef.find((c: any) => c.id === cardId);
@@ -711,6 +796,16 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
 
                 const engineResult = await engine.resolvePlay(offenseId, defenseId, currentState, createLCG(currentState.seed));
 
+                console.log('🏈 ENGINE RESULT:', {
+                  offenseId,
+                  defenseId,
+                  engineResult: {
+                    yards: engineResult.yards,
+                    clock: engineResult.clock,
+                    turnover: engineResult.turnover
+                  }
+                });
+
                 // Process dice engine result and update game state
                 const newState = { ...currentState };
 
@@ -724,6 +819,14 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
                   const clockRunoff = parseInt(engineResult.clock);
                   newState.clock = Math.max(0, newState.clock - clockRunoff);
                 }
+
+                console.log('⏰ STATE BEFORE UPDATE:', {
+                  ballOn: currentState.ballOn,
+                  clock: currentState.clock,
+                  down: currentState.down,
+                  toGo: currentState.toGo,
+                  possession: currentState.possession
+                });
 
                 // Handle turnovers
                 if (engineResult.turnover && typeof engineResult.turnover !== 'boolean') {
@@ -779,6 +882,14 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
                 catch (error) { /* ignore telemetry bookkeeping errors */ }
                 (window as any).GS_RUNTIME.state = newState as any;
 
+                console.log('🏟️ STATE AFTER UPDATE:', {
+                  ballOn: newState.ballOn,
+                  clock: newState.clock,
+                  down: newState.down,
+                  toGo: newState.toGo,
+                  possession: newState.possession
+                });
+
                 // Emit HUD update to refresh UI
                 bus.emit('hudUpdate', {
                   quarter: newState.quarter,
@@ -810,6 +921,42 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
                 (window as any).GS_RUNTIME.state = res.state as any;
               }
             } else {
+              // Check if this is a special teams play for AI
+              if (cardId === 'punt') {
+                // Handle AI punt
+                const puntResult = flow.performKickoff(currentState, 'normal', 'ai');
+                const newState = puntResult.state as any;
+                (window as any).GS_RUNTIME.state = newState;
+                bus.emit('hudUpdate', {
+                  quarter: newState.quarter,
+                  clock: newState.clock,
+                  down: newState.down,
+                  toGo: newState.toGo,
+                  ballOn: newState.ballOn,
+                  possession: newState.possession,
+                  score: newState.score,
+                } as any);
+                bus.emit('log', { message: 'AI Punt - possession changes' });
+                return;
+              } else if (cardId === 'field-goal') {
+                // Handle AI field goal attempt
+                const fgDistance = 100 - currentState.ballOn;
+                const fgResult = flow.attemptFieldGoal(currentState, fgDistance, 'ai');
+                const newState = fgResult.state as any;
+                (window as any).GS_RUNTIME.state = newState;
+                bus.emit('hudUpdate', {
+                  quarter: newState.quarter,
+                  clock: newState.clock,
+                  down: newState.down,
+                  toGo: newState.toGo,
+                  ballOn: newState.ballOn,
+                  possession: newState.possession,
+                  score: newState.score,
+                } as any);
+                bus.emit('log', { message: `AI field goal attempt from ${fgDistance} yards` });
+                return;
+              }
+
               // AI offense: player's click selects a defense; AI picks offense via PlayCaller
               const defCard = DEFENSE_DECK.find((d) => (d as any).id === cardId);
               if (!defCard) return;

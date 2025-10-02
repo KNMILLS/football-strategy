@@ -62,9 +62,11 @@ Gridiron Strategy is a sophisticated digital adaptation of the classic *Avalon H
 ### 2.4 Sophisticated AI System
 
 **Coach Profile System** (Updated for New Playbooks):
-- **Andy Reid**: Aggressive passing game (Air Raid playbook) with high risk tolerance and explosive play emphasis
-- **Bill Belichick**: Conservative, situational football (Smashmouth playbook) with defensive emphasis and clock management
-- **John Madden**: Balanced approach (West Coast playbook) with adaptive tendencies and short-to-intermediate focus
+- **Andy Reid**: Aggressive passing game (Spread playbook) with high risk tolerance and explosive play emphasis
+- **Bill Walsh**: Innovative West Coast offense (West Coast playbook) with timing, precision, and balanced approach
+- **Kliff Kingsbury**: Aggressive downfield passing (Air Raid playbook) with gunslinger mentality and high tempo
+- **Marty Schottenheimer**: Power running focus (Smashmouth playbook) with conservative, ground-based approach
+- **Mike Shanahan**: Innovative zone blocking (Wide Zone playbook) with smart, calculated decision making
 
 **AI Intelligence Features** (Enhanced for Dice System):
 - **Opponent Modeling**: Tracks player tendencies across new playbooks and adjusts defensive strategy
@@ -220,9 +222,11 @@ Gridiron Strategy is a sophisticated digital adaptation of the classic *Avalon H
 ### 5.2 Advanced AI System (Updated Playbooks) 🔄
 
 **Sophisticated Coach Personalities**:
-- **Andy Reid**: Aggressive passing game with high-risk, high-reward tendencies (Air Raid)
-- **Bill Belichick**: Conservative, situational approach with defensive emphasis (Smashmouth)
-- **John Madden**: Balanced, adaptive strategy suitable for all situations (West Coast)
+- **Andy Reid**: Aggressive passing game with high-risk, high-reward tendencies (Spread)
+- **Bill Walsh**: Innovative West Coast offense with timing and precision focus (West Coast)
+- **Kliff Kingsbury**: Aggressive downfield passing with gunslinger mentality (Air Raid)
+- **Marty Schottenheimer**: Power running focus with conservative approach (Smashmouth)
+- **Mike Shanahan**: Innovative zone blocking with smart decision making (Wide Zone)
 
 **AI Intelligence Features**:
 - **Opponent Modeling**: Tracks player tendencies across new playbooks and adjusts defensive strategy accordingly

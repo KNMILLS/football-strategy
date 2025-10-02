@@ -179,12 +179,24 @@ class DiceEngine implements Engine {
       try {
         // Generate the correct table filename based on offense and defense card IDs
         const tableFilename = this.generateTableFilename(offenseCard.id, defenseCard.id);
+        console.log('📁 Generated filename:', tableFilename);
 
         // Load the specific matchup table for this play/defense combination
+        // Use our own filename generation instead of the loader's formatting
         const { fetchMatchupTable } = require('../data/loaders/matchupTables');
         const matchupResult = fetchMatchupTable(tableFilename);
 
+        console.log('🔍 DICE DEBUG:', {
+          offenseCardId: offenseCard.id,
+          defenseCardLabel: defenseCard.label,
+          tableFilename,
+          matchupResult: matchupResult ? { ok: matchupResult.ok, error: matchupResult.error } : 'undefined'
+        });
+
         if (matchupResult && matchupResult.ok) {
+          console.log('📊 Matchup table loaded, entries:', Object.keys(matchupResult.data.entries || {}).length);
+          console.log('📋 Sample entries:', Object.keys(matchupResult.data.entries || {}).slice(0, 5));
+
           const { resolveSnap } = require('../rules/ResolveSnap');
           const diceResult = resolveSnap(
             offenseCard.id,
@@ -195,10 +207,17 @@ class DiceEngine implements Engine {
             rng
           );
 
+          console.log('🎲 Dice result:', {
+            diceRoll: diceResult.diceRoll,
+            finalYards: diceResult.finalYards,
+            doubles: diceResult.doubles,
+            baseOutcome: diceResult.baseOutcome
+          });
+
           // Convert the dice result to our ResolveResult format
           return this.convertDiceResult(diceResult, offenseCard.label, defenseCard.label);
         } else {
-          console.warn(`Failed to load matchup table for ${tableFilename}:`, matchupResult?.error);
+          console.warn(`❌ Failed to load matchup table for ${tableFilename}:`, matchupResult?.error);
         }
       } catch (error) {
         console.warn('Failed to use resolveSnap, falling back to stub:', error);
@@ -273,19 +292,37 @@ class DiceEngine implements Engine {
     return DEFENSE_DECK.find(c => c.id === cardId) || null;
   }
 
-  private generateTableFilename(offenseCardId: string, defenseCardId: string): string {
-    // Extract play name from offense card ID (e.g., "wc-quick-slant" -> "wc-quick-slant")
-    const offensePlay = offenseCardId;
+  public generateTableFilename(offenseCardId: string, defenseCardId: string): string {
+    // Map offense card IDs to their corresponding table names
+    const offenseTableMap: Record<string, string> = {
+      'SP_BUBBLE': 'spread-rpo-bubble',
+      'SP_RPO_BUBBLE': 'spread-rpo-bubble',
+      // Add other mappings as needed
+    };
+
+    // Extract play name from offense card ID, using mapping if available
+    const offensePlay = offenseTableMap[offenseCardId] || offenseCardId;
 
     // Extract defense name from defense card ID (e.g., "Defense_Cover1" -> "def-cover-1")
     const defenseName = defenseCardId
       .replace(/^Defense_/, 'def-')
-      .replace(/([A-Z])/g, '_$1')
-      .toLowerCase()
+      .replace(/([A-Z])/g, (match) => `_${match.toLowerCase()}`)
       .replace(/^_/, '');
 
-    // Construct filename (e.g., "wc-quick-slant__def-cover-1.json")
-    return `${offensePlay}__${defenseName}.json`;
+    // Determine the playbook directory based on the offense card ID prefix
+    let playbookDir = 'west-coast'; // default (note: hyphen, not underscore)
+    if (offenseCardId.startsWith('spread-') || offenseCardId.startsWith('SP_')) {
+      playbookDir = 'spread';
+    } else if (offenseCardId.startsWith('ar-')) {
+      playbookDir = 'air_raid';
+    } else if (offenseCardId.startsWith('sm-')) {
+      playbookDir = 'smashmouth';
+    } else if (offenseCardId.startsWith('wz-')) {
+      playbookDir = 'wide_zone';
+    }
+
+    // Construct full path (e.g., "tables_v1/spread/spread-rpo-bubble__def-cover-1.json")
+    return `tables_v1/${playbookDir}/${offensePlay}__${defenseName}.json`;
   }
 }
 

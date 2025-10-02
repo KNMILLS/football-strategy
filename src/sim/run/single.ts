@@ -61,10 +61,10 @@ export async function simulateOneGame(opts: SimulateOneGameOptions): Promise<Sim
   }});
 
   // Coaches
-  const playerCoachName = opts.playerCoach || 'John Madden';
-  const aiCoachName = opts.aiCoach || 'Bill Belichick';
-  const playerCoach: CoachProfile = (COACH_PROFILES[playerCoachName] as CoachProfile) || COACH_PROFILES['John Madden'];
-  const aiCoach: CoachProfile = (COACH_PROFILES[aiCoachName] as CoachProfile) || COACH_PROFILES['Bill Belichick'];
+  const playerCoachName = opts.playerCoach || 'Andy Reid';
+  const aiCoachName = opts.aiCoach || 'Marty Schottenheimer';
+  const playerCoach: CoachProfile = (COACH_PROFILES[playerCoachName] as CoachProfile) || COACH_PROFILES['Andy Reid'];
+  const aiCoach: CoachProfile = (COACH_PROFILES[aiCoachName] as CoachProfile) || COACH_PROFILES['Marty Schottenheimer'];
 
   // Decks: defaults per requirement
   const homeDeck: DeckName = 'Pro Style';

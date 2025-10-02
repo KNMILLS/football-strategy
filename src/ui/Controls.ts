@@ -131,10 +131,14 @@ export function registerControls(bus: EventBus): void {
         const block = document.createElement('div');
         block.id = 'dice-play-options';
         block.className = 'control-row';
+        block.style.marginBottom = '8px';
+        block.style.marginTop = '4px';
         const title = document.createElement('div');
         title.textContent = `Plays (2d20) - ${playbook}:`;
         title.style.fontWeight = 'bold';
-        title.style.marginTop = '8px';
+        title.style.fontSize = '12px';
+        title.style.marginTop = '4px';
+        title.style.marginBottom = '2px';
         block.appendChild(title);
 
         // Load playbook definitions
@@ -156,10 +160,10 @@ export function registerControls(bus: EventBus): void {
 
         const grid = document.createElement('div');
         grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
-        grid.style.gap = '6px';
-        grid.style.marginTop = '6px';
-        grid.style.maxHeight = '400px';
+        grid.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
+        grid.style.gap = '3px';
+        grid.style.marginTop = '4px';
+        grid.style.maxHeight = '200px';
         grid.style.overflowY = 'auto';
 
         for (const p of list) {
@@ -168,14 +172,14 @@ export function registerControls(bus: EventBus): void {
           btn.style.justifyContent = 'flex-start';
           btn.style.whiteSpace = 'normal';
           btn.style.textAlign = 'left';
-          btn.style.padding = '8px';
-          btn.style.minHeight = '50px';
+          btn.style.padding = '4px';
+          btn.style.minHeight = '32px';
           btn.title = p.description || p.label;
           btn.innerHTML = `
-            <div style="font-weight:600; margin-bottom:2px">${p.label}</div>
-            <div style="font-size:11px;opacity:.8; line-height:1.3">${p.description || ''}</div>
-            <div style="font-size:10px;opacity:.6; margin-top:2px">
-              ${p.type} • ${p.riskLevel} risk • ${p.averageYards} avg yds
+            <div style="font-weight:600; font-size:10px; margin-bottom:1px">${p.label}</div>
+            <div style="font-size:8px;opacity:.8; line-height:1.2">${p.description || ''}</div>
+            <div style="font-size:7px;opacity:.6; margin-top:1px">
+              ${p.type} • ${p.riskLevel} • ${p.averageYards}yds
             </div>
           `;
           btn.addEventListener('click', () => {
@@ -351,10 +355,14 @@ export function registerControls(bus: EventBus): void {
             const block = document.createElement('div');
             block.id = 'dice-play-options';
             block.className = 'control-row';
+            block.style.marginBottom = '8px';
+            block.style.marginTop = '4px';
             const title = document.createElement('div');
             title.textContent = `Plays (2d20) - ${selectedPlaybook}:`;
             title.style.fontWeight = 'bold';
-            title.style.marginTop = '8px';
+            title.style.fontSize = '12px';
+            title.style.marginTop = '4px';
+            title.style.marginBottom = '2px';
             block.appendChild(title);
 
             // Load playbook definitions
@@ -366,9 +374,9 @@ export function registerControls(bus: EventBus): void {
 
                 const grid = document.createElement('div');
                 grid.style.display = 'grid';
-                grid.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
-                grid.style.gap = '6px';
-                grid.style.marginTop = '6px';
+                grid.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
+                grid.style.gap = '3px';
+                grid.style.marginTop = '4px';
 
                 for (const p of list) {
                   const btn = document.createElement('button');
@@ -376,7 +384,9 @@ export function registerControls(bus: EventBus): void {
                   btn.style.justifyContent = 'flex-start';
                   btn.style.whiteSpace = 'normal';
                   btn.style.textAlign = 'left';
-                  btn.innerHTML = `<div style="font-weight:600">${p.label}</div><div style="font-size:11px;opacity:.8">${p.description || ''}</div>`;
+                  btn.style.padding = '4px';
+                  btn.style.minHeight = '32px';
+                  btn.innerHTML = `<div style="font-weight:600; font-size:10px">${p.label}</div><div style="font-size:8px;opacity:.8">${p.description || ''}</div>`;
                   btn.addEventListener('click', () => {
                     bus.emit('ui:playCard', { cardId: p.id } as any);
                   });
