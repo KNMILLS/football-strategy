@@ -1,4 +1,6 @@
 import type { EventBus } from '../../utils/EventBus';
+import { getCurrentEngine } from '../../config/FeatureFlags';
+import { initializeDiceUIIntegration } from './integration';
 import type { DiceUIState, DiceUIConfig, DiceUIEvent } from './types';
 import { CardSelector } from './CardSelector';
 import { PenaltyModal } from './PenaltyModal';
@@ -411,4 +413,47 @@ export class DiceUI {
   isReady(): boolean {
     return this.isRegistered;
   }
+}
+
+// Register function for optionalComponents loader in src/index.ts
+export function registerDiceUI(bus: EventBus): void {
+  if (typeof document === 'undefined') return;
+
+  // Ensure a container exists in the DOM
+  let container = document.getElementById('dice-ui-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'dice-ui-container';
+    // Basic layout; can be refined by CSS if desired
+    (container as any).style && ((container as any).style.cssText = 'position:relative;padding:8px;');
+    // Prefer placing within the main area if present
+    const main = document.getElementById('main');
+    if (main && main.appendChild) main.appendChild(container);
+    else document.body.appendChild(container);
+  }
+
+  const diceUI = new DiceUI(bus);
+  diceUI.register();
+
+  const integration = initializeDiceUIIntegration(bus);
+
+  const applyEngineMode = (engine: string) => {
+    const handEl = document.getElementById('hand') as HTMLElement | null;
+    const diceEl = document.getElementById('dice-ui-container') as HTMLElement | null;
+    const isDice = engine === 'dice';
+    if (handEl) handEl.style.display = isDice ? 'none' : '';
+    if (diceEl) diceEl.style.display = isDice ? 'block' : 'none';
+    try {
+      if (isDice) (integration as any)?.enable?.(diceUI);
+      else (integration as any)?.disable?.();
+    } catch { /* non-fatal */ }
+  };
+
+  // Set initial visibility based on current engine
+  try { applyEngineMode(getCurrentEngine()); } catch { /* ignore */ }
+
+  // React to engine changes from DevMode dropdown
+  (bus as any).on && (bus as any).on('ui:engineChanged', ({ engine }: { engine: string }) => {
+    applyEngineMode(engine);
+  });
 }

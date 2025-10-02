@@ -168,19 +168,11 @@ class DiceEngine implements Engine {
     state: GameState,
     rng: RNG
   ): ResolveResult {
-    // Map card IDs to play labels for dice resolution
-    const offenseCard = this.findOffenseCard(offCardId);
-    const defenseCard = this.findDefenseCard(defCardId);
-
-    if (!offenseCard) {
-      console.warn(`Unknown offense card ID: ${offCardId}`);
-      return { yards: 0, clock: '30' };
-    }
-
-    if (!defenseCard) {
-      console.warn(`Unknown defense card ID: ${defCardId}`);
-      return { yards: 0, clock: '30' };
-    }
+    // Map card IDs to play labels for dice resolution. For the dice engine,
+    // card identity is informational only (tables are global). If not found
+    // in legacy decks, proceed with placeholders so dice engine still runs.
+    const offenseCard = this.findOffenseCard(offCardId) || { id: offCardId, label: String(offCardId) } as any;
+    const defenseCard = this.findDefenseCard(defCardId) || { id: defCardId, label: String(defCardId) } as any;
 
     // Use the dice resolution system if tables are available
     if (this.matchupTable && this.penaltyTable) {
