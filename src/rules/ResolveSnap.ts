@@ -4,16 +4,16 @@ import type { MatchupTable, PenaltyTable } from '../data/schemas/MatchupTable';
 import type {
   DiceRoll,
   BaseOutcome,
-  TurnoverInfo,
   PenaltyOutcome,
-  DoublesKind,
   DiceResolutionResult
 } from './DiceOutcome';
 import {
   createDiceRoll,
   isForcedOverride,
   canAcceptDeclinePenalty,
-  determineClockRunoff
+  determineClockRunoff,
+  rollD20,
+  rollD10
 } from './DiceOutcome';
 
 /**
@@ -53,8 +53,8 @@ export function resolveSnap(
   rng: RNG
 ): DiceResolutionResult {
   // Roll 2d20
-  const die1 = Math.floor(rng() * 20) + 1;
-  const die2 = Math.floor(rng() * 20) + 1;
+  const die1 = rollD20(rng);
+  const die2 = rollD20(rng);
   const diceRoll = createDiceRoll(die1, die2);
 
   // Check for doubles
@@ -109,7 +109,7 @@ function resolvePenaltyDoubles(
   rng: RNG
 ): DiceResolutionResult {
   // Roll d10 for penalty table (1-10, not 2-19)
-  const penaltyRoll = Math.floor(rng() * 10) + 1;
+  const penaltyRoll = rollD10(rng);
   const penaltyInfo = penaltyTable.entries[penaltyRoll.toString() as keyof typeof penaltyTable.entries];
 
   const overridesPlayResult = isForcedOverride(penaltyRoll);
@@ -160,7 +160,7 @@ function resolveNormalRoll(
   const entry = matchupTable.entries[diceRoll.sum.toString() as keyof typeof matchupTable.entries];
 
   if (!entry) {
-    throw new Error(`No entry found for dice sum ${diceRoll.sum} in matchup table`);
+    throw new Error(`No entry found for dice sum ${diceRoll.sum}`);
   }
 
   // Apply field position clamp if meta indicates it should be used
@@ -174,33 +174,43 @@ function resolveNormalRoll(
 
   const baseOutcome: BaseOutcome = {
     yards: finalYards,
-    turnover: entry.turnover ? {
-      type: entry.turnover.type,
-      return_yards: entry.turnover.return_yards,
-      return_to: entry.turnover.return_to
-    } : undefined,
-    oob: entry.oob,
+    ...(entry.turnover ? {
+      turnover: {
+        type: entry.turnover.type,
+        return_yards: entry.turnover.return_yards,
+        return_to: entry.turnover.return_to
+      }
+    } : {}),
+    ...(entry.oob !== undefined ? { oob: entry.oob } : {}),
     clock: parseInt(entry.clock) as 10 | 20 | 30,
-    tags: entry.tags
+    ...(entry.tags ? { tags: entry.tags } : {})
   };
+
+  // Infer turnover for legacy tables that use tags only
+  if (!baseOutcome.turnover && entry.tags && (entry.tags.includes('turnover') || entry.tags.includes('interception'))) {
+    baseOutcome.turnover = { type: 'INT', return_yards: 0, return_to: 'LOS' };
+  }
+  const isIncompleteFromTags = !!(entry.tags && (entry.tags.includes('incomplete') || entry.tags.includes('incompletion')));
 
   // Determine final clock runoff based on play characteristics
   const finalClockRunoff = determineClockRunoff(
     entry.oob,
     isFirstDown,
-    entry.turnover?.type === 'INT' // Incomplete passes are turnovers but don't chain-move
+    isIncompleteFromTags
   );
 
   // Create description
   let description = '';
-  if (entry.turnover) {
-    if (entry.turnover.type === 'INT') {
+  if (entry.turnover || baseOutcome.turnover) {
+    const t = entry.turnover?.type || baseOutcome.turnover!.type;
+    if (t === 'INT') {
       description = `Interception`;
-    } else if (entry.turnover.type === 'FUM') {
+    } else if (t === 'FUM') {
       description = `Fumble`;
     }
-    if (entry.turnover.return_yards && entry.turnover.return_yards > 0) {
-      description += ` returned ${entry.turnover.return_yards} yards`;
+    const ry = entry.turnover?.return_yards || baseOutcome.turnover?.return_yards;
+    if (ry && ry > 0) {
+      description += ` returned ${ry} yards`;
     }
   } else if (finalYards !== undefined) {
     if (finalYards > 0) {
@@ -230,16 +240,4 @@ function resolveNormalRoll(
   };
 }
 
-/**
- * Helper to roll d20 (for use in tests or other contexts)
- */
-export function rollD20(rng: RNG): number {
-  return Math.floor(rng() * 20) + 1;
-}
-
-/**
- * Helper to roll d10 (for penalty table lookups)
- */
-export function rollD10(rng: RNG): number {
-  return Math.floor(rng() * 10) + 1;
-}
+export { rollD20, rollD10 };

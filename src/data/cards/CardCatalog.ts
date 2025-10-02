@@ -1,4 +1,4 @@
-import type { PlaybookName, CardType, DefensivePlay } from '../../types/dice';
+import type { PlaybookName, CardType } from '../../types/dice';
 import type {
   CardCatalog,
   CardCatalogLoadResult,

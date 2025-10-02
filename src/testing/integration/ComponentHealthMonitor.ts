@@ -24,11 +24,11 @@ export class ComponentHealthMonitor {
     this.monitoringActive = true;
 
     // Monitor component registration events
-    this.bus.on('component:registered', ({ componentName }) => {
-      this.updateComponentHealth(componentName, { status: 'registered' });
+    (this.bus as any).on('component:registered', ({ componentName }: any) => {
+      this.updateComponentHealth(componentName, { status: 'healthy' });
     });
 
-    this.bus.on('component:error', ({ componentName, error }) => {
+    (this.bus as any).on('component:error', ({ componentName, error }: any) => {
       this.updateComponentHealth(componentName, {
         status: 'error',
         error: getErrorMessage(error),
@@ -37,9 +37,9 @@ export class ComponentHealthMonitor {
     });
 
     // Monitor error boundary events
-    this.bus.on('errorBoundary:error', ({ componentName, error }) => {
+    (this.bus as any).on('errorBoundary:error', ({ componentName, error }: any) => {
       this.updateComponentHealth(componentName, {
-        status: 'error_boundary',
+        status: 'error',
         error: getErrorMessage(error),
         errorBoundaryTriggered: true
       });
@@ -200,7 +200,7 @@ export class ComponentHealthMonitor {
         visible: false,
         dimensions: { width: 0, height: 0 },
         styles: {},
-        error: error.message
+        error: getErrorMessage(error as any)
       };
     }
   }
@@ -216,14 +216,14 @@ export class ComponentHealthMonitor {
       });
 
       let eventHandled = false;
-      const eventHandler = (event: CustomEvent) => {
+      const eventHandler = (event: any) => {
         if (event.detail?.componentName === componentName) {
           eventHandled = true;
-          document.removeEventListener('componentHealthResponse', eventHandler);
+          document.removeEventListener('componentHealthResponse' as any, eventHandler as any);
         }
       };
 
-      document.addEventListener('componentHealthResponse', eventHandler);
+      document.addEventListener('componentHealthResponse' as any, eventHandler as any);
 
       // Dispatch test event (components should listen for this)
       document.dispatchEvent(testEvent);
@@ -241,7 +241,8 @@ export class ComponentHealthMonitor {
       return {
         responsive: false,
         responseTime: 0,
-        error: error.message
+        lastEventTimestamp: Date.now(),
+        error: getErrorMessage(error as any)
       };
     }
   }
@@ -261,14 +262,14 @@ export class ComponentHealthMonitor {
       return {
         triggered: componentErrors.length > 0,
         errorCount: componentErrors.length,
-        lastErrorTimestamp: componentErrors.length > 0 ? Date.now() : undefined
+        ...(componentErrors.length > 0 ? { lastErrorTimestamp: Date.now() } : {})
       };
 
     } catch (error) {
       return {
         triggered: false,
         errorCount: 0,
-        error: error.message
+        error: getErrorMessage(error as any)
       };
     }
   }
@@ -320,22 +321,22 @@ export class ComponentHealthMonitor {
    */
   private setupEventListeners(): void {
     // Monitor for component lifecycle events
-    this.bus.on('ui:enhancement', ({ type, enabled }) => {
+    (this.bus as any).on('ui:enhancement', ({ type, enabled }: any) => {
       if (enabled) {
         this.updateComponentHealth('ProgressiveEnhancement', { status: 'enhanced' });
       }
     });
 
     // Monitor for error boundary activations
-    this.bus.on('errorBoundary:fallback', ({ componentName }) => {
+    (this.bus as any).on('errorBoundary:fallback', ({ componentName }: any) => {
       this.updateComponentHealth(componentName, {
-        status: 'error_boundary',
+        status: 'error',
         errorBoundaryTriggered: true
       });
     });
 
     // Monitor for progressive enhancement features
-    this.bus.on('features:detected', ({ features }) => {
+    (this.bus as any).on('features:detected', ({ features }: any) => {
       const enhancementStatus = Object.entries(features)
         .filter(([_, supported]) => supported)
         .map(([feature]) => feature);

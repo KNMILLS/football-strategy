@@ -86,7 +86,7 @@ export function registerDevMode(bus: EventBus): void {
   try {
     const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('gs_dev_mode') : null;
     if (stored === '1') devEnabled = true;
-  } catch {}
+  } catch (error) { /* ignore unavailable storage */ }
   if (devToggle) devToggle.checked = devEnabled;
   if (panel) {
     (panel as any).hidden = !devEnabled;
@@ -103,7 +103,7 @@ export function registerDevMode(bus: EventBus): void {
   if (devToggle) {
     devToggle.addEventListener('change', () => {
       const enabled = !!devToggle.checked;
-      try { if (typeof localStorage !== 'undefined') localStorage.setItem('gs_dev_mode', enabled ? '1' : '0'); } catch {}
+      try { if (typeof localStorage !== 'undefined') localStorage.setItem('gs_dev_mode', enabled ? '1' : '0'); } catch (error) { /* ignore storage failures */ }
       if (panel) {
         (panel as any).hidden = !enabled;
         (panel as HTMLElement).classList.toggle('hidden', !enabled);
@@ -115,7 +115,7 @@ export function registerDevMode(bus: EventBus): void {
 
   // Sync visibility on devModeChanged (idempotent)
   bus.on('ui:devModeChanged', ({ enabled }) => {
-    try { (globalThis as any).GS = (globalThis as any).GS || {}; (globalThis as any).GS.__devMode = { enabled: !!enabled }; } catch {}
+    try { (globalThis as any).GS = (globalThis as any).GS || {}; (globalThis as any).GS.__devMode = { enabled: !!enabled }; } catch (error) { /* ignore */ }
     if (panel) {
       (panel as any).hidden = !enabled;
       (panel as HTMLElement).classList.toggle('hidden', !enabled);

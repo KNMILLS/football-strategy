@@ -1,5 +1,4 @@
 import type { CommentaryTemplate } from '../CommentaryEngine';
-import type { DiceTag } from '../TagMapper';
 
 // Additional run-specific templates
 export const RUN_TEMPLATES: CommentaryTemplate[] = [

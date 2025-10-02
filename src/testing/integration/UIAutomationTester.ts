@@ -1,5 +1,4 @@
 import { EventBus, getErrorMessage } from '../../utils/EventBus';
-import type { DeckName } from '../../data/decks';
 
 /**
  * UI automation tester specifically designed for Gridiron football game
@@ -49,19 +48,19 @@ export class UIAutomationTester {
       // Test deck selection dropdown
       const deckSelection = await this.testDeckSelection();
       if (!deckSelection.success) {
-        return { success: false, error: deckSelection.error };
+        return { success: false, error: String(deckSelection.error || 'Deck selection failed') };
       }
 
       // Test opponent selection dropdown
       const opponentSelection = await this.testOpponentSelection();
       if (!opponentSelection.success) {
-        return { success: false, error: opponentSelection.error };
+        return { success: false, error: String(opponentSelection.error || 'Opponent selection failed') };
       }
 
       // Test new game button click
       const gameStart = await this.testNewGameButton();
       if (!gameStart.success) {
-        return { success: false, error: gameStart.error };
+        return { success: false, error: String(gameStart.error || 'Start game failed') };
       }
 
       // Wait for game to initialize
@@ -70,7 +69,7 @@ export class UIAutomationTester {
       // Verify game state updates
       const gameStateValidation = await this.validateGameStateAfterStart();
       if (!gameStateValidation.success) {
-        return { success: false, error: gameStateValidation.error };
+        return { success: false, error: String(gameStateValidation.error || 'Game state invalid') };
       }
 
       return { success: true };
@@ -248,7 +247,7 @@ export class UIAutomationTester {
         const initialDisabled = element.disabled;
 
         // Simulate state change event
-        this.bus.emit(control.event, { [control.property]: true });
+        (this.bus as any).emit(control.event, { [control.property]: true });
 
         // Wait for state to be applied
         await new Promise(resolve => setTimeout(resolve, 50));

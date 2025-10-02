@@ -18,7 +18,7 @@ export async function runIntegrationTests(config: IntegrationTestConfig = {}): P
 
   try {
     // Load baseline for comparison if requested
-    if (config.enableBaselineComparison) {
+  if ((config as any).enableBaselineComparison) {
       console.log('📊 Loading baseline data for comparison...');
       const baselineLoaded = await testRunner.loadBaseline();
       if (!baselineLoaded) {
@@ -133,19 +133,20 @@ function displayTestResults(report: any, runtimeIssues: any[]): void {
  */
 if (require.main === module) {
   const args = process.argv.slice(2);
-  const config: IntegrationTestConfig = {};
+  const config: IntegrationTestConfig = {} as any;
 
   // Parse command line arguments
   args.forEach(arg => {
     if (arg === '--enable-baseline') {
-      config.enableBaselineComparison = true;
+      (config as any).enableBaselineComparison = true;
     } else if (arg === '--enable-visual-regression') {
       config.enableVisualRegression = true;
     } else if (arg === '--enable-performance-monitoring') {
       config.enablePerformanceMonitoring = true;
     } else if (arg.startsWith('--performance-thresholds=')) {
       try {
-        config.performanceThresholds = JSON.parse(arg.split('=')[1]);
+        const val = arg.split('=')[1];
+        config.performanceThresholds = JSON.parse(val || '{}');
       } catch {
         console.error('Invalid performance thresholds JSON');
         process.exit(1);

@@ -3,7 +3,6 @@ import { RuntimeValidator } from './RuntimeValidator';
 import { ComponentHealthMonitor } from './ComponentHealthMonitor';
 import { GameFlowValidator } from './GameFlowValidator';
 import { UIAutomationTester } from './UIAutomationTester';
-import type { GameState, TeamSide } from '../../domain/GameState';
 import type { DeckName } from '../../data/decks';
 
 /**
@@ -96,9 +95,9 @@ export class GridironIntegrationTestRunner {
 
     for (const componentName of components) {
       const health = await this.componentHealthMonitor.validateComponentHealth(componentName);
-      const status = health.isHealthy ? 'PASSED' : 'FAILED';
-      this.recordTestResult(`component_${componentName.toLowerCase()}`, status,
-        health.isHealthy ? undefined : health.issues.join(', '));
+      const ok = (health as any).status === 'healthy';
+      this.recordTestResult(`component_${componentName.toLowerCase()}`, ok ? 'PASSED' : 'FAILED',
+        ok ? undefined : ((health as any).issues || []).join(', '));
     }
   }
 
@@ -194,7 +193,7 @@ export class GridironIntegrationTestRunner {
     ];
 
     for (const scenario of scenarios) {
-      await this.testGameScenario(scenario.name, scenario);
+      await this.testGameScenario(scenario.name, scenario as any);
     }
   }
 
@@ -297,7 +296,7 @@ export class GridironIntegrationTestRunner {
 
       // Listen for game completion
       const completionHandler = () => {
-        this.bus.off('log', logHandler);
+        (this.bus as any).off?.('log', logHandler);
         resolve();
       };
 

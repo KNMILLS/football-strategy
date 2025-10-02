@@ -66,7 +66,7 @@ export function scaffoldMatchupTable(options: ScaffoldingOptions): ScaffoldingRe
   // Generate entries for sums 3-39 with template-based defaults
   for (let sum = 3; sum <= 39; sum++) {
     const entry = createEntryForSum(sum, defaults, options.template || 'balanced');
-    table.entries[sum.toString()] = entry;
+    (table.entries as any)[sum.toString()] = entry;
 
     // Add suggestions for turnover band (3-5)
     if (sum >= 3 && sum <= 5) {

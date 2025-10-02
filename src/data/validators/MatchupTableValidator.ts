@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import type { MatchupTable, PenaltyTable } from '../schemas/MatchupTable';
 
 /**
  * Field position clamp helper for validation

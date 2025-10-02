@@ -6,7 +6,7 @@
  */
 
 import type { RNG } from '../RNG';
-import { BALANCE_GUARDRAILS, DISTRIBUTION_GUARDRAILS, STATISTICAL_THRESHOLDS } from './Guardrails';
+import { DISTRIBUTION_GUARDRAILS, STATISTICAL_THRESHOLDS, PERFORMANCE_REQUIREMENTS } from './Guardrails';
 
 export interface DiceOutcome {
   yards: number;
@@ -104,11 +104,16 @@ export class StatisticalAnalyzer {
     for (let i = 0; i < sampleSize; i++) {
       const outcome = this.generateOutcome(tableId, offenseCard, defenseCard);
       this.outcomes.push(outcome);
+      // Enforce per-table time budget with graceful degradation
+      if ((performance.now() - startTime) >= PERFORMANCE_REQUIREMENTS.maxPerTableTime) {
+        break;
+      }
     }
 
     // Calculate metrics
     const metrics = this.calculateDistributionMetrics();
-    const analysis = this.buildAnalysisResult(tableId, offenseCard, defenseCard, playbook, sampleSize, metrics);
+    const effectiveSample = this.outcomes.length;
+    const analysis = this.buildAnalysisResult(tableId, offenseCard, defenseCard, playbook, effectiveSample, metrics);
 
     const endTime = performance.now();
     analysis.analysisTime = endTime - startTime;
@@ -145,14 +150,16 @@ export class StatisticalAnalyzer {
    * Generates realistic yardage based on play type and matchup
    */
   private generateYards(offenseCard: string, defenseCard: string): number {
+    const oc = offenseCard.toUpperCase();
+    const dc = defenseCard.toUpperCase();
     // Base distributions by play type
     let baseMean: number, baseStdDev: number;
 
-    if (offenseCard.includes('PASS') || offenseCard.includes('AIR') || offenseCard.includes('VERT')) {
+    if (oc.includes('PASS') || oc.includes('AIR') || oc.includes('VERT')) {
       // Pass plays - higher variance, more explosive potential
       baseMean = 7.5;
       baseStdDev = 12.0;
-    } else if (offenseCard.includes('RUN') || offenseCard.includes('ZONE')) {
+    } else if (oc.includes('RUN') || oc.includes('ZONE')) {
       // Run plays - more consistent, lower average
       baseMean = 4.2;
       baseStdDev = 3.8;
@@ -163,10 +170,10 @@ export class StatisticalAnalyzer {
     }
 
     // Adjust for defense
-    if (defenseCard.includes('BLITZ')) {
+    if (dc.includes('BLITZ')) {
       baseMean *= 0.85; // Blitz reduces effectiveness
       baseStdDev *= 1.1; // But increases variance
-    } else if (defenseCard.includes('COVER')) {
+    } else if (dc.includes('COVER')) {
       baseMean *= 0.95; // Coverage slightly reduces pass effectiveness
     }
 
@@ -187,12 +194,13 @@ export class StatisticalAnalyzer {
    * Generates clock runoff based on play characteristics
    */
   private generateClock(yards: number, offenseCard: string): number {
+    const oc = offenseCard.toUpperCase();
     let clockWeights = { 10: 0.25, 20: 0.35, 30: 0.40 };
 
     // Adjust based on play type
-    if (offenseCard.includes('PASS') || yards > 15) {
+    if (oc.includes('PASS') || yards > 15) {
       clockWeights = { 10: 0.45, 20: 0.35, 30: 0.20 }; // Faster for passes/explosives
-    } else if (offenseCard.includes('RUN')) {
+    } else if (oc.includes('RUN')) {
       clockWeights = { 10: 0.15, 20: 0.30, 30: 0.55 }; // Slower for runs
     }
 
@@ -213,11 +221,12 @@ export class StatisticalAnalyzer {
    * Generates out of bounds probability based on play type
    */
   private generateOOB(offenseCard: string): boolean {
+    const oc = offenseCard.toUpperCase();
     let oobRate = 0.05; // Base 5% OOB rate
 
     // Perimeter plays more likely to go OOB
-    if (offenseCard.includes('BUBBLE') || offenseCard.includes('SWING') ||
-        offenseCard.includes('JET') || offenseCard.includes('TOSS')) {
+    if (oc.includes('BUBBLE') || oc.includes('SWING') ||
+        oc.includes('JET') || oc.includes('TOSS')) {
       oobRate = 0.15;
     }
 
@@ -228,10 +237,12 @@ export class StatisticalAnalyzer {
    * Generates outcome tags based on play characteristics
    */
   private generateTags(yards: number, turnover: boolean, offenseCard: string, defenseCard: string): string[] {
+    const oc = offenseCard.toUpperCase();
+    const dc = defenseCard.toUpperCase();
     const tags: string[] = [];
 
     if (turnover) {
-      if (offenseCard.includes('PASS')) {
+      if (oc.includes('PASS')) {
         tags.push('INTERCEPTION');
       } else {
         tags.push('FUMBLE');
@@ -242,17 +253,24 @@ export class StatisticalAnalyzer {
       tags.push('EXPLOSIVE');
     }
 
-    if (yards <= -5 && offenseCard.includes('PASS')) {
+    if (yards <= -5 && oc.includes('PASS')) {
       tags.push('SACK');
     }
 
-    if (offenseCard.includes('PASS') && yards === 0) {
+    if (oc.includes('PASS') && yards === 0) {
       tags.push('INCOMPLETE');
     }
 
     // Add defensive tags
-    if (defenseCard.includes('BLITZ')) {
+    if (dc.includes('BLITZ')) {
       tags.push('PRESSURE');
+    }
+
+    // Add play-type tag for downstream metrics
+    if (oc.includes('PASS') || oc.includes('AIR') || oc.includes('VERT')) {
+      tags.push('PASS');
+    } else if (oc.includes('RUN') || oc.includes('ZONE')) {
+      tags.push('RUN');
     }
 
     return tags;
@@ -349,7 +367,7 @@ export class StatisticalAnalyzer {
     metrics: DistributionMetrics
   ): TableAnalysis {
     // Calculate derived metrics
-    const passPlays = this.outcomes.filter(o => o.tags.some(t => t.includes('PASS') || t === 'INCOMPLETE' || t === 'SACK'));
+    const passPlays = this.outcomes.filter(o => o.tags.includes('PASS') || o.tags.includes('INCOMPLETE') || o.tags.includes('SACK'));
     const runPlays = this.outcomes.filter(o => !passPlays.includes(o));
 
     const explosiveGains = this.outcomes.filter(o => o.yards >= 20 && !o.turnover);
@@ -378,8 +396,8 @@ export class StatisticalAnalyzer {
       avgYards: metrics.mean,
       yardsStdDev: metrics.standardDeviation,
       turnoverRate: this.outcomes.filter(o => o.turnover).length / sampleSize * 100,
-      explosiveRate: explosiveGains.length / (passPlays.length || 1) * 100,
-      sackRate: sacks.length / (passPlays.length || 1) * 100,
+      explosiveRate: explosiveGains.length / sampleSize * 100,
+      sackRate: sacks.length / sampleSize * 100,
       penaltyRate: penalties.length / sampleSize * 100,
 
       clockDistribution: {

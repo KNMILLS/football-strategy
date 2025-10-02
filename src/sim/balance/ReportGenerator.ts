@@ -191,11 +191,11 @@ export class ReportGenerator {
    */
   private generateComplianceSection(compliance: ComplianceResult[]): BalanceReport['compliance'] {
     // Group by playbook
-    const byPlaybook: Record<string, any> = {};
+    const byPlaybook: Record<string, any> = {} as Record<string, any>;
 
     for (const result of compliance) {
       // Extract playbook from table ID (format: playbook/filename)
-      const playbook = result.tableId.split('/')[0];
+      const playbook = String(result.tableId.split('/')[0] || 'unknown');
 
       if (!byPlaybook[playbook]) {
         byPlaybook[playbook] = {
@@ -281,10 +281,10 @@ export class ReportGenerator {
     };
 
     // Group by playbook
-    const byPlaybook: Record<string, any> = {};
+    const byPlaybook: Record<string, any> = {} as Record<string, any>;
 
     for (const outlier of outliers) {
-      const playbook = outlier.tableId.split('/')[0];
+      const playbook = String(outlier.tableId.split('/')[0] || 'unknown');
 
       if (!byPlaybook[playbook]) {
         byPlaybook[playbook] = {

@@ -1,5 +1,5 @@
 import { EventBus } from '../utils/EventBus';
-import { TelemetryCollector, type TelemetryConfig } from './TelemetryCollector';
+import { TelemetryCollector } from './TelemetryCollector';
 import { NdJsonLogger, type NdJsonLoggerConfig } from './NdJsonLogger';
 import { PrivacyFilter, type PrivacyFilterConfig } from './PrivacyFilter';
 import { TelemetryConfig as ConfigClass, globalTelemetryConfig, type TelemetryConfiguration } from './TelemetryConfig';

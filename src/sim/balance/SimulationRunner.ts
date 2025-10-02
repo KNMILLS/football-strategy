@@ -5,7 +5,7 @@
  * performance monitoring, and batch processing capabilities.
  */
 
-import { createLCG, type RNG } from '../RNG';
+import { createLCG } from '../RNG';
 import { StatisticalAnalyzer, type TableAnalysis } from './StatisticalAnalyzer';
 import { GuardrailChecker, type ComplianceResult } from './GuardrailChecker';
 import { PERFORMANCE_REQUIREMENTS } from './Guardrails';

@@ -88,8 +88,8 @@ export function determineOutcomeFromCharts(params: DetermineOutcomeParams) {
         defenseLabel,
         deckName,
         diceResult: { d1, d2, sum, isDoubles },
-        chartKey: chartDeckKey,
-        defenseKey: defLetter || undefined
+        chartKey: String(chartDeckKey),
+        ...(defLetter ? { defenseKey: defLetter } : {})
       });
     }
 

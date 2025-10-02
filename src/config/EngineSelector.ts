@@ -1,8 +1,6 @@
 import { getCurrentEngine, getFeatureFlags, type EngineType } from './FeatureFlags';
 import type { GameState } from '../domain/GameState';
 import type { RNG } from '../sim/RNG';
-import { resolvePlayCore } from '../rules/ResolvePlayCore';
-import { resolveSnap } from '../rules/ResolveSnap';
 import { OFFENSE_DECKS, DEFENSE_DECK, type DeckName } from '../data/decks';
 
 /**

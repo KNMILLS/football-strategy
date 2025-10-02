@@ -1,6 +1,5 @@
 import { EventBus, getErrorMessage } from '../../utils/EventBus';
 import type { GameState } from '../../domain/GameState';
-import type { DeckName } from '../../data/decks';
 
 /**
  * Game flow validator specifically designed for Gridiron football simulation
@@ -447,7 +446,7 @@ export class GameFlowValidator {
     });
 
     // Monitor scoring events
-    this.bus.on('score', (event) => {
+    (this.bus as any).on('score', (event: any) => {
       if (this.validationActive) {
         this.gameEvents.push({
           type: 'score',

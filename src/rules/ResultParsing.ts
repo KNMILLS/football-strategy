@@ -1,5 +1,5 @@
 import type { RNG } from '../sim/RNG';
-import { resolveLongGainWithDice, type DiceRollResult } from './LongGain';
+import { resolveLongGainWithDice } from './LongGain';
 
 export type OutcomeCategory = 'incomplete' | 'fumble' | 'interception' | 'penalty' | 'loss' | 'gain' | 'other';
 

@@ -1,11 +1,8 @@
 import type { GameState, TeamSide } from '../../domain/GameState';
-import type { RNG } from '../../sim/RNG';
-import type { OffenseCharts } from '../../data/schemas/OffenseCharts';
 import { resolvePlayCore } from '../../rules/ResolvePlayCore';
 import { administerPenalty, type AdminResult } from '../../rules/PenaltyAdmin';
 import type { Outcome } from '../../rules/ResultParsing';
 import { DEFAULT_TIME_KEEPING as DEFAULT_TIME_KEEPING_CONST } from '../../rules/ResultParsing';
-import type { TimeKeeping } from '../../data/schemas/Timekeeping';
 import { buildBroadcastCall as buildBroadcastCallExt, chooseCommentaryLines as chooseCommentaryLinesExt } from '../narration/Broadcast';
 import { buildResultSummary as buildResultSummaryExt } from '../narration/Summary';
 import { DriveTracker } from '../drive/DriveTracker';
@@ -19,22 +16,18 @@ import { hudPayload as hudPayloadExt } from '../HudPayload';
 import type { FlowEvent, PlayInput, FlowContext } from '../types';
 import {
   isTwoMinute,
-  clampYard,
-  nextDownDistanceAfterKickoff,
   scoringSideToDelta,
   attemptPatInternal,
   randomHash,
   isLeading,
   isTrailing,
-  isTied,
-  defaultAIShouldGoForTwo
+  isTied
 } from '../utils/GameFlowUtils';
 import {
   formatOrdinal,
   formatClock,
   formatPossessionSpotForBroadcast,
-  formatTeamYardLine,
-  scoreAnchorLine
+  formatTeamYardLine
 } from '../formatting/GameFlowFormatting';
 import {
   calculateTimeOff,

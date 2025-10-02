@@ -271,9 +271,9 @@ function validateStructuralConsistency(table: MatchupTable): { warnings: Validat
   // Suggest turnover variety in turnover band
   const turnoverBandSums = ['3', '4', '5'];
   const turnoverOutcomes = turnoverBandSums
-    .filter(sum => sum in table.entries)
-    .map(sum => table.entries[sum])
-    .filter(outcome => outcome.turnover);
+    .filter(sum => (table.entries as any)[sum])
+    .map(sum => (table.entries as any)[sum])
+    .filter((outcome: any) => outcome.turnover);
 
   if (turnoverOutcomes.length === 0) {
     suggestions.push({

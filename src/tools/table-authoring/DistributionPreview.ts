@@ -1,5 +1,5 @@
 import type { MatchupTable } from '../../data/schemas/MatchupTable.js';
-import { BALANCE_GUARDRAILS, DISTRIBUTION_GUARDRAILS, PLAYBOOK_IDENTITY_GUARDRAILS } from '../../sim/balance/Guardrails.js';
+import { BALANCE_GUARDRAILS, PLAYBOOK_IDENTITY_GUARDRAILS } from '../../sim/balance/Guardrails.js';
 
 /**
  * DistributionPreview.ts - Visualization and analysis utilities for dice table distributions
@@ -73,7 +73,7 @@ export function analyzeDistribution(table: MatchupTable, options: PreviewOptions
   }));
 
   const statistics = calculateStatistics(outcomes);
-  const bins = createDistributionBins(outcomes, binSize);
+  const bins = createDistributionBins(outcomes as Array<{ sum: number; yards: number; clock: string; tags?: string[] }>, binSize);
 
   // Generate balance analysis
   const balance = analyzeBalance ? analyzeTableBalance(table, outcomes, statistics) : {
@@ -135,7 +135,7 @@ function calculateStatistics(outcomes: Array<{sum: number; yards: number; clock:
 
   // Calculate turnover rate (based on turnover tags or actual turnover field)
   const turnoverOutcomes = outcomes.filter(o =>
-    o.tags?.some((tag: string) => tag.includes('turnover'))
+    (o as any).tags?.some((tag: string) => String(tag).includes('turnover'))
   ).length;
   const turnoverRate = (turnoverOutcomes / outcomes.length) * 100;
 
@@ -147,9 +147,9 @@ function calculateStatistics(outcomes: Array<{sum: number; yards: number; clock:
 
   const totalClocks = outcomes.length;
   const clockDistribution = {
-    '10': (clockCounts['10'] / totalClocks) * 100,
-    '20': (clockCounts['20'] / totalClocks) * 100,
-    '30': (clockCounts['30'] / totalClocks) * 100
+    '10': ((clockCounts['10'] || 0) / (totalClocks || 1)) * 100,
+    '20': ((clockCounts['20'] || 0) / (totalClocks || 1)) * 100,
+    '30': ((clockCounts['30'] || 0) / (totalClocks || 1)) * 100
   };
 
   return {

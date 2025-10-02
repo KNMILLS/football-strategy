@@ -436,17 +436,24 @@ function setTheme(theme: string): void {
 
 // Bridge UI theme change events to body dataset
 bus.on('ui:themeChanged', ({ theme }: any) => {
-  try { setTheme(theme); } catch {}
+  try { setTheme(theme); }
+  catch (error) {
+    console.error('Failed to apply theme:', error);
+  }
 });
 
 // Track when a QA test game is running so we can enrich logs in dev mode
 try {
   (bus as any).on && (bus as any).on('qa:startTestGame', () => { isTestGame = true; });
-} catch {}
+} catch (error) {
+  console.warn('Unable to wire qa:startTestGame listener:', error);
+}
 
 function isDevModeOn(): boolean {
-  try { if (typeof localStorage !== 'undefined') return localStorage.getItem('gs_dev_mode') === '1'; } catch {}
-  try { return !!(globalThis as any).GS?.__devMode?.enabled; } catch {}
+  try { if (typeof localStorage !== 'undefined') return localStorage.getItem('gs_dev_mode') === '1'; }
+  catch (error) { /* non-fatal */ }
+  try { return !!(globalThis as any).GS?.__devMode?.enabled; }
+  catch (error) { /* non-fatal */ }
   return false;
 }
 
@@ -606,7 +613,9 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
                     bus.emit('log', { message: `${pref} — ${ev.message}` });
                     continue;
                   }
-                } catch {}
+                } catch (error) {
+                  console.debug('Failed to build dev prefix', error);
+                }
               }
               bus.emit('log', { message: ev.message });
             }
@@ -619,7 +628,8 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
         };
 
         // Emit kickoff events now that translator is ready
-        try { translate(ko.events as any); } catch {}
+        try { translate(ko.events as any); }
+        catch (error) { console.debug('Kickoff event translation failed', error); }
 
         // Prepare new PlayCaller instances for human vs AI flow
         const deps = {
@@ -633,7 +643,8 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
         } as const;
         const pcPlayer = new PlayCaller(deps as any, true);
         const pcAI = new PlayCaller(deps as any, true);
-        try { await pcPlayer.loadPersonality(); await pcAI.loadPersonality(); } catch {}
+        try { await pcPlayer.loadPersonality(); await pcAI.loadPersonality(); }
+        catch (error) { console.warn('PlayCaller personality load failed', error); }
         pcPlayer.reset(seed);
         pcAI.reset(seed + 1);
 
@@ -650,7 +661,7 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
               const defCards = DEFENSE_DECK.map((d) => ({ id: (d as any).id, label: (d as any).label, art: `assets/cards/Defense/${(d as any).label}.jpg`, type: 'defense' }));
               bus.emit('handUpdate', { cards: defCards, isPlayerOffense: false } as any);
             }
-          } catch {}
+          } catch (error) { console.debug('HUD sync failed', error); }
         });
 
         // Listen for player selection; if player has ball, it's an offense play; if AI has ball, selection is defense
@@ -680,8 +691,9 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
                 // TODO: Implement proper event translation from engine result
                 bus.emit('log', { message: `Play resolved: ${engineResult.yards > 0 ? 'Gain' : engineResult.yards < 0 ? 'Loss' : 'No gain'} of ${Math.abs(engineResult.yards)} yards` });
 
-                if (engineResult.turnover) {
-                  bus.emit('log', { message: `${engineResult.turnover.type} - ${engineResult.turnover.return_yards ? `${engineResult.turnover.return_yards} yard return` : 'Turnover'}` });
+                if (engineResult.turnover && typeof engineResult.turnover !== 'boolean') {
+                  const t = engineResult.turnover;
+                  bus.emit('log', { message: `${t.type}${typeof t.return_yards === 'number' ? ` - ${t.return_yards} yard return` : ''}` });
                 }
 
                 // Update game state based on result (simplified)
@@ -690,7 +702,8 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
                   newState.ballOn = Math.max(0, Math.min(100, newState.ballOn + (newState.possession === 'player' ? engineResult.yards : -engineResult.yards)));
                 }
 
-                try { (window as any).GS_RUNTIME.__lastOffLabel = card.label; (window as any).GS_RUNTIME.__lastDefLabel = defPicked.label; } catch {}
+                try { (window as any).GS_RUNTIME.__lastOffLabel = card.label; (window as any).GS_RUNTIME.__lastDefLabel = defPicked.label; }
+                catch (error) { /* ignore telemetry bookkeeping errors */ }
                 (window as any).GS_RUNTIME.state = newState as any;
 
                 // TODO: Update tendencies and AI observations based on engine result
@@ -703,7 +716,7 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
                     playerIsHome: true,
                     possessing: before.possession,
                   });
-                } catch {}
+                } catch (error) { console.debug('Tendency record failed', error); }
               } catch (error) {
                 console.warn('Engine resolution failed, falling back to deterministic:', error);
                 // Fallback to original system
@@ -727,8 +740,9 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
                 // TODO: Implement proper event translation from engine result
                 bus.emit('log', { message: `AI Play resolved: ${engineResult.yards > 0 ? 'Gain' : engineResult.yards < 0 ? 'Loss' : 'No gain'} of ${Math.abs(engineResult.yards)} yards` });
 
-                if (engineResult.turnover) {
-                  bus.emit('log', { message: `AI ${engineResult.turnover.type} - ${engineResult.turnover.return_yards ? `${engineResult.turnover.return_yards} yard return` : 'Turnover'}` });
+                if (engineResult.turnover && typeof engineResult.turnover !== 'boolean') {
+                  const t = engineResult.turnover;
+                  bus.emit('log', { message: `AI ${t.type}${typeof t.return_yards === 'number' ? ` - ${t.return_yards} yard return` : ''}` });
                 }
 
                 // Update game state based on result (simplified)
@@ -737,7 +751,8 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
                   newState.ballOn = Math.max(0, Math.min(100, newState.ballOn + (newState.possession === 'player' ? engineResult.yards : -engineResult.yards)));
                 }
 
-                try { (window as any).GS_RUNTIME.__lastOffLabel = offPicked.playLabel; (window as any).GS_RUNTIME.__lastDefLabel = (defCard as any).label; } catch {}
+                try { (window as any).GS_RUNTIME.__lastOffLabel = offPicked.playLabel; (window as any).GS_RUNTIME.__lastDefLabel = (defCard as any).label; }
+                catch (error) { /* ignore telemetry bookkeeping errors */ }
                 (window as any).GS_RUNTIME.state = newState as any;
 
                 // TODO: Update tendencies and AI observations based on engine result
@@ -751,14 +766,15 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
               }
             }
           } catch (err) {
-            try { bus.emit('log', { message: `Play selection failed: ${String((err as any)?.message || err)}` }); } catch {}
+            try { bus.emit('log', { message: `Play selection failed: ${String((err as any)?.message || err)}` }); }
+            catch { /* ignore logging failure */ }
           }
         });
       } catch (err) {
         bus.emit('log', { message: `Failed to start new game: ${(err as Error)?.message || err}` });
       }
     });
-  } catch {}
+  } catch (error) { console.warn('Failed to register ui:newGame handler', error); }
 }
 
 function dispose(): void {
@@ -961,9 +977,9 @@ if (typeof window !== 'undefined' && !window.GS) {
 if (typeof document !== 'undefined') {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      try { void runtime.start(); } catch {}
+      try { void runtime.start(); } catch (error) { console.error('Runtime start failed', error); }
     }, { once: true });
   } else {
-    try { void runtime.start(); } catch {}
+    try { void runtime.start(); } catch (error) { console.error('Runtime start failed', error); }
   }
 }

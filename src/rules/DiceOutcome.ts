@@ -1,4 +1,5 @@
-import type { DiceOutcome, DoublesOutcome, PenaltyTable } from '../data/schemas/MatchupTable';
+import type { PenaltyTable } from '../data/schemas/MatchupTable';
+import type { RNG } from '../sim/RNG';
 
 /**
  * Core dice roll result
@@ -119,4 +120,23 @@ export function determineClockRunoff(
   } else {
     return 30;
   }
+}
+
+/**
+ * Roll a d20 using the underlying LCG integer state to ensure deterministic mapping.
+ * Given rng() returns r = (s - 1) / 2147483646 for next state s, recover s and map via modulo.
+ */
+export function rollD20(rng: RNG): number {
+  const r = rng();
+  const s = Math.floor(r * 2147483646) + 1;
+  return (s % 20) + 1;
+}
+
+/**
+ * Roll a d10 using the underlying LCG integer state to ensure deterministic mapping.
+ */
+export function rollD10(rng: RNG): number {
+  const r = rng();
+  const s = Math.floor(r * 2147483646) + 1;
+  return (s % 10) + 1;
 }
