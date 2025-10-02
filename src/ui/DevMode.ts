@@ -202,6 +202,15 @@ export function registerDevMode(bus: EventBus): void {
       setEngine(selectedEngine);
       updateEngineInfo();
       bus.emit('ui:engineChanged', { engine: selectedEngine });
+      // Force full UI reload to switch between engines cleanly
+      try {
+        if (typeof location !== 'undefined') {
+          // Preserve dev hash if present
+          const hasDev = (location.hash || '').includes('dev');
+          if (hasDev) location.hash = '#dev';
+          location.reload();
+        }
+      } catch { /* ignore */ }
     });
   }
 
