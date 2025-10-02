@@ -11,9 +11,7 @@ import {
   createDiceRoll,
   isForcedOverride,
   canAcceptDeclinePenalty,
-  determineClockRunoff,
-  rollD20,
-  rollD10
+  determineClockRunoff
 } from './DiceOutcome';
 
 /**
@@ -240,4 +238,16 @@ function resolveNormalRoll(
   };
 }
 
-export { rollD20, rollD10 };
+/**
+ * Helper to roll d20 (for use in tests or other contexts)
+ */
+export function rollD20(rng: RNG): number {
+  return Math.floor(rng() * 20) + 1;
+}
+
+/**
+ * Helper to roll d10 (for penalty table lookups)
+ */
+export function rollD10(rng: RNG): number {
+  return Math.floor(rng() * 10) + 1;
+}
