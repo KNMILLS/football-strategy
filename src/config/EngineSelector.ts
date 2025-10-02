@@ -218,17 +218,16 @@ class DiceEngine implements Engine {
           return this.convertDiceResult(diceResult, offenseCard.label, defenseCard.label);
         } else {
           console.warn(`❌ Failed to load matchup table for ${tableFilename}:`, matchupResult?.error);
+          throw new Error(`No matchup table found for ${tableFilename}`);
         }
       } catch (error) {
-        console.warn('Failed to use resolveSnap, falling back to stub:', error);
+        console.warn('Failed to use resolveSnap, falling back to legacy system:', error);
+        throw error;
       }
     }
 
-    // Fallback stub result
-    return {
-      yards: 0,
-      clock: '30'
-    };
+    // This should not be reached if dice engine is properly configured
+    throw new Error('Dice engine not available for this game type');
   }
 
   private convertDiceResult(diceResult: any, playLabel: string, defenseLabel: string): ResolveResult {
