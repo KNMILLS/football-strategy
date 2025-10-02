@@ -1,6 +1,5 @@
 import type { RNG } from '../../sim/RNG';
-import type { DiceOutcome, PenaltyTable } from '../../data/schemas/MatchupTable';
-import type { GameState } from '../../domain/GameState';
+import type { PenaltyTable } from '../../data/schemas/MatchupTable';
 import type { DiceTag, TagContext } from './TagMapper';
 
 // Template phrase variants for different commentary situations
@@ -289,10 +288,13 @@ function selectBestTemplate(
 
   // Sort by priority (highest first) and pick randomly among highest priority
   matchingTemplates.sort((a, b) => b.priority - a.priority);
-  const highestPriority = matchingTemplates[0].priority;
+  const first = matchingTemplates[0];
+  if (!first) return null;
+  const highestPriority = first.priority;
   const topTemplates = matchingTemplates.filter(t => t.priority === highestPriority);
-
-  return topTemplates[Math.floor(rng() * topTemplates.length)];
+  if (topTemplates.length === 0) return null;
+  const idx = Math.floor(rng() * topTemplates.length);
+  return topTemplates[Math.min(idx, topTemplates.length - 1)] || null;
 }
 
 // Generate commentary for a set of tags
@@ -323,7 +325,8 @@ export function generateCommentary(
   }
 
   // Select a random variant and interpolate
-  const variant = template.variants[Math.floor(rng() * template.variants.length)];
+  const vIdx = Math.floor(rng() * Math.max(1, template.variants.length));
+  const variant = template.variants[Math.min(vIdx, Math.max(0, template.variants.length - 1))] || '';
   return interpolate(variant, context);
 }
 

@@ -1,4 +1,6 @@
 import { EventBus } from '../utils/EventBus';
+import { getCurrentEngine, setEngine, getCurrentEngineInfo } from '../config/FeatureFlags';
+import { registerEngineIndicator, updateEngineIndicatorVisibility } from './EngineIndicator';
 
 function $(id: string): HTMLElement | null {
   return typeof document !== 'undefined' ? document.getElementById(id) : null;
@@ -36,6 +38,26 @@ export function registerDevMode(bus: EventBus): void {
   const runAutoBtn = $('run-auto-game') as HTMLButtonElement | null;
   const copyLogBtn = $('copy-log') as HTMLButtonElement | null;
   const downloadBtn = $('download-debug') as HTMLButtonElement | null;
+
+  // Create Engine Selection controls dynamically if panel exists
+  const engineControls = ((): { container: HTMLElement | null; select: HTMLSelectElement | null; info: HTMLElement | null } => {
+    if (!panel || typeof document === 'undefined') return { container: null, select: null, info: null };
+    const container = document.createElement('div'); container.className = 'control-row';
+    const label = document.createElement('label'); label.textContent = 'Engine:'; label.style.marginRight = '8px';
+    const select = document.createElement('select'); select.id = 'engine-select';
+    const deterministicOption = document.createElement('option'); deterministicOption.value = 'deterministic'; deterministicOption.textContent = 'Deterministic (Legacy)';
+    const diceOption = document.createElement('option'); diceOption.value = 'dice'; diceOption.textContent = 'Dice (2d20)';
+    select.appendChild(deterministicOption);
+    select.appendChild(diceOption);
+    select.style.marginRight = '8px';
+    const info = document.createElement('span'); info.id = 'engine-info'; info.style.fontSize = '12px'; info.style.color = '#666';
+    container.appendChild(label);
+    container.appendChild(select);
+    container.appendChild(info);
+    panel.appendChild(container);
+    return { container, select, info };
+  })();
+
   // Create Validated Batch controls dynamically if panel exists
   const validatedBatch = ((): { container: HTMLElement | null; count: HTMLInputElement | null; chunk: HTMLInputElement | null; pat: HTMLSelectElement | null; run: HTMLButtonElement | null } => {
     if (!panel || typeof document === 'undefined') return { container: null, count: null, chunk: null, pat: null, run: null };
@@ -64,7 +86,7 @@ export function registerDevMode(bus: EventBus): void {
   try {
     const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('gs_dev_mode') : null;
     if (stored === '1') devEnabled = true;
-  } catch {}
+  } catch (error) { /* ignore unavailable storage */ }
   if (devToggle) devToggle.checked = devEnabled;
   if (panel) {
     (panel as any).hidden = !devEnabled;
@@ -73,10 +95,15 @@ export function registerDevMode(bus: EventBus): void {
   }
   bus.emit('ui:devModeChanged', { enabled: devEnabled });
 
+  // Register engine indicator if dev mode is enabled
+  if (devEnabled) {
+    registerEngineIndicator(bus);
+  }
+
   if (devToggle) {
     devToggle.addEventListener('change', () => {
       const enabled = !!devToggle.checked;
-      try { if (typeof localStorage !== 'undefined') localStorage.setItem('gs_dev_mode', enabled ? '1' : '0'); } catch {}
+      try { if (typeof localStorage !== 'undefined') localStorage.setItem('gs_dev_mode', enabled ? '1' : '0'); } catch (error) { /* ignore storage failures */ }
       if (panel) {
         (panel as any).hidden = !enabled;
         (panel as HTMLElement).classList.toggle('hidden', !enabled);
@@ -88,13 +115,16 @@ export function registerDevMode(bus: EventBus): void {
 
   // Sync visibility on devModeChanged (idempotent)
   bus.on('ui:devModeChanged', ({ enabled }) => {
-    try { (globalThis as any).GS = (globalThis as any).GS || {}; (globalThis as any).GS.__devMode = { enabled: !!enabled }; } catch {}
+    try { (globalThis as any).GS = (globalThis as any).GS || {}; (globalThis as any).GS.__devMode = { enabled: !!enabled }; } catch (error) { /* ignore */ }
     if (panel) {
       (panel as any).hidden = !enabled;
       (panel as HTMLElement).classList.toggle('hidden', !enabled);
       (panel as HTMLElement).setAttribute('aria-hidden', (!enabled).toString());
     }
     if (devToggle) devToggle.checked = !!enabled;
+
+    // Update engine indicator visibility
+    updateEngineIndicatorVisibility(enabled);
   });
 
   if (themeSelect) {
@@ -121,7 +151,7 @@ export function registerDevMode(bus: EventBus): void {
   if (startTestBtn) {
     startTestBtn.addEventListener('click', () => {
       const provided = seedInput ? parseInt(seedInput.value || '0', 10) : 0;
-      const seed = (isFinite(provided) && provided > 0) ? provided : Math.floor(Math.random() * 1e9);
+      const seed = (isFinite(provided) && provided > 0) ? provided : (Date.now() % 1e9);
       const playerDeckVal = playerDeck ? playerDeck.value : 'Pro Style';
       const aiDeckVal = aiDeck ? aiDeck.value : 'Pro Style';
       const startingPossession = (possession ? possession.value : 'player') as 'player'|'ai';
@@ -140,7 +170,7 @@ export function registerDevMode(bus: EventBus): void {
       if (isFinite(provided) && provided > 0) {
         bus.emit('qa:runAutoGame', { seed: provided, playerPAT: 'auto' } as any);
       } else {
-        const seed = Math.floor(Math.random() * 1e9);
+        const seed = Date.now() % 1e9;
         bus.emit('qa:runAutoGame', { seed, playerPAT: 'auto' } as any);
       }
     });
@@ -155,6 +185,28 @@ export function registerDevMode(bus: EventBus): void {
   if (downloadBtn) {
     downloadBtn.addEventListener('click', () => {
       bus.emit('qa:downloadDebug', {} as any);
+    });
+  }
+
+  // Engine selection controls
+  if (engineControls.select && engineControls.info) {
+    // Initialize engine selection from current setting
+    const currentEngine = getCurrentEngine();
+    engineControls.select.value = currentEngine;
+
+    // Update info display
+    const updateEngineInfo = () => {
+      const engineInfo = getCurrentEngineInfo();
+      engineControls.info!.textContent = `${engineInfo.name} - ${engineInfo.description}`;
+    };
+    updateEngineInfo();
+
+    // Handle engine selection changes
+    engineControls.select.addEventListener('change', () => {
+      const selectedEngine = engineControls.select!.value as 'deterministic' | 'dice';
+      setEngine(selectedEngine);
+      updateEngineInfo();
+      bus.emit('ui:engineChanged', { engine: selectedEngine });
     });
   }
 

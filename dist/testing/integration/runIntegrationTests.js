@@ -1,4 +1,4 @@
-import { EventBus } from '../utils/EventBus';
+import { EventBus } from '../../utils/EventBus';
 import { GridironIntegrationTestRunner } from './GridironIntegrationTestRunner';
 /**
  * Main integration test runner script for Gridiron football game

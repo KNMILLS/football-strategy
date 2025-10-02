@@ -1,4 +1,3 @@
-import type { RNG } from '../../sim/RNG';
 import { createLCG } from '../../sim/RNG';
 import type { GameState } from '../../domain/GameState';
 import type { MatchupTable, PenaltyTable } from '../../data/schemas/MatchupTable';

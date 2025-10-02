@@ -2,7 +2,7 @@
  * ReportGenerator.test.ts - Tests for comprehensive balance report generation
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { ReportGenerator } from '../../../src/sim/balance/ReportGenerator';
 import type { TableAnalysis } from '../../../src/sim/balance/StatisticalAnalyzer';
 import type { ComplianceResult } from '../../../src/sim/balance/GuardrailChecker';

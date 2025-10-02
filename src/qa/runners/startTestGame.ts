@@ -36,7 +36,7 @@ function initializeState(seed: number, opts?: Partial<Pick<GameState, 'possessio
 
 export async function startTestGame(bus: EventBus, p: any): Promise<void> {
   try {
-    const seed = typeof p.seed === 'number' ? p.seed : Math.floor(Math.random() * 1e9);
+    const seed = typeof p.seed === 'number' ? p.seed : 123456789;
     const rng = createLCG(seed);
     resetDebugEntries();
     setDebugSeed(seed);

@@ -204,8 +204,8 @@ export const PERFORMANCE_REQUIREMENTS = {
   // Maximum time for full analysis of all tables
   maxAnalysisTime: 30 * 1000, // 30 seconds
 
-  // Maximum time per table analysis
-  maxPerTableTime: 5 * 1000, // 5 seconds
+  // Maximum time per table analysis aligned to EV budget requirement
+  maxPerTableTime: 100, // 100ms per table
 
   // Maximum memory usage during analysis
   maxMemoryUsage: 100 * 1024 * 1024, // 100MB

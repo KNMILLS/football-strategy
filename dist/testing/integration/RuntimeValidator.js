@@ -1,4 +1,4 @@
-import { EventBus } from '../utils/EventBus';
+import { EventBus, getErrorMessage } from '../../utils/EventBus';
 /**
  * Runtime validator specifically designed for Gridiron football game
  * Automatically detects runtime issues like black screens, component failures,
@@ -104,12 +104,12 @@ export class RuntimeValidator {
             this.updateComponentState(componentName, 'registered');
         });
         this.bus.on('component:error', ({ componentName, error }) => {
-            this.updateComponentState(componentName, 'error', error.message);
-            this.logIssue('critical', `Component ${componentName} failed`, error.message);
+            this.updateComponentState(componentName, 'error', getErrorMessage(error));
+            this.logIssue('critical', `Component ${componentName} failed`, getErrorMessage(error));
         });
         // Monitor error boundary events
         this.bus.on('errorBoundary:error', ({ componentName, error }) => {
-            this.logIssue('high', `Error boundary caught error in ${componentName}`, error.message);
+            this.logIssue('high', `Error boundary caught error in ${componentName}`, getErrorMessage(error));
         });
     }
     /**
@@ -147,7 +147,7 @@ export class RuntimeValidator {
                 }
             }
             catch (error) {
-                this.logIssue('medium', 'Rendering check failed', error.message);
+                this.logIssue('medium', 'Rendering check failed', getErrorMessage(error));
             }
             setTimeout(checkRendering, 5000); // Check every 5 seconds
         };
@@ -209,7 +209,7 @@ export class RuntimeValidator {
                 severity: 'medium',
                 message: 'Failed to check rendering status',
                 timestamp: Date.now(),
-                details: error.message
+                details: getErrorMessage(error)
             });
         }
         return issues;

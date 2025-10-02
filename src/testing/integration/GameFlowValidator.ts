@@ -1,6 +1,5 @@
-import { EventBus } from '../utils/EventBus';
-import type { GameState } from '../domain/GameState';
-import type { DeckName } from '../data/decks';
+import { EventBus, getErrorMessage } from '../../utils/EventBus';
+import type { GameState } from '../../domain/GameState';
 
 /**
  * Game flow validator specifically designed for Gridiron football simulation
@@ -76,7 +75,7 @@ export class GameFlowValidator {
           return { success: false, error: `Unknown penalty scenario: ${scenario}` };
       }
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -100,7 +99,7 @@ export class GameFlowValidator {
           return { success: false, error: `Unknown scoring scenario: ${scenario}` };
       }
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -124,7 +123,7 @@ export class GameFlowValidator {
           return { success: false, error: `Unknown AI scenario: ${scenario}` };
       }
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -148,7 +147,7 @@ export class GameFlowValidator {
           return { success: false, error: `Unknown time scenario: ${scenario}` };
       }
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -171,7 +170,7 @@ export class GameFlowValidator {
 
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -184,7 +183,7 @@ export class GameFlowValidator {
       // Verify first down is awarded appropriately
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -197,7 +196,7 @@ export class GameFlowValidator {
       // Verify proper yardage and down adjustments
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -210,7 +209,7 @@ export class GameFlowValidator {
       // Verify penalty can be accepted or declined
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -223,7 +222,7 @@ export class GameFlowValidator {
       // Verify scoring still counts but penalty affects kickoff position
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -236,7 +235,7 @@ export class GameFlowValidator {
       // Verify score increases by 7, then PAT attempt follows
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -249,7 +248,7 @@ export class GameFlowValidator {
       // Verify score increases by 8 if successful, 6 if failed
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -263,7 +262,7 @@ export class GameFlowValidator {
       // Verify ball position changes if missed
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -277,7 +276,7 @@ export class GameFlowValidator {
       // Verify free kick follows
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -290,7 +289,7 @@ export class GameFlowValidator {
       // Verify score increases by 6 for defensive team
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -303,7 +302,7 @@ export class GameFlowValidator {
       // Verify play selection follows coach profiles
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -316,7 +315,7 @@ export class GameFlowValidator {
       // Verify defensive play calling adapts to offensive patterns
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -329,7 +328,7 @@ export class GameFlowValidator {
       // Verify each coach has distinct play calling tendencies
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -342,7 +341,7 @@ export class GameFlowValidator {
       // Verify defensive adjustments based on observed patterns
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -355,7 +354,7 @@ export class GameFlowValidator {
       // Verify appropriate play calling in critical situations
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -368,7 +367,7 @@ export class GameFlowValidator {
       // Verify clock resets, possession changes, etc.
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -381,7 +380,7 @@ export class GameFlowValidator {
       // Verify game stops and appropriate notifications
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -394,7 +393,7 @@ export class GameFlowValidator {
       // Verify timeouts are properly consumed and tracked
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -407,7 +406,7 @@ export class GameFlowValidator {
       // Verify proper half-ending procedures
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -420,7 +419,7 @@ export class GameFlowValidator {
       // Verify final score calculation and game over state
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -447,7 +446,7 @@ export class GameFlowValidator {
     });
 
     // Monitor scoring events
-    this.bus.on('score', (event) => {
+    (this.bus as any).on('score', (event: any) => {
       if (this.validationActive) {
         this.gameEvents.push({
           type: 'score',

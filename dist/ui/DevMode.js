@@ -1,4 +1,6 @@
 import { EventBus } from '../utils/EventBus';
+import { getCurrentEngine, setEngine, getCurrentEngineInfo } from '../config/FeatureFlags';
+import { registerEngineIndicator, updateEngineIndicatorVisibility } from './EngineIndicator';
 function $(id) {
     return typeof document !== 'undefined' ? document.getElementById(id) : null;
 }
@@ -42,6 +44,36 @@ export function registerDevMode(bus) {
     const runAutoBtn = $('run-auto-game');
     const copyLogBtn = $('copy-log');
     const downloadBtn = $('download-debug');
+    // Create Engine Selection controls dynamically if panel exists
+    const engineControls = (() => {
+        if (!panel || typeof document === 'undefined')
+            return { container: null, select: null, info: null };
+        const container = document.createElement('div');
+        container.className = 'control-row';
+        const label = document.createElement('label');
+        label.textContent = 'Engine:';
+        label.style.marginRight = '8px';
+        const select = document.createElement('select');
+        select.id = 'engine-select';
+        const deterministicOption = document.createElement('option');
+        deterministicOption.value = 'deterministic';
+        deterministicOption.textContent = 'Deterministic (Legacy)';
+        const diceOption = document.createElement('option');
+        diceOption.value = 'dice';
+        diceOption.textContent = 'Dice (2d20)';
+        select.appendChild(deterministicOption);
+        select.appendChild(diceOption);
+        select.style.marginRight = '8px';
+        const info = document.createElement('span');
+        info.id = 'engine-info';
+        info.style.fontSize = '12px';
+        info.style.color = '#666';
+        container.appendChild(label);
+        container.appendChild(select);
+        container.appendChild(info);
+        panel.appendChild(container);
+        return { container, select, info };
+    })();
     // Create Validated Batch controls dynamically if panel exists
     const validatedBatch = (() => {
         if (!panel || typeof document === 'undefined')
@@ -106,6 +138,10 @@ export function registerDevMode(bus) {
         panel.setAttribute('aria-hidden', (!devEnabled).toString());
     }
     bus.emit('ui:devModeChanged', { enabled: devEnabled });
+    // Register engine indicator if dev mode is enabled
+    if (devEnabled) {
+        registerEngineIndicator(bus);
+    }
     if (devToggle) {
         devToggle.addEventListener('change', () => {
             const enabled = !!devToggle.checked;
@@ -136,6 +172,8 @@ export function registerDevMode(bus) {
         }
         if (devToggle)
             devToggle.checked = !!enabled;
+        // Update engine indicator visibility
+        updateEngineIndicatorVisibility(enabled);
     });
     if (themeSelect) {
         themeSelect.addEventListener('change', () => {
@@ -191,6 +229,25 @@ export function registerDevMode(bus) {
     if (downloadBtn) {
         downloadBtn.addEventListener('click', () => {
             bus.emit('qa:downloadDebug', {});
+        });
+    }
+    // Engine selection controls
+    if (engineControls.select && engineControls.info) {
+        // Initialize engine selection from current setting
+        const currentEngine = getCurrentEngine();
+        engineControls.select.value = currentEngine;
+        // Update info display
+        const updateEngineInfo = () => {
+            const engineInfo = getCurrentEngineInfo();
+            engineControls.info.textContent = `${engineInfo.name} - ${engineInfo.description}`;
+        };
+        updateEngineInfo();
+        // Handle engine selection changes
+        engineControls.select.addEventListener('change', () => {
+            const selectedEngine = engineControls.select.value;
+            setEngine(selectedEngine);
+            updateEngineInfo();
+            bus.emit('ui:engineChanged', { engine: selectedEngine });
         });
     }
     if (validatedBatch.run && validatedBatch.count && validatedBatch.pat) {

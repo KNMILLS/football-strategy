@@ -1,4 +1,5 @@
-import type { DiceOutcome, DoublesOutcome, PenaltyTable } from '../data/schemas/MatchupTable';
+import type { PenaltyTable } from '../data/schemas/MatchupTable';
+import type { RNG } from '../sim/RNG';
 
 /**
  * Core dice roll result
@@ -119,4 +120,20 @@ export function determineClockRunoff(
   } else {
     return 30;
   }
+}
+
+/**
+ * Roll a d20 using the new LCG-derived RNG value r in [0,1): face = floor(r * 20) + 1
+ */
+export function rollD20(rng: RNG): number {
+  const r = rng();
+  return Math.floor(r * 20) + 1;
+}
+
+/**
+ * Roll a d10 using the new LCG-derived RNG value r in [0,1): face = floor(r * 10) + 1
+ */
+export function rollD10(rng: RNG): number {
+  const r = rng();
+  return Math.floor(r * 10) + 1;
 }

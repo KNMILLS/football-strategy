@@ -1,11 +1,8 @@
 import type { GameState, TeamSide } from '../../domain/GameState';
-import type { RNG } from '../../sim/RNG';
-import type { OffenseCharts } from '../../data/schemas/OffenseCharts';
 import { resolvePlayCore } from '../../rules/ResolvePlayCore';
 import { administerPenalty, type AdminResult } from '../../rules/PenaltyAdmin';
 import type { Outcome } from '../../rules/ResultParsing';
 import { DEFAULT_TIME_KEEPING as DEFAULT_TIME_KEEPING_CONST } from '../../rules/ResultParsing';
-import type { TimeKeeping } from '../../data/schemas/Timekeeping';
 import { buildBroadcastCall as buildBroadcastCallExt, chooseCommentaryLines as chooseCommentaryLinesExt } from '../narration/Broadcast';
 import { buildResultSummary as buildResultSummaryExt } from '../narration/Summary';
 import { DriveTracker } from '../drive/DriveTracker';
@@ -19,22 +16,18 @@ import { hudPayload as hudPayloadExt } from '../HudPayload';
 import type { FlowEvent, PlayInput, FlowContext } from '../types';
 import {
   isTwoMinute,
-  clampYard,
-  nextDownDistanceAfterKickoff,
   scoringSideToDelta,
   attemptPatInternal,
   randomHash,
   isLeading,
   isTrailing,
-  isTied,
-  defaultAIShouldGoForTwo
+  isTied
 } from '../utils/GameFlowUtils';
 import {
   formatOrdinal,
   formatClock,
   formatPossessionSpotForBroadcast,
-  formatTeamYardLine,
-  scoreAnchorLine
+  formatTeamYardLine
 } from '../formatting/GameFlowFormatting';
 import {
   calculateTimeOff,
@@ -159,7 +152,7 @@ export class GameFlowCore {
    */
   resolvePATAndRestart(state: GameState, side: TeamSide): { state: GameState; events: FlowEvent[] } {
     return resolvePATAndRestartExt(state, side, {
-      rng: () => this.ctx.rng?.() || Math.random(),
+      rng: () => this.ctx.rng?.() ?? (() => { throw new Error('RNG not provided'); })(),
       attemptPatInternal: (r) => attemptPatInternal(r as any),
       scoringSideToDelta: (s, p) => scoringSideToDelta(s, p),
       isTrailing: (s, score) => isTrailing(s, score),
@@ -178,10 +171,10 @@ export class GameFlowCore {
    */
   attemptFieldGoal(state: GameState, attemptYards: number, side: TeamSide): { state: GameState; events: FlowEvent[] } {
     return attemptFieldGoalFlow(state, attemptYards, side, {
-      rng: () => this.ctx.rng?.() || Math.random(),
+      rng: () => this.ctx.rng?.() ?? (() => { throw new Error('RNG not provided'); })(),
       attemptFieldGoalKick: (r, y) => attemptFieldGoalKick(r as any, y),
       scoringSideToDelta: (s, p) => scoringSideToDelta(s, p),
-      randomHash: () => randomHash(this.ctx.rng),
+      randomHash: () => randomHash(this.ctx.rng!),
       formatClock: (n) => formatClock(n),
       formatTeamYardLine: (p, b) => formatTeamYardLine(p, b),
       performKickoff: (st, type, kicking) => this.performKickoff(st, type, kicking),
@@ -443,7 +436,7 @@ export class GameFlowCore {
     return buildResultSummaryExt(pre, next, outcome, flags, currentPlayLabel, defenseLabel, {
       formatOrdinal: (n) => formatOrdinal(n),
       formatTeamYardLine: (p, b) => formatTeamYardLine(p, b),
-      rng: () => this.ctx.rng?.() || Math.random(),
+      rng: () => this.ctx.rng?.() ?? (() => { throw new Error('RNG not provided'); })(),
       getLastNotesForSide: (side) => this.tracker.getLastNotesForSide(side),
       setLastNotesForSide: (side, notes) => this.tracker.setLastNotesForSide(side, notes),
     });

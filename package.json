@@ -26,6 +26,9 @@
     "validate-tables": "node scripts/validate-tables.mjs",
     "validate-baseline": "node scripts/generate-deterministic-baseline.mjs",
     "sim:matchup": "node scripts/sim-matchup.mjs",
+    "scaffold-table": "node scripts/scaffold-table.mjs",
+    "import-csv-tables": "node scripts/import-csv-tables.mjs",
+    "preview-distribution": "node scripts/preview-distribution.mjs",
     "prepare": "husky"
   },
   "keywords": [],

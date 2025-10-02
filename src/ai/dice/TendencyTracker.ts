@@ -1,4 +1,4 @@
-import type { PlaybookName, DefensivePlay } from '../../types/dice';
+import type { PlaybookName } from '../../types/dice';
 import type { GameState } from '../../domain/GameState';
 
 /**

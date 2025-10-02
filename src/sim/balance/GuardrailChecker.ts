@@ -5,7 +5,7 @@
  * and provides detailed compliance reports with actionable recommendations.
  */
 
-import { BALANCE_GUARDRAILS, PLAYBOOK_IDENTITY_GUARDRAILS, DISTRIBUTION_GUARDRAILS, STATISTICAL_THRESHOLDS } from './Guardrails';
+import { BALANCE_GUARDRAILS, PLAYBOOK_IDENTITY_GUARDRAILS, DISTRIBUTION_GUARDRAILS } from './Guardrails';
 import type { TableAnalysis } from './StatisticalAnalyzer';
 
 export interface GuardrailViolation {
@@ -62,7 +62,7 @@ export class GuardrailChecker {
     this.checkGuardrail(
       'explosivePassRate',
       analysis.explosiveRate,
-      BALANCE_GUARDRAILS.explosivePassRate,
+      BALANCE_GUARDRAILS.explosivePassRate!,
       analysis,
       violations,
       warnings,
@@ -73,7 +73,7 @@ export class GuardrailChecker {
     this.checkGuardrail(
       'sackRate',
       analysis.sackRate,
-      BALANCE_GUARDRAILS.sackRate,
+      BALANCE_GUARDRAILS.sackRate!,
       analysis,
       violations,
       warnings,
@@ -84,7 +84,7 @@ export class GuardrailChecker {
     this.checkGuardrail(
       'turnoverRate',
       analysis.turnoverRate,
-      BALANCE_GUARDRAILS.turnoverRate,
+      BALANCE_GUARDRAILS.turnoverRate!,
       analysis,
       violations,
       warnings,
@@ -95,7 +95,7 @@ export class GuardrailChecker {
     this.checkGuardrail(
       'penaltyRate',
       analysis.penaltyRate,
-      BALANCE_GUARDRAILS.penaltyRate,
+      BALANCE_GUARDRAILS.penaltyRate!,
       analysis,
       violations,
       warnings,
@@ -109,7 +109,7 @@ export class GuardrailChecker {
     this.checkGuardrail(
       'redZoneEfficiency',
       analysis.redZoneEfficiency,
-      BALANCE_GUARDRAILS.redZoneEfficiency,
+      BALANCE_GUARDRAILS.redZoneEfficiency!,
       analysis,
       violations,
       warnings,

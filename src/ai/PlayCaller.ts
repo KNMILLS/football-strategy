@@ -60,7 +60,7 @@ function yardlineText(st: GameState, offenseIsHome: boolean): string {
 }
 
 export class PlayCaller {
-  private rng: RNG = Math.random;
+  private rng: RNG = createLCG(123456789);
   private model = new OpponentModel({ halfLife: 12, alpha: 0.5 });
   private lastOffenseCalls: string[] = [];
   private lastDefenseCalls: string[] = [];
@@ -148,7 +148,7 @@ export class PlayCaller {
       const antiRepeat = recentRepeats >= 2 ? -0.5 : (recentRepeats === 1 ? -0.2 : 0);
 
       // Deception: if model is confident (low uncertainty), small boost to off-tendency picks
-      const surprise = (1 - predDef.uncertainty) * this.personality.deception_bias * (Math.random() < 0.5 ? 1 : -1) * 0.1;
+      const surprise = (1 - predDef.uncertainty) * this.personality.deception_bias * (this.rng() < 0.5 ? 1 : -1) * 0.1;
 
       // Risk penalty for deep/gadget when leading late
       const offScore = state.score[(state.possession === 'player') ? 'player' : 'ai'];

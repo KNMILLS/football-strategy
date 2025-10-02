@@ -1,4 +1,4 @@
-import type { CardDimensions, CardStyles, VisualCardProperties } from './types';
+import type { CardDimensions, CardStyles } from './types';
 
 /**
  * SVG card template builder

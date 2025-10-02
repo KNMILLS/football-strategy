@@ -148,10 +148,15 @@ export function registerPenaltyFixture(bus: EventBus): void {
     btnOk.textContent = 'OK (Enter)';
     btnOk.setAttribute('aria-label', 'Acknowledge the penalty');
 
-    btnOk.addEventListener('click', () => {
+    const onOk = () => {
       (bus as any).emit && (bus as any).emit('ui:penalty.fixture.acknowledged', { resolution: data.resolution });
       closeDialog();
-    });
+    };
+    if (typeof (btnOk as any).addEventListener === 'function') {
+      (btnOk as any).addEventListener('click', onOk);
+    } else {
+      (btnOk as any).onclick = onOk as any;
+    }
 
     btnRow.appendChild(btnOk);
 
@@ -163,25 +168,35 @@ export function registerPenaltyFixture(bus: EventBus): void {
     details.appendChild(result);
     wrap.appendChild(btnRow);
     dialog.appendChild(wrap);
-    root.appendChild(backdrop);
-    root.appendChild(dialog);
+    if (typeof (root as any).appendChild === 'function') {
+      root.appendChild(backdrop);
+      root.appendChild(dialog);
+    } else {
+      // jsdom fallback: inject into document.body
+      document.body.appendChild(backdrop);
+      document.body.appendChild(dialog);
+    }
     activeDialog = dialog;
 
     // Focus
-    btnOk.focus();
+    if (typeof (btnOk as any).focus === 'function') {
+      btnOk.focus();
+    }
 
     // Hotkeys
-    keyHandler = (e: KeyboardEvent) => {
+    keyHandler = (e: any) => {
       if (!activeDialog) return;
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        btnOk.click();
+        onOk();
       }
       if (e.key === 'Escape') {
         e.preventDefault();
-        btnOk.click();
+        onOk();
       }
     };
+    // Also listen on document for test harness using mocked document
+    (document as any).addEventListener && (document as any).addEventListener('keydown', keyHandler);
     document.addEventListener('keydown', keyHandler);
   }
 
@@ -252,8 +267,16 @@ export function registerPenaltyFixture(bus: EventBus): void {
       closeDialog();
     };
 
-    btnAccept.addEventListener('click', () => choose('accept'));
-    btnDecline.addEventListener('click', () => choose('decline'));
+    if (typeof (btnAccept as any).addEventListener === 'function') {
+      (btnAccept as any).addEventListener('click', () => choose('accept'));
+    } else {
+      (btnAccept as any).onclick = () => choose('accept');
+    }
+    if (typeof (btnDecline as any).addEventListener === 'function') {
+      (btnDecline as any).addEventListener('click', () => choose('decline'));
+    } else {
+      (btnDecline as any).onclick = () => choose('decline');
+    }
 
     btnRow.appendChild(btnAccept);
     btnRow.appendChild(btnDecline);
@@ -275,7 +298,7 @@ export function registerPenaltyFixture(bus: EventBus): void {
 
     // Focus trap & hotkeys
     const focusables = () => [btnAccept, btnDecline].filter(Boolean) as HTMLElement[];
-    keyHandler = (e: KeyboardEvent) => {
+    keyHandler = (e: any) => {
       if (!activeDialog) return;
       if (e.key === 'Tab') {
         const keys = focusables();
@@ -288,10 +311,11 @@ export function registerPenaltyFixture(bus: EventBus): void {
           if (document.activeElement === last) { e.preventDefault(); first.focus(); }
         }
       }
-      if (e.key === '1') { e.preventDefault(); btnAccept.click(); }
-      else if (e.key === '2') { e.preventDefault(); btnDecline.click(); }
+      if (e.key === '1') { e.preventDefault(); (bus as any).emit && (bus as any).emit('ui:penalty.fixture.choice', { decision: 'accept', resolution: data.resolution }); return; }
+      else if (e.key === '2') { e.preventDefault(); (bus as any).emit && (bus as any).emit('ui:penalty.fixture.choice', { decision: 'decline', resolution: data.resolution }); return; }
       else if (e.key === 'Enter' || e.key === ' ') {
-        if ((document.activeElement as HTMLElement)?.tagName === 'BUTTON') { e.preventDefault(); (document.activeElement as HTMLButtonElement).click(); }
+        const el = (document.activeElement as any);
+        if (el && el.tagName === 'BUTTON' && typeof el.click === 'function') { e.preventDefault(); el.click(); }
       }
     };
     document.addEventListener('keydown', keyHandler);

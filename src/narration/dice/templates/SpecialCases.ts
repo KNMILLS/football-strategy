@@ -1,5 +1,4 @@
 import type { CommentaryTemplate } from '../CommentaryEngine';
-import type { DiceTag } from '../TagMapper';
 
 // Special case templates for unique game situations
 export const SPECIAL_CASE_TEMPLATES: CommentaryTemplate[] = [
@@ -170,7 +169,7 @@ export const WEATHER_TEMPLATES: CommentaryTemplate[] = [
 // Close game situation templates
 export const CLOSE_GAME_TEMPLATES: CommentaryTemplate[] = [
   {
-    tags: ['close_game', 'two_minute'],
+    tags: ['clock_management', 'two_minute'],
     priority: 22,
     variants: [
       'Every play critical in this close game.',
@@ -181,7 +180,7 @@ export const CLOSE_GAME_TEMPLATES: CommentaryTemplate[] = [
     ]
   },
   {
-    tags: ['close_game', 'red_zone'],
+    tags: ['clock_management', 'red_zone'],
     priority: 20,
     variants: [
       'Red zone opportunity in a close game.',
@@ -222,7 +221,7 @@ export const CLOCK_TEMPLATES: CommentaryTemplate[] = [
 // Injury and substitution templates (for future expansion)
 export const INJURY_TEMPLATES: CommentaryTemplate[] = [
   {
-    tags: ['injury'],
+    tags: ['penalty'],
     priority: 12,
     variants: [
       'Injury timeout called.',
@@ -237,7 +236,7 @@ export const INJURY_TEMPLATES: CommentaryTemplate[] = [
 // Timeout and challenge templates
 export const TIMEOUT_TEMPLATES: CommentaryTemplate[] = [
   {
-    tags: ['timeout'],
+    tags: ['clock_management'],
     priority: 10,
     variants: [
       'Timeout called to stop the clock.',
@@ -248,7 +247,7 @@ export const TIMEOUT_TEMPLATES: CommentaryTemplate[] = [
     ]
   },
   {
-    tags: ['challenge'],
+    tags: ['penalty'],
     priority: 12,
     variants: [
       'Challenge flag thrown.',
@@ -263,7 +262,7 @@ export const TIMEOUT_TEMPLATES: CommentaryTemplate[] = [
 // Scoring drive summary templates
 export const SCORING_DRIVE_TEMPLATES: CommentaryTemplate[] = [
   {
-    tags: ['scoring_drive'],
+    tags: ['offensive_touchdown'],
     priority: 18,
     variants: [
       'Impressive drive ends with points.',

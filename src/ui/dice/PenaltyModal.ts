@@ -1,5 +1,5 @@
 import type { EventBus } from '../../utils/EventBus';
-import type { DiceResolutionResult, PenaltyModalState, DiceUIConfig } from './types';
+import type { PenaltyModalState, DiceUIConfig } from './types';
 
 function $(id: string): HTMLElement | null {
   return typeof document !== 'undefined' ? document.getElementById(id) : null;

@@ -1,10 +1,9 @@
-import { EventBus } from '../utils/EventBus';
+import { EventBus, getErrorMessage } from '../../utils/EventBus';
 import { RuntimeValidator } from './RuntimeValidator';
 import { ComponentHealthMonitor } from './ComponentHealthMonitor';
 import { GameFlowValidator } from './GameFlowValidator';
 import { UIAutomationTester } from './UIAutomationTester';
-import type { GameState, TeamSide } from '../domain/GameState';
-import type { DeckName } from '../data/decks';
+import type { DeckName } from '../../data/decks';
 
 /**
  * Main integration test runner specifically tailored for Gridiron football simulation
@@ -57,7 +56,7 @@ export class GridironIntegrationTestRunner {
       await this.runPostTestValidation();
 
     } catch (error) {
-      this.recordTestResult('critical_error', 'FAILED', error.message);
+      this.recordTestResult('critical_error', 'FAILED', getErrorMessage(error));
     }
 
     const duration = performance.now() - startTime;
@@ -96,9 +95,9 @@ export class GridironIntegrationTestRunner {
 
     for (const componentName of components) {
       const health = await this.componentHealthMonitor.validateComponentHealth(componentName);
-      const status = health.isHealthy ? 'PASSED' : 'FAILED';
-      this.recordTestResult(`component_${componentName.toLowerCase()}`, status,
-        health.isHealthy ? undefined : health.issues.join(', '));
+      const ok = (health as any).status === 'healthy';
+      this.recordTestResult(`component_${componentName.toLowerCase()}`, ok ? 'PASSED' : 'FAILED',
+        ok ? undefined : ((health as any).issues || []).join(', '));
     }
   }
 
@@ -194,7 +193,7 @@ export class GridironIntegrationTestRunner {
     ];
 
     for (const scenario of scenarios) {
-      await this.testGameScenario(scenario.name, scenario);
+      await this.testGameScenario(scenario.name, scenario as any);
     }
   }
 
@@ -214,7 +213,7 @@ export class GridironIntegrationTestRunner {
         gameValidation.isValid ? undefined : gameValidation.errors.join(', '));
 
     } catch (error) {
-      this.recordTestResult(`game_scenario_${scenarioName}`, 'FAILED', error.message);
+      this.recordTestResult(`game_scenario_${scenarioName}`, 'FAILED', getErrorMessage(error));
     }
   }
 
@@ -289,7 +288,7 @@ export class GridironIntegrationTestRunner {
     return new Promise((resolve) => {
       // Use existing QA harness to start automated game
       this.bus.emit('qa:startTestGame', {
-        seed: Math.floor(Math.random() * 1e9),
+        seed: 123456789,
         playerDeck: config.playerDeck,
         aiDeck: config.aiDeck,
         startingPossession: 'player'
@@ -297,7 +296,7 @@ export class GridironIntegrationTestRunner {
 
       // Listen for game completion
       const completionHandler = () => {
-        this.bus.off('log', logHandler);
+        (this.bus as any).off?.('log', logHandler);
         resolve();
       };
 
@@ -393,7 +392,7 @@ export class GridironIntegrationTestRunner {
     this.testResults.push({
       name: testName,
       status,
-      message,
+      ...(message !== undefined && { message }),
       timestamp: Date.now()
     });
   }
@@ -420,8 +419,7 @@ export class GridironIntegrationTestRunner {
       },
       results: this.testResults,
       timestamp: Date.now(),
-      baselineComparison: this.baselineData ?
-        this.compareWithBaseline() : undefined
+      ...(this.baselineData && { baselineComparison: this.compareWithBaseline() })
     };
   }
 

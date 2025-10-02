@@ -138,6 +138,8 @@ export class CardSelector {
   private config: DiceUIConfig;
   private playbookState: PlaybookSelectionState;
   private defensiveState: DefensiveSelectionState;
+  private eventsWired: boolean = false;
+  private isBroadcasting: boolean = false;
 
   constructor(bus: EventBus, config: DiceUIConfig) {
     this.bus = bus;
@@ -159,6 +161,26 @@ export class CardSelector {
       })),
       maxSelections: 10
     };
+
+    // Wire core bus listeners so tests can use the component without DOM registration
+    this.wireBusListeners();
+  }
+
+  private wireBusListeners(): void {
+    if (this.eventsWired) return;
+    this.eventsWired = true;
+    this.bus.on('ui:playbookSelected', (payload: { playbook: string }) => {
+      if (this.isBroadcasting) return;
+      this.applyPlaybookSelection(payload.playbook);
+    });
+    this.bus.on('ui:defensiveCardToggled', (payload: { cardId: string }) => {
+      if (this.isBroadcasting) return;
+      this.applyDefensiveToggle(payload.cardId);
+    });
+    this.bus.on('ui:cardSelected', (payload: { cardId: string }) => {
+      if (this.isBroadcasting) return;
+      this.applyCardSelection(payload.cardId);
+    });
   }
 
   register(): void {
@@ -179,20 +201,7 @@ export class CardSelector {
       this.setupPlaybookSelector(playbookContainer);
       this.setupDefensiveSelector(defensiveContainer);
 
-      // Listen for playbook selection changes
-      this.bus.on('ui:playbookSelected', (payload: { playbook: string }) => {
-        this.selectPlaybook(payload.playbook);
-      });
-
-      // Listen for defensive card toggles
-      this.bus.on('ui:defensiveCardToggled', (payload: { cardId: string }) => {
-        this.toggleDefensiveCard(payload.cardId);
-      });
-
-      // Listen for card selection
-      this.bus.on('ui:cardSelected', (payload: { cardId: string }) => {
-        this.selectCard(payload.cardId);
-      });
+      // Bus listeners are wired in constructor to avoid duplicate handlers
 
       console.log('CardSelector registered successfully');
     };
@@ -314,6 +323,14 @@ export class CardSelector {
   }
 
   private selectPlaybook(playbook: string): void {
+    this.applyPlaybookSelection(playbook);
+    // Emit selection event for observers
+    this.isBroadcasting = true;
+    try { this.bus.emit('ui:playbookSelected', { playbook }); }
+    finally { this.isBroadcasting = false; }
+  }
+
+  private applyPlaybookSelection(playbook: string): void {
     if (!this.playbookState.availablePlaybooks.includes(playbook)) {
       console.warn(`Invalid playbook selected: ${playbook}`);
       return;
@@ -429,6 +446,14 @@ export class CardSelector {
   }
 
   private toggleDefensiveCard(cardId: string): void {
+    this.applyDefensiveToggle(cardId);
+    // Emit toggle event for observers (echo for consumers)
+    this.isBroadcasting = true;
+    try { this.bus.emit('ui:defensiveCardToggled', { cardId }); }
+    finally { this.isBroadcasting = false; }
+  }
+
+  private applyDefensiveToggle(cardId: string): void {
     const cardIndex = this.defensiveState.availableCards.findIndex(card => card.id === cardId);
     if (cardIndex === -1) return;
 
@@ -485,6 +510,14 @@ export class CardSelector {
   }
 
   private selectCard(cardId: string): void {
+    this.applyCardSelection(cardId);
+    // Emit the card selection event
+    this.isBroadcasting = true;
+    try { this.bus.emit('ui:cardSelected', { cardId }); }
+    finally { this.isBroadcasting = false; }
+  }
+
+  private applyCardSelection(cardId: string): void {
     // Find the card in the current playbook
     const card = this.playbookState.cards.find(c => c.id === cardId);
     if (!card) {
@@ -509,29 +542,34 @@ export class CardSelector {
       this.announceToScreenReader(`Selected play: ${card.label}`);
     }
 
-    // Emit the card selection to the game flow
-    this.bus.emit('ui:playCard', { cardId });
+    // No emit in internal apply; public selectCard emits
   }
 
   private announceToScreenReader(message: string): void {
     if (!this.config.accessibility.enableScreenReader) return;
+    if (typeof document === 'undefined') return;
 
     // Create or find live region for announcements
     let liveRegion = $('dice-screen-reader-announcements');
     if (!liveRegion) {
-      liveRegion = document.createElement('div');
-      liveRegion.id = 'dice-screen-reader-announcements';
-      liveRegion.setAttribute('aria-live', 'polite');
-      liveRegion.setAttribute('aria-atomic', 'true');
-      liveRegion.style.cssText = 'position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;';
-      document.body.appendChild(liveRegion);
+      const newRegion = document.createElement('div');
+      newRegion.id = 'dice-screen-reader-announcements';
+      newRegion.setAttribute('aria-live', 'polite');
+      newRegion.setAttribute('aria-atomic', 'true');
+      (newRegion as any).style && ((newRegion as any).style.cssText = 'position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;');
+      if ((document as any).body && (document as any).body.appendChild) {
+        (document as any).body.appendChild(newRegion);
+      }
+      liveRegion = newRegion as any;
     }
 
-    liveRegion.textContent = message;
+    if (liveRegion) {
+      (liveRegion as any).textContent = message;
+    }
 
     // Clear after announcement
     setTimeout(() => {
-      liveRegion!.textContent = '';
+      if (liveRegion) (liveRegion as any).textContent = '';
     }, 1000);
   }
 

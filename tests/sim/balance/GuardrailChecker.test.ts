@@ -2,7 +2,7 @@
  * GuardrailChecker.test.ts - Tests for GDD compliance validation
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { GuardrailChecker } from '../../../src/sim/balance/GuardrailChecker';
 import type { TableAnalysis } from '../../../src/sim/balance/StatisticalAnalyzer';
 

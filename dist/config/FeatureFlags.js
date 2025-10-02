@@ -11,7 +11,7 @@ const DEFAULT_FLAGS = {
 /**
  * Get feature flag value from localStorage, then environment, then default
  */
-function getFeatureFlag(key) {
+export function getFeatureFlag(key) {
     // Check environment variables first (for CI/deployment control)
     const envKey = `GRIDIRON_${String(key).toUpperCase()}`;
     const envValue = process.env[envKey];
@@ -84,6 +84,26 @@ export function isFeatureEnabled(flag) {
  */
 export function getCurrentEngine() {
     return getFeatureFlag('engine');
+}
+/**
+ * Get information about the current engine
+ */
+export function getCurrentEngineInfo() {
+    const type = getCurrentEngine();
+    const info = {
+        deterministic: {
+            name: 'Deterministic Engine',
+            description: 'Legacy card-based resolution system'
+        },
+        dice: {
+            name: 'Dice Engine',
+            description: 'New 2d20 dice-based resolution system'
+        }
+    };
+    return {
+        type,
+        ...info[type]
+    };
 }
 /**
  * Set the engine type

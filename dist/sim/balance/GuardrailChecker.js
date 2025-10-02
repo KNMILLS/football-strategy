@@ -124,7 +124,7 @@ export class GuardrailChecker {
      * Generic guardrail checking with severity assessment
      */
     checkGuardrail(guardrailName, actual, guardrail, analysis, violations, warnings, context) {
-        const { min, max } = guardrail.expected || guardrail;
+        const { min, max } = guardrail;
         if (actual < min) {
             const deviation = min - actual;
             const severity = deviation > (max - min) * 0.5 ? 'high' : 'medium';

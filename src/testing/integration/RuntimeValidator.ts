@@ -1,5 +1,5 @@
-import { EventBus } from '../utils/EventBus';
-import type { GameState } from '../domain/GameState';
+import { EventBus, getErrorMessage } from '../../utils/EventBus';
+import type { GameState } from '../../domain/GameState';
 
 /**
  * Runtime validator specifically designed for Gridiron football game
@@ -102,8 +102,9 @@ export class RuntimeValidator {
       }
 
       // Check memory usage if available
-      if (performance.memory) {
-        this.performanceMetrics.memoryUsage = performance.memory.usedJSHeapSize;
+      const anyPerf: any = performance as any;
+      if (anyPerf && anyPerf.memory) {
+        this.performanceMetrics.memoryUsage = anyPerf.memory.usedJSHeapSize;
       }
 
       requestAnimationFrame(measureFrameRate);
@@ -112,7 +113,7 @@ export class RuntimeValidator {
     requestAnimationFrame(measureFrameRate);
 
     // Monitor UI load time
-    this.bus.on('ui:ready', () => {
+    (this.bus as any).on('ui:ready', () => {
       this.performanceMetrics.loadTime = performance.now() - this.performanceMetrics.startTime;
       console.log(`⏱️ UI loaded in ${Math.round(this.performanceMetrics.loadTime)}ms`);
     });
@@ -123,18 +124,18 @@ export class RuntimeValidator {
    */
   private startComponentMonitoring(): void {
     // Monitor component registration events
-    this.bus.on('component:registered', ({ componentName }) => {
+    (this.bus as any).on('component:registered', ({ componentName }: any) => {
       this.updateComponentState(componentName, 'registered');
     });
 
-    this.bus.on('component:error', ({ componentName, error }) => {
-      this.updateComponentState(componentName, 'error', error.message);
-      this.logIssue('critical', `Component ${componentName} failed`, error.message);
+    (this.bus as any).on('component:error', ({ componentName, error }: any) => {
+      this.updateComponentState(componentName, 'error', getErrorMessage(error));
+      this.logIssue('critical', `Component ${componentName} failed`, getErrorMessage(error));
     });
 
     // Monitor error boundary events
-    this.bus.on('errorBoundary:error', ({ componentName, error }) => {
-      this.logIssue('high', `Error boundary caught error in ${componentName}`, error.message);
+    (this.bus as any).on('errorBoundary:error', ({ componentName, error }: any) => {
+      this.logIssue('high', `Error boundary caught error in ${componentName}`, getErrorMessage(error));
     });
   }
 
@@ -176,7 +177,7 @@ export class RuntimeValidator {
         }
 
       } catch (error) {
-        this.logIssue('medium', 'Rendering check failed', error.message);
+        this.logIssue('medium', 'Rendering check failed', getErrorMessage(error));
       }
 
       setTimeout(checkRendering, 5000); // Check every 5 seconds
@@ -249,7 +250,7 @@ export class RuntimeValidator {
         severity: 'medium',
         message: 'Failed to check rendering status',
         timestamp: Date.now(),
-        details: error.message
+        details: getErrorMessage(error)
       });
     }
 
@@ -310,8 +311,9 @@ export class RuntimeValidator {
   private async checkMemoryIssues(): Promise<RuntimeIssue[]> {
     const issues: RuntimeIssue[] = [];
 
-    if (performance.memory) {
-      const memoryUsage = performance.memory.usedJSHeapSize;
+    const anyPerf: any = performance as any;
+    if (anyPerf && anyPerf.memory) {
+      const memoryUsage = anyPerf.memory.usedJSHeapSize;
       const memoryLimit = 100 * 1024 * 1024; // 100MB
 
       if (memoryUsage > memoryLimit) {
@@ -435,8 +437,8 @@ export class RuntimeValidator {
     this.componentStates.set(componentName, {
       status,
       lastUpdate: Date.now(),
-      error
-    });
+      error: error || ''
+    } as any);
   }
 
   /**
@@ -448,7 +450,7 @@ export class RuntimeValidator {
       severity,
       message,
       timestamp: Date.now(),
-      details
+      details: details || ''
     };
 
     this.issueLog.push(issue);

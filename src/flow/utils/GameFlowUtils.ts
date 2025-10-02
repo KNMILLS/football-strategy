@@ -61,8 +61,8 @@ export function attemptPatInternal(rng: RNG): boolean {
  * @param rng - Random number generator (optional, uses Math.random if not provided)
  * @returns Hash mark position string
  */
-export function randomHash(rng?: RNG): 'left hash'|'right hash'|'middle' {
-  const r = rng?.() || Math.random();
+export function randomHash(rng: RNG): 'left hash'|'right hash'|'middle' {
+  const r = rng();
   if (r < 0.45) return 'left hash';
   if (r < 0.9) return 'right hash';
   return 'middle';

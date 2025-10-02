@@ -301,7 +301,7 @@ export class ResultDisplay {
 
     this.state.isVisible = false;
     this.state.showAnimation = false;
-    this.state.animationPhase = undefined;
+    (this.state as any).animationPhase = undefined;
 
     // Clear any pending animations
     this.animationTimeouts.forEach(timeoutId => {
