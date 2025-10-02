@@ -58,9 +58,7 @@ async function ensureUIRegistered(): Promise<void> {
     // Register optional UI components (non-critical features)
     await registerOptionalUI();
 
-    // Initialize engine indicator
-    const { registerEngineIndicator } = await import('./ui/EngineIndicator');
-    registerEngineIndicator(bus);
+    // Engine indicator intentionally disabled; gameplay/UI indicates engine implicitly
 
     uiRegistered = true;
     hideLoadingSpinner();

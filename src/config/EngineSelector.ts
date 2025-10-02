@@ -147,7 +147,8 @@ class DiceEngine implements Engine {
 
       const [matchupResult, penaltyResult] = await Promise.all([
         fetchMatchupTable('play_vs_defense_outcomes.json'),
-        fetchPenaltyTableByName('penalty_table_v1') // Use default penalty table
+        // Our penalties live at data/penalties/nfl-penalties-v1.json → name is 'nfl-penalties-v1'
+        fetchPenaltyTableByName('nfl-penalties-v1')
       ]);
 
       if (matchupResult.ok) {

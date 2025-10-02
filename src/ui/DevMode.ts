@@ -1,6 +1,5 @@
 import { EventBus } from '../utils/EventBus';
 import { getCurrentEngine, setEngine, getCurrentEngineInfo } from '../config/FeatureFlags';
-import { registerEngineIndicator, updateEngineIndicatorVisibility } from './EngineIndicator';
 
 function $(id: string): HTMLElement | null {
   return typeof document !== 'undefined' ? document.getElementById(id) : null;
@@ -95,10 +94,7 @@ export function registerDevMode(bus: EventBus): void {
   }
   bus.emit('ui:devModeChanged', { enabled: devEnabled });
 
-  // Register engine indicator if dev mode is enabled
-  if (devEnabled) {
-    registerEngineIndicator(bus);
-  }
+  // Engine indicator overlay disabled; rely on UI/gameplay cues instead
 
   if (devToggle) {
     devToggle.addEventListener('change', () => {
@@ -123,8 +119,7 @@ export function registerDevMode(bus: EventBus): void {
     }
     if (devToggle) devToggle.checked = !!enabled;
 
-    // Update engine indicator visibility
-    updateEngineIndicatorVisibility(enabled);
+    // Engine indicator overlay disabled; no-op visibility update
   });
 
   if (themeSelect) {
