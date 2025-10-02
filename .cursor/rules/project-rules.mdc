@@ -24,8 +24,9 @@ These rules align Cursor AI edits with this repository's architecture, tests, an
 
 ### Git & PR Hygiene
 - Create a feature branch per task using: `feat/<area>-<slug>` or `chore/<area>-<slug>`.
-- Use **Conventional Commits** (imperative, scoped):  
+- Use **Conventional Commits** (imperative, scoped):
   `feat(rules): add 2d20 resolver`, `fix(ui): modal focus trap`, `docs(gdd): update migration status`.
+- **Always commit and push changes**: After making any code modifications, tests, or documentation changes, immediately commit with a descriptive message and push to the remote repository to ensure changes are not lost and are visible to other collaborators.
 - Open focused PRs (≤ ~500 LOC) with: summary, risk/rollback, test plan, and screenshots/logs where relevant.
 
 ### TypeScript & Determinism

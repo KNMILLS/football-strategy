@@ -259,7 +259,19 @@ async function registerOptionalUI() {
         './ui/PenaltyUI',
         './ui/VFX',
         './ui/SFX',
-        './qa/Harness'
+        './qa/Harness',
+        // Dice UI components (button-based card system for 2d20 dice engine)
+        './ui/dice/DiceUI',
+        './ui/dice/CardSelector',
+        './ui/dice/PenaltyModal',
+        './ui/dice/ResultDisplay',
+        './ui/dice/integration',
+        // Programmatic card renderer system (SVG-based cards with visual indicators)
+        './ui/cards/ProgressiveCardSystem',
+        './ui/cards/CardRenderer',
+        './ui/cards/CardDefinitions',
+        './ui/cards/RiskIndicator',
+        './ui/cards/PerimeterBadge'
     ];
     // Load optional components in background
     optionalComponents.forEach(async (modulePath) => {

@@ -315,7 +315,13 @@ async function registerOptionalUI(): Promise<void> {
     './ui/dice/CardSelector',
     './ui/dice/PenaltyModal',
     './ui/dice/ResultDisplay',
-    './ui/dice/integration'
+    './ui/dice/integration',
+    // Programmatic card renderer system (SVG-based cards with visual indicators)
+    './ui/cards/ProgressiveCardSystem',
+    './ui/cards/CardRenderer',
+    './ui/cards/CardDefinitions',
+    './ui/cards/RiskIndicator',
+    './ui/cards/PerimeterBadge'
   ];
 
   // Load optional components in background

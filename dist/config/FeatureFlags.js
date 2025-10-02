@@ -13,7 +13,7 @@ const DEFAULT_FLAGS = {
  */
 function getFeatureFlag(key) {
     // Check environment variables first (for CI/deployment control)
-    const envKey = `GRIDIRON_${key.toUpperCase()}`;
+    const envKey = `GRIDIRON_${String(key).toUpperCase()}`;
     const envValue = process.env[envKey];
     if (envValue !== undefined) {
         if (key === 'engine') {

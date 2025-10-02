@@ -418,29 +418,29 @@ Goal Line, All-Out Blitz, Inside Blitz, Outside Blitz, Cover 1, Cover 2, Cover 3
 
 **OOB Bias**: Perimeter plays (Bubble, Swing, Jet, Toss) include OOB flags at meaningful sums to stop clock more often.
 
-## 10. Future Improvements
+## 15. Future Improvements
 
-### 10.1 Enhanced Presentation
+### 15.1 Enhanced Presentation
 
 * **Animated Plays**: Reintroduce SVG-based play animations for players and ball movement (snap, handoff, pursuit, tackle, spot) with deterministic JSON-driven implementation.
 * **Advanced Audio**: Stadium crowd ambience, expanded sound effects library, and dynamic audio mixing.
 * **Environmental Effects**: Dynamic weather/lighting system (rain, snow, day/night cycles) with visual and gameplay impact.
 * **Immersive Commentary**: Multiple broadcast styles (radio vs TV), unique commentator personalities, and contextual commentary variations.
 
-### 9.2 Gameplay Expansion
+### 15.2 Gameplay Expansion
 
 * **Strategic Depth**: Fatigue/attrition system where overused plays become less effective, encouraging strategic deck management.
 * **AI Enhancement**: Hidden player tendencies analysis with AI adapting to play-calling patterns in real-time.
 * **Difficulty Levels**: Multiple AI difficulty settings with varying aggression, predictability, and strategic complexity.
 * **Social Features**: Multiplayer support (hotseat → online) with matchmaking, tournaments, and persistent player profiles.
 
-### 9.3 Rules Completeness
+### 15.3 Rules Completeness
 
 * **Penalty Expansion**: Implement all penalty scenarios including offsetting penalties, automatic first downs, and defensive holding.
 * **Clock Management**: Advanced time management including timeouts, spiking the ball, kneel-downs, and precise runoff rules.
 * **Overtime Rules**: Complete sudden-death overtime implementation per current NFL rules with proper possession and field position handling.
 
-### 9.4 Technical Enhancements
+### 15.4 Technical Enhancements
 
 * **Persistence**: Save/load game state functionality with cloud synchronization for cross-device continuity.
 * **Mobile Optimization**: Full responsive design with touch-optimized controls, gesture support, and mobile-specific UI adaptations.
@@ -448,19 +448,20 @@ Goal Line, All-Out Blitz, Inside Blitz, Outside Blitz, Cover 1, Cover 2, Cover 3
 
 ---
 
-## 10. Development Roadmap (Dice System Migration)
+## 16. Development Roadmap (Dice System Migration)
 
 **Phase 0 – Repo Prep & Validation (🔄 in progress Q2 2025):**
 
 * Clean assets & dead code; decouple old image-card pipeline.
 * Land **JSON schemas** for matchup tables & penalty tables; add CI schema checks.
 * Add **table completeness** tests and **field clamp** assertions.
+* Implement **automated balance analysis** system for ongoing validation.
 
 **Phase 1 – Engine Drop-in (⏳ planned Q2 2025):**
 
 * Implement `resolveSnap(offCard, defCard, state, rng)` → returns `{ yards | turnover, clock, oob?, tags[], penalty?:{ side, yards, autoFirst?, lossOfDown?, replay? }, options?:{accept,decline} }`.
 * Integrate doubles / penalty logic / accept-decline and clock/OOB.
-* Add **histogram sim CLI** for authors.
+* Add **histogram sim CLI** for authors and **balance validation** tooling.
 
 **Phase 2 – Minimal UI (⏳ planned Q2 2025):**
 
@@ -479,8 +480,9 @@ Goal Line, All-Out Blitz, Inside Blitz, Outside Blitz, Cover 1, Cover 2, Cover 3
 
 **Phase 5 – Balancing & Launch (⏳ planned Q3 2025):**
 
-* Run league-guided tuning passes; adjust clumps & turnover windows.
+* Run **automated balance analysis** across all tables; adjust clumps & turnover windows.
 * Telemetry: log outcome distributions to confirm realism (e.g., explosive-pass rates around analytics expectations, sack% reasonable, deep hits rare).
+* **Continuous balance validation** integrated into development workflow.
 
 **Phase 6 – Enhanced Features (⏳ planned Q4 2025):**
 
@@ -505,23 +507,23 @@ Goal Line, All-Out Blitz, Inside Blitz, Outside Blitz, Cover 1, Cover 2, Cover 3
 
 ---
 
-## 11. Success Metrics & Validation
+## 17. Success Metrics & Validation
 
-### 11.1 Technical Validation ✅
+### 17.1 Technical Validation ✅
 
 - **Code Quality**: 87%+ test coverage across lines, functions, and branches
 - **Performance**: Sub-3-second load times, 60+ FPS rendering, <50MB memory usage
 - **Accessibility**: WCAG 2.1 AA compliance with comprehensive screen reader support
 - **Cross-Browser**: Compatible with all modern browsers (Chrome, Firefox, Safari, Edge)
 
-### 11.2 User Experience Metrics 🎯
+### 17.2 User Experience Metrics 🎯
 
 - **Intuitive Design**: <5-minute learning curve for new players
 - **Engagement**: Average session duration >15 minutes with high replay value
 - **Accessibility**: 95%+ of game features accessible to users with disabilities
 - **Mobile Experience**: Responsive design supporting phones and tablets
 
-### 11.3 Production Readiness ✅
+### 17.3 Production Readiness ✅
 
 - **Stability**: Zero critical runtime errors in production environment
 - **Scalability**: Architecture supports future features and performance requirements
@@ -530,9 +532,85 @@ Goal Line, All-Out Blitz, Inside Blitz, Outside Blitz, Cover 1, Cover 2, Cover 3
 
 ---
 
-## 13. Implementation Plan: Dice System Migration
+## 13. Balance Analysis & Validation System
 
-### 13.1 Phase 0: Foundation & Validation (Week 1-2)
+### 13.1 Automated Balance Validation
+
+**Comprehensive Guardrail System**: Automated analysis validates all dice tables against NFL analytics-based requirements:
+
+#### Core Balance Metrics (NFL Analytics Foundation)
+- **Explosive Pass Rate**: 15-25% of completions gain 20+ yards (drives scoring)
+- **Sack Rate**: 4-8% of dropbacks result in sacks (defensive pressure realism)
+- **Turnover Rate**: 10-20% of drives end in turnovers (possession balance)
+- **Penalty Rate**: 8-15% of plays with penalties (game flow management)
+- **Clock Management**: Balanced 10"/20"/30" runoff distribution
+
+#### Playbook Identity Preservation
+- **Air Raid** (70-85% pass): Vertical volume with high explosive potential
+- **Smashmouth** (25-45% pass): Ground-based attack with consistency
+- **West Coast** (65-80% pass): Rhythm passing with balanced approach
+- **Spread** (55-75% pass): Creative plays with tempo advantages
+- **Wide Zone** (35-55% pass): Zone running with motion and play-action
+
+#### Distribution Shape Requirements
+- **Explosive Clustering**: Realistic thresholds at 20, 25, 30, 35, 40 yards
+- **Volatility Patterns**: Pass games show boom-bust, runs show consistency
+- **Field Position Awareness**: Long gains capped to remaining field
+
+### 13.2 Statistical Analysis Engine
+
+**Deterministic Simulation**: 10,000 outcomes per table with reproducible RNG:
+```typescript
+// Generate realistic football distributions
+const analysis = await analyzer.analyzeTable(
+  'air-raid/four-verts-vs-cover-4',
+  'Four Verts',
+  'Cover 4',
+  'Air Raid',
+  10000
+);
+```
+
+**Multi-Method Outlier Detection**:
+- **Z-Score Analysis**: Deviations >2.5σ from peer averages
+- **IQR Method**: Robust outlier detection using interquartile ranges
+- **Playbook Identity**: Violations of expected strategic characteristics
+- **Distribution Shape**: Unrealistic clustering or volatility patterns
+
+### 13.3 Balance Reporting & Recommendations
+
+**Comprehensive Reporting**:
+- **Health Dashboard**: Overall system status (excellent/good/fair/poor/critical)
+- **Compliance Scores**: Per-table validation against all guardrails
+- **Priority Actions**: Critical fixes first, then high-impact improvements
+- **Trend Analysis**: Balance changes over time and across playbooks
+
+**Usage**:
+```bash
+# Run complete balance analysis
+node scripts/playtest-balance.mjs
+
+# Generate detailed report
+node scripts/playtest-balance.mjs --format json --output balance-report.json
+
+# CI integration with exit codes
+npm run balance-check  # 0=good, 1=warnings, 2=critical
+```
+
+### 13.4 Balance Tuning Workflow
+
+**Iterative Improvement Process**:
+1. **Automated Detection**: System identifies problematic distributions
+2. **Statistical Analysis**: Quantifies deviation magnitude and impact
+3. **Prioritized Fixes**: Critical issues addressed first
+4. **Validation**: Re-analysis confirms improvements
+5. **Documentation**: All changes tracked with rationale
+
+**Performance Optimized**: Complete analysis of 50+ tables in <30 seconds with configurable concurrency and progress tracking.
+
+## 14. Implementation Plan: Dice System Migration
+
+### 14.1 Phase 0: Foundation & Validation (Week 1-2)
 
 **Objective**: Establish data schemas and validation before implementing core engine.
 
@@ -749,7 +827,7 @@ Goal Line, All-Out Blitz, Inside Blitz, Outside Blitz, Cover 1, Cover 2, Cover 3
 
 ---
 
-## 14. Conclusion
+## 18. Conclusion
 
 Gridiron Strategy represents a comprehensive digital adaptation of the classic Avalon Hill Football Strategy board game, elevated through modern web technologies, sophisticated software architecture, and an innovative dice-driven resolution system. The project has evolved from a basic card game implementation into a production-ready foundation now migrating to an enhanced **V1 dice-driven engine** with:
 

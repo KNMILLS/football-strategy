@@ -1,3 +1,5 @@
+import type { PlaybookName } from '../types/dice';
+
 export interface CoachProfile {
   name: string;
   aggression: number;
@@ -5,6 +7,10 @@ export interface CoachProfile {
   passBias: number; // positive => pass leaning, negative => run leaning
   twoPointAggressiveLate: boolean;
   onsideAggressive: boolean;
+  // New playbook system preferences
+  playbookPreferences: Record<PlaybookName, number>; // 0-1 preference weights
+  riskTolerance: number; // How willing to take risks with EV calculations
+  clockManagementAggression: number; // How aggressive with clock in late game
 }
 
 export const COACH_PROFILES: Record<string, CoachProfile> = {
@@ -15,6 +21,16 @@ export const COACH_PROFILES: Record<string, CoachProfile> = {
     passBias: 0.15,
     twoPointAggressiveLate: true,
     onsideAggressive: true,
+    // Aggressive playbook preferences - favors explosive passing attacks
+    playbookPreferences: {
+      'West Coast': 0.7,    // Balanced but pass-oriented
+      'Spread': 0.9,        // High tempo, explosive
+      'Air Raid': 0.95,     // Maximum aggression, deep shots
+      'Smashmouth': 0.4,    // Conservative ground game
+      'Wide Zone': 0.8      // Zone running with play action
+    },
+    riskTolerance: 0.8,    // High risk tolerance - willing to go for big plays
+    clockManagementAggression: 0.9  // Very aggressive clock management
   },
   'John Madden': {
     name: 'John Madden',
@@ -23,6 +39,16 @@ export const COACH_PROFILES: Record<string, CoachProfile> = {
     passBias: 0.05,
     twoPointAggressiveLate: false,
     onsideAggressive: false,
+    // Balanced playbook preferences - traditional football
+    playbookPreferences: {
+      'West Coast': 0.8,    // Classic balanced offense
+      'Spread': 0.6,        // Moderate tempo
+      'Air Raid': 0.3,      // Conservative on deep shots
+      'Smashmouth': 0.9,     // Strong running game focus
+      'Wide Zone': 0.7       // Zone scheme with balance
+    },
+    riskTolerance: 0.5,    // Moderate risk tolerance
+    clockManagementAggression: 0.5  // Balanced clock management
   },
   'Bill Belichick': {
     name: 'Bill Belichick',
@@ -31,5 +57,15 @@ export const COACH_PROFILES: Record<string, CoachProfile> = {
     passBias: -0.05,
     twoPointAggressiveLate: false,
     onsideAggressive: false,
+    // Conservative playbook preferences - situational football
+    playbookPreferences: {
+      'West Coast': 0.9,    // Efficient, low-risk passing
+      'Spread': 0.3,        // Conservative tempo
+      'Air Raid': 0.1,      // Minimal deep shots
+      'Smashmouth': 0.8,     // Strong running focus
+      'Wide Zone': 0.6       // Zone running for efficiency
+    },
+    riskTolerance: 0.2,    // Low risk tolerance - conservative decisions
+    clockManagementAggression: 0.3  // Conservative clock management
   },
 };
