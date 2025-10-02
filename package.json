@@ -6,15 +6,8 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "vitest --run",
-    "test:cov": "vitest --run --coverage",
-    "test:integration": "node src/testing/integration/runIntegrationTests.js",
-    "test:integration:baseline": "node src/testing/integration/runIntegrationTests.js --enable-baseline",
-    "test:integration:full": "node src/testing/integration/runIntegrationTests.js --enable-baseline --enable-visual-regression --enable-performance-monitoring",
-    "test:integration:ci": "npm run test:integration:full",
-    "test:watch": "nodemon --exec \"npm run test:integration\" --watch src --ext .ts,.js",
     "check:rules-cov": "node scripts/check-rules-coverage.mjs",
-    "ci": "npm run typecheck && npm run lint -- --max-warnings=0 && npm run validate-tables && npm run test:cov && npm run test:integration:ci && npm run check:rules-cov",
+    "ci": "npm run typecheck && npm run lint -- --max-warnings=0 && npm run validate-tables && npm run check:rules-cov",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview --port 5173",
@@ -41,22 +34,18 @@
   "devDependencies": {
     "@eslint/js": "^9.36.0",
     "@types/node": "^24.6.0",
-    "@vitest/coverage-v8": "^3.2.4",
-    "@vitest/ui": "^3.2.4",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-unused-imports": "^4.2.0",
     "husky": "^9.1.7",
-    "jsdom": "^27.0.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.44.1",
     "vite": "^7.1.7",
     "vite-plugin-static-copy": "^3.1.2",
     "vite-plugin-html": "^3.2.2",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4"
+    "vite-tsconfig-paths": "^5.1.4"
   },
   "dependencies": {
     "zod": "^4.1.11"

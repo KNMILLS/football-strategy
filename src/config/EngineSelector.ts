@@ -175,20 +175,31 @@ class DiceEngine implements Engine {
     const defenseCard = this.findDefenseCard(defCardId) || { id: defCardId, label: String(defCardId) } as any;
 
     // Use the dice resolution system if tables are available
-    if (this.matchupTable && this.penaltyTable) {
+    if (this.penaltyTable) {
       try {
-        const { resolveSnap } = require('../rules/ResolveSnap');
-        const diceResult = resolveSnap(
-          offenseCard.id,
-          defenseCard.id,
-          this.matchupTable,
-          this.penaltyTable,
-          state,
-          rng
-        );
+        // Generate the correct table filename based on offense and defense card IDs
+        const tableFilename = this.generateTableFilename(offenseCard.id, defenseCard.id);
 
-        // Convert the dice result to our ResolveResult format
-        return this.convertDiceResult(diceResult, offenseCard.label, defenseCard.label);
+        // Load the specific matchup table for this play/defense combination
+        const { fetchMatchupTable } = require('../data/loaders/matchupTables');
+        const matchupResult = fetchMatchupTable(tableFilename);
+
+        if (matchupResult && matchupResult.ok) {
+          const { resolveSnap } = require('../rules/ResolveSnap');
+          const diceResult = resolveSnap(
+            offenseCard.id,
+            defenseCard.id,
+            matchupResult.data,
+            this.penaltyTable,
+            state,
+            rng
+          );
+
+          // Convert the dice result to our ResolveResult format
+          return this.convertDiceResult(diceResult, offenseCard.label, defenseCard.label);
+        } else {
+          console.warn(`Failed to load matchup table for ${tableFilename}:`, matchupResult?.error);
+        }
       } catch (error) {
         console.warn('Failed to use resolveSnap, falling back to stub:', error);
       }
@@ -241,16 +252,40 @@ class DiceEngine implements Engine {
   }
 
   private findOffenseCard(cardId: string) {
+    // First try to find in legacy decks
     for (const deckName of ['Pro Style', 'Ball Control', 'Aerial Style'] as DeckName[]) {
       const deck = OFFENSE_DECKS[deckName];
       const card = deck.find(c => c.id === cardId);
       if (card) return card;
     }
-    return null;
+
+    // If not found in legacy decks, it might be a dice engine playbook play ID
+    // Return a placeholder card object for dice engine compatibility
+    return {
+      id: cardId,
+      label: cardId,
+      deck: 'Dice Engine',
+      type: 'unknown'
+    };
   }
 
   private findDefenseCard(cardId: string) {
     return DEFENSE_DECK.find(c => c.id === cardId) || null;
+  }
+
+  private generateTableFilename(offenseCardId: string, defenseCardId: string): string {
+    // Extract play name from offense card ID (e.g., "wc-quick-slant" -> "wc-quick-slant")
+    const offensePlay = offenseCardId;
+
+    // Extract defense name from defense card ID (e.g., "Defense_Cover1" -> "def-cover-1")
+    const defenseName = defenseCardId
+      .replace(/^Defense_/, 'def-')
+      .replace(/([A-Z])/g, '_$1')
+      .toLowerCase()
+      .replace(/^_/, '');
+
+    // Construct filename (e.g., "wc-quick-slant__def-cover-1.json")
+    return `${offensePlay}__${defenseName}.json`;
   }
 }
 

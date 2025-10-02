@@ -39,11 +39,13 @@
         <div id="controls" class="controls">
           <div id="controls-normal">
             <div class="control-row">
-              <label for="deck-select">Offense Deck:</label>
+              <label for="deck-select">Playbook:</label>
               <select id="deck-select">
-                <option value="Pro Style">Pro Style</option>
-                <option value="Ball Control">Ball Control</option>
-                <option value="Aerial Style">Aerial Style</option>
+                <option value="West Coast">West Coast</option>
+                <option value="Spread">Spread</option>
+                <option value="Air Raid">Air Raid</option>
+                <option value="Smashmouth">Smashmouth</option>
+                <option value="Wide Zone">Wide Zone</option>
               </select>
             </div>
             <!-- Opponent selection: choose an AI coach persona. Determines AI deck. -->
@@ -57,37 +59,41 @@
             </div>
             <button id="new-game" class="btn" aria-label="Start a new game">New Game</button>
           </div>
-          <div id="controls-test" class="hidden">
+          <div id="controls-dev" class="hidden">
             <div class="control-row">
-              <label for="test-player-deck">HOME Deck:</label>
-              <select id="test-player-deck">
-                <option value="Pro Style">Pro Style</option>
-                <option value="Ball Control">Ball Control</option>
-                <option value="Aerial Style">Aerial Style</option>
+              <label for="dev-player-deck">HOME Playbook:</label>
+              <select id="dev-player-deck">
+                <option value="West Coast">West Coast</option>
+                <option value="Spread">Spread</option>
+                <option value="Air Raid">Air Raid</option>
+                <option value="Smashmouth">Smashmouth</option>
+                <option value="Wide Zone">Wide Zone</option>
               </select>
             </div>
             <div class="control-row">
-              <label for="test-ai-deck">AWAY Deck:</label>
-              <select id="test-ai-deck">
-                <option value="Pro Style">Pro Style</option>
-                <option value="Ball Control">Ball Control</option>
-                <option value="Aerial Style">Aerial Style</option>
+              <label for="dev-ai-deck">AWAY Playbook:</label>
+              <select id="dev-ai-deck">
+                <option value="West Coast">West Coast</option>
+                <option value="Spread">Spread</option>
+                <option value="Air Raid">Air Raid</option>
+                <option value="Smashmouth">Smashmouth</option>
+                <option value="Wide Zone">Wide Zone</option>
               </select>
             </div>
             <div class="control-row">
-              <label for="test-possession">Possession:</label>
-              <select id="test-possession">
+              <label for="dev-possession">Possession:</label>
+              <select id="dev-possession">
                 <option value="player">HOME</option>
                 <option value="ai">AWAY</option>
               </select>
             </div>
             <div class="control-row">
-              <label for="test-ballon">Ball on:</label>
-              <input id="test-ballon" type="number" min="1" max="99" value="25"/>
+              <label for="dev-ballon">Ball on:</label>
+              <input id="dev-ballon" type="number" min="1" max="99" value="25"/>
             </div>
             <div class="control-row">
-              <label for="test-down">Down:</label>
-              <select id="test-down">
+              <label for="dev-down">Down:</label>
+              <select id="dev-down">
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
@@ -95,12 +101,12 @@
               </select>
             </div>
             <div class="control-row">
-              <label for="test-togo">To go:</label>
-              <input id="test-togo" type="number" min="1" max="30" value="10"/>
+              <label for="dev-togo">To go:</label>
+              <input id="dev-togo" type="number" min="1" max="30" value="10"/>
             </div>
             <div class="control-row">
-              <label for="test-quarter">Quarter:</label>
-              <select id="test-quarter">
+              <label for="dev-quarter">Quarter:</label>
+              <select id="dev-quarter">
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
@@ -108,8 +114,8 @@
               </select>
             </div>
             <div class="control-row">
-              <label for="test-clock">Clock (mm:ss):</label>
-              <input id="test-clock" type="text" value="15:00"/>
+              <label for="dev-clock">Clock (mm:ss):</label>
+              <input id="dev-clock" type="text" value="15:00"/>
             </div>
             <hr/>
             <div class="control-row">
@@ -131,7 +137,7 @@
               <label for="sfx-volume">Volume:</label>
               <input id="sfx-volume" type="range" min="0" max="1" step="0.01" value="0.6" />
             </div>
-            <button id="start-test-game" class="btn">Start Test Game</button>
+            <button id="start-dev-game" class="btn">Start Dev Game</button>
             <button id="run-auto-game" class="btn">Run Full Auto Game</button>
             <div class="control-row">
               <button id="copy-log" class="btn">Copy Log</button>

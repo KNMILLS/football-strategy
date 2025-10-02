@@ -12,22 +12,22 @@ export function registerDevMode(bus: EventBus): void {
   registered = true;
 
   const devToggle = $('dev-mode-checkbox') as HTMLInputElement | null;
-  const panel = $('controls-test') as HTMLElement | null;
+  const panel = $('controls-dev') as HTMLElement | null;
   const themeSelect = $('theme-select') as HTMLSelectElement | null;
   const sfxEnabled = $('sfx-enabled') as HTMLInputElement | null;
   const sfxVolume = $('sfx-volume') as HTMLInputElement | null;
 
-  const playerDeck = $('test-player-deck') as HTMLSelectElement | null;
-  const aiDeck = $('test-ai-deck') as HTMLSelectElement | null;
-  const possession = $('test-possession') as HTMLSelectElement | null;
+  const playerDeck = $('dev-player-deck') as HTMLSelectElement | null;
+  const aiDeck = $('dev-ai-deck') as HTMLSelectElement | null;
+  const possession = $('dev-possession') as HTMLSelectElement | null;
   const seedInput = ((): HTMLInputElement | null => {
     // If the seed input is not present in HTML yet, create it inside the panel's top section
-    const existing = document && document.getElementById('test-seed');
+    const existing = document && document.getElementById('dev-seed');
     if (existing) return existing as HTMLInputElement;
     if (!panel || typeof document === 'undefined') return null;
     const row = document.createElement('div'); row.className = 'control-row';
-    const label = document.createElement('label'); label.htmlFor = 'test-seed'; label.textContent = 'Seed:';
-    const input = document.createElement('input'); input.type = 'number'; (input as any).min = '1'; input.placeholder = 'random'; input.value = ''; input.id = 'test-seed';
+    const label = document.createElement('label'); label.htmlFor = 'dev-seed'; label.textContent = 'Seed:';
+    const input = document.createElement('input'); input.type = 'number'; (input as any).min = '1'; input.placeholder = 'random'; input.value = ''; input.id = 'dev-seed';
     row.appendChild(label); row.appendChild(input);
     panel.insertBefore(row, panel.firstChild);
     return input as HTMLInputElement;

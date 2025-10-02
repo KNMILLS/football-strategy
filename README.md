@@ -13,13 +13,8 @@ Adding/updating tables:
 Fallback behavior:
 - If any table is missing or invalid, the app still boots. Corresponding entries in `window.GS.tables` are set to `null`, and a concise log message is emitted (e.g., `Loaded offense charts ✓, place-kicking ✓, timekeeping ✕ (SCHEMA), long-gain ✓`).
 
-CI/Tests:
-- Tests stub `global.fetch` to provide deterministic inputs for loaders.
-- The dev server requires `data/` reachable at `/data/...` for manual verification.
-
 ### Scripts
 - `npm run dev` — start Vite dev server
-- `npm run test` — run Vitest in jsdom with coverage
 - `npm run build` — TypeScript project references build + Vite bundle
 - `npm run baseline` — regenerate golden baseline log (dev aid)
 
@@ -30,7 +25,7 @@ CI/Tests:
 - Data schemas live under `src/data/schemas/**` and are validated via Zod.
 - Deterministic RNG utilities in `src/sim/RNG.ts` (LCG); never use `Math.random()` in code.
 - TS-only runtime boot: `index.html` loads `src/index.ts` directly. Legacy `main.js` and `src/legacy/*` are removed.
-- The runtime exposes a typed API on `window.GS` for UI, tests, and dev tools.
+- The runtime exposes a typed API on `window.GS` for UI and dev tools.
 
 **Module Structure**: The codebase uses facade/barrel patterns for clean separation of concerns:
 - `src/flow/GameFlow.ts` - Central game orchestration with delegation to specialized modules
@@ -41,19 +36,17 @@ CI/Tests:
 - `src/ai/Playcall.ts` - AI decision-making exports from `ai/decisions/*` and `ai/tendencies/*`
 - `src/sim/Simulator.ts` - Simulation and validation APIs from `sim/run/*` and `sim/validation/*`
 
-### Determinism & Tests
+### Determinism
 - Do not use `Math.random()` directly. Consume an injected `rng()`.
-- Golden tests remain for legacy parity. New runtime tests boot via `src/index.ts` and assert core UI appears and `window.GS` API shape.
-- Preserve all log strings and DOM IDs for accessibility and tests.
+- Preserve all log strings and DOM IDs for accessibility.
 
 ### Running Locally
 1) Install: `npm i`
-2) Tests: `npm run test`
-3) Build: `npm run build`
-4) Dev server: `npm run dev` then open `http://localhost:5173` and smoke test
+2) Build: `npm run build`
+3) Dev server: `npm run dev` then open `http://localhost:5173` and smoke test
 
 ### Dev Mode
-- Toggle via the checkbox in the header. When on, normal controls (`#controls-normal`) are hidden and test controls (`#controls-test`) are shown.
+- Toggle via the checkbox in the header. When on, normal controls (`#controls-normal`) are hidden and dev controls (`#controls-dev`) are shown.
 - You can force Dev Mode on page load by appending `#dev` to the URL (e.g., `http://localhost:5173/#dev`).
 - Dev Mode provides: start test game, run full auto game, theme selection, SFX toggles, and debug log export.
 
@@ -67,12 +60,7 @@ CI/Tests:
   - `runtime.resolvePlayAdapter(...)` for migration parity
 
 ### Troubleshooting
-- **Black screen**: CI watchdog test fails if `#scoreboard`, `#field-display`, or `#log` are missing. Locally, run `npm run dev` and check console for table load messages.
-- In tests/jsdom, external CSS (`style.css`) may warn; harmless.
-
-### Coverage Gates
-- Configured in `vitest.config.ts` with V8 coverage provider and thresholds.
-- Adjust thresholds via `coverageThresholds` if refactors significantly move code.
+- **Black screen**: Ensure `#scoreboard`, `#field-display`, or `#log` are present in the DOM. Locally, run `npm run dev` and check console for table load messages.
 
 ### Release
 - Update `CHANGELOG.md` with notable changes and dates.

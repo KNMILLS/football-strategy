@@ -440,11 +440,11 @@ bus.on('ui:themeChanged', ({ theme }: any) => {
   }
 });
 
-// Track when a QA test game is running so we can enrich logs in dev mode
+// Track when a dev game is running so we can enrich logs in dev mode
 try {
-  (bus as any).on && (bus as any).on('qa:startTestGame', () => { isTestGame = true; });
+  (bus as any).on && (bus as any).on('dev:startGame', () => { isTestGame = true; });
 } catch (error) {
-  console.warn('Unable to wire qa:startTestGame listener:', error);
+  console.warn('Unable to wire dev:startGame listener:', error);
 }
 
 function isDevModeOn(): boolean {
@@ -485,7 +485,7 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
   await ensureUIRegistered();
   if (options && options.theme) setTheme(options.theme);
   await preloadTables();
-  // Emit a baseline HUD update so UI is not blank in smoke tests
+  // Emit a baseline HUD update so UI is not blank
   bus.emit('hudUpdate', {
     quarter: 1,
     clock: 15 * 60,
@@ -500,6 +500,9 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
   try {
     bus.on('ui:newGame', async ({ deckName, opponentName }: any) => {
       try {
+        const { getCurrentEngine } = await import('./config/FeatureFlags');
+        const engineNow = getCurrentEngine();
+        console.log(`[NewGame] Engine mode: ${engineNow}`);
         if (!tables.offenseCharts) {
           bus.emit('log', { message: 'Data tables not loaded yet.' });
           return;
@@ -581,7 +584,18 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
         if (stateAfterKO.possession === 'player') {
           const deck = OFFENSE_DECKS[playerDeck] || [];
           const cardsToRender = deck.map((c) => ({ id: c.id, label: c.label, art: c.art, type: c.type }));
-          bus.emit('handUpdate', { cards: cardsToRender, isPlayerOffense: true } as any);
+          // Hide legacy hand when using dice engine; Controls will render dice options in left panel
+          const isDice = engineNow === 'dice';
+          if (!isDice) {
+            bus.emit('handUpdate', { cards: cardsToRender, isPlayerOffense: true } as any);
+          } else {
+            try {
+              const handEl = document.getElementById('hand');
+              const previewEl = document.getElementById('card-preview');
+              if (handEl) (handEl as HTMLElement).style.display = 'none';
+              if (previewEl) (previewEl as HTMLElement).style.display = 'none';
+            } catch {}
+          }
         } else {
           const defCards = DEFENSE_DECK.map((d) => ({ id: (d as any).id, label: (d as any).label, art: `assets/cards/Defense/${(d as any).label}.jpg`, type: 'defense' }));
           bus.emit('handUpdate', { cards: defCards, isPlayerOffense: false } as any);
@@ -672,41 +686,113 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
             // Initialize engine factory if not already done
             await engineFactory.initialize();
 
+            const { getCurrentEngine } = await import('./config/FeatureFlags');
+            const engineNow = getCurrentEngine();
+            const useDice = engineNow === 'dice';
+
             if (currentState.possession === 'player') {
               // Player offense: look up offense card from player's deck
               const playerDeckDef = OFFENSE_DECKS[rt.playerDeck as DeckName] || [];
-              const card = playerDeckDef.find((c: any) => c.id === cardId);
-              if (!card) return;
+              const legacyCard = playerDeckDef.find((c: any) => c.id === cardId);
               const defPicked = pcAI.choose_defense_play(currentState);
 
               // Use the new engine system for play resolution
               const before = { ...currentState };
               try {
+                const offenseId = useDice ? cardId : (legacyCard as any).id;
+                const engine = engineFactory.getEngine(useDice ? 'dice' : undefined as any);
+
+                // For dice engine, we need to find the defense card ID that corresponds to the picked defense
+                let defenseId = defPicked.label; // fallback to label if ID lookup fails
                 const defenseCard = DEFENSE_DECK.find(d => (d as any).label === defPicked.label);
-                const engineResult = await resolvePlay(card.id, defenseCard?.id || defPicked.label, currentState, createLCG(currentState.seed));
-
-                // Convert engine result back to flow events (simplified for now)
-                // TODO: Implement proper event translation from engine result
-                bus.emit('log', { message: `Play resolved: ${engineResult.yards > 0 ? 'Gain' : engineResult.yards < 0 ? 'Loss' : 'No gain'} of ${Math.abs(engineResult.yards)} yards` });
-
-                if (engineResult.turnover && typeof engineResult.turnover !== 'boolean') {
-                  const t = engineResult.turnover;
-                  bus.emit('log', { message: `${t.type}${typeof t.return_yards === 'number' ? ` - ${t.return_yards} yard return` : ''}` });
+                if (defenseCard) {
+                  defenseId = defenseCard.id;
                 }
 
-                // Update game state based on result (simplified)
+                const engineResult = await engine.resolvePlay(offenseId, defenseId, currentState, createLCG(currentState.seed));
+
+                // Process dice engine result and update game state
                 const newState = { ...currentState };
+
+                // Update ball position
                 if (engineResult.yards !== 0) {
                   newState.ballOn = Math.max(0, Math.min(100, newState.ballOn + (newState.possession === 'player' ? engineResult.yards : -engineResult.yards)));
                 }
 
-                try { (window as any).GS_RUNTIME.__lastOffLabel = card.label; (window as any).GS_RUNTIME.__lastDefLabel = defPicked.label; }
+                // Update clock based on result
+                if (engineResult.clock) {
+                  const clockRunoff = parseInt(engineResult.clock);
+                  newState.clock = Math.max(0, newState.clock - clockRunoff);
+                }
+
+                // Handle turnovers
+                if (engineResult.turnover && typeof engineResult.turnover !== 'boolean') {
+                  const t = engineResult.turnover;
+                  newState.possession = newState.possession === 'player' ? 'ai' : 'player';
+
+                  // Update ball position for turnover return
+                  if (t.return_yards && t.return_to === 'LOS') {
+                    newState.ballOn = Math.max(0, Math.min(100, newState.ballOn + (newState.possession === 'player' ? t.return_yards : -t.return_yards)));
+                  }
+
+                  bus.emit('log', { message: `${t.type} - ${t.return_yards || 0} yard return` });
+                }
+
+                // Update down and distance
+                const yardsGained = newState.possession === 'player' ? engineResult.yards : -engineResult.yards;
+                const progressTowardsFirstDown = Math.max(0, yardsGained);
+                const newToGo = Math.max(0, newState.toGo - progressTowardsFirstDown);
+
+                if (newToGo <= 0) {
+                  // First down achieved
+                  newState.down = 1;
+                  newState.toGo = 10;
+                } else {
+                  // Update down if 4th down or if we gained yards but didn't get first down
+                  if (newState.down < 4) {
+                    newState.down += 1;
+                  } else {
+                    // Turnover on downs - change possession
+                    newState.possession = newState.possession === 'player' ? 'ai' : 'player';
+                    newState.down = 1;
+                    newState.toGo = 10;
+                  }
+                }
+
+                // Log the result
+                let resultMessage = '';
+                if (engineResult.yards > 0) {
+                  resultMessage = `Gain of ${engineResult.yards} yards`;
+                } else if (engineResult.yards < 0) {
+                  resultMessage = `Loss of ${Math.abs(engineResult.yards)} yards`;
+                } else {
+                  resultMessage = 'No gain';
+                }
+
+                if (engineResult.turnover && typeof engineResult.turnover !== 'boolean') {
+                  resultMessage += ` - ${engineResult.turnover.type}`;
+                }
+
+                bus.emit('log', { message: `Play resolved: ${resultMessage}` });
+
+                try { (window as any).GS_RUNTIME.__lastOffLabel = (legacyCard as any)?.label || String(cardId); (window as any).GS_RUNTIME.__lastDefLabel = defPicked.label; }
                 catch (error) { /* ignore telemetry bookkeeping errors */ }
                 (window as any).GS_RUNTIME.state = newState as any;
 
+                // Emit HUD update to refresh UI
+                bus.emit('hudUpdate', {
+                  quarter: newState.quarter,
+                  clock: newState.clock,
+                  down: newState.down,
+                  toGo: newState.toGo,
+                  ballOn: newState.ballOn,
+                  possession: newState.possession,
+                  score: newState.score,
+                } as any);
+
                 // TODO: Update tendencies and AI observations based on engine result
                 try {
-                  const playType: 'run'|'pass' = (/pass/i.test(card.label) ? 'pass' : 'run');
+                  const playType: 'run'|'pass' = (legacyCard && /pass/i.test(legacyCard.label)) ? 'pass' : 'run';
                   tendencies.record('player', playType, {
                     down: before.down,
                     toGo: before.toGo,
@@ -718,7 +804,7 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
               } catch (error) {
                 console.warn('Engine resolution failed, falling back to deterministic:', error);
                 // Fallback to original system
-                const input: PlayInput = { deckName: rt.playerDeck, playLabel: card.label, defenseLabel: defPicked.label } as any;
+                const input: PlayInput = { deckName: rt.playerDeck, playLabel: (legacyCard as any)?.label || String(cardId), defenseLabel: defPicked.label } as any;
                 const res = flow.resolveSnap(currentState, input);
                 translate(res.events);
                 (window as any).GS_RUNTIME.state = res.state as any;
@@ -734,24 +820,84 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
               try {
                 const engineResult = await resolvePlay(offPicked.playLabel, defCard.id, currentState, createLCG(currentState.seed));
 
-                // Convert engine result back to flow events (simplified for now)
-                // TODO: Implement proper event translation from engine result
-                bus.emit('log', { message: `AI Play resolved: ${engineResult.yards > 0 ? 'Gain' : engineResult.yards < 0 ? 'Loss' : 'No gain'} of ${Math.abs(engineResult.yards)} yards` });
-
-                if (engineResult.turnover && typeof engineResult.turnover !== 'boolean') {
-                  const t = engineResult.turnover;
-                  bus.emit('log', { message: `AI ${t.type}${typeof t.return_yards === 'number' ? ` - ${t.return_yards} yard return` : ''}` });
-                }
-
-                // Update game state based on result (simplified)
+                // Process dice engine result and update game state for AI
                 const newState = { ...currentState };
+
+                // Update ball position
                 if (engineResult.yards !== 0) {
                   newState.ballOn = Math.max(0, Math.min(100, newState.ballOn + (newState.possession === 'player' ? engineResult.yards : -engineResult.yards)));
                 }
 
+                // Update clock based on result
+                if (engineResult.clock) {
+                  const clockRunoff = parseInt(engineResult.clock);
+                  newState.clock = Math.max(0, newState.clock - clockRunoff);
+                }
+
+                // Handle turnovers
+                if (engineResult.turnover && typeof engineResult.turnover !== 'boolean') {
+                  const t = engineResult.turnover;
+                  newState.possession = newState.possession === 'player' ? 'ai' : 'player';
+
+                  // Update ball position for turnover return
+                  if (t.return_yards && t.return_to === 'LOS') {
+                    newState.ballOn = Math.max(0, Math.min(100, newState.ballOn + (newState.possession === 'player' ? t.return_yards : -t.return_yards)));
+                  }
+
+                  bus.emit('log', { message: `AI ${t.type} - ${t.return_yards || 0} yard return` });
+                }
+
+                // Update down and distance
+                const yardsGained = newState.possession === 'player' ? engineResult.yards : -engineResult.yards;
+                const progressTowardsFirstDown = Math.max(0, yardsGained);
+                const newToGo = Math.max(0, newState.toGo - progressTowardsFirstDown);
+
+                if (newToGo <= 0) {
+                  // First down achieved
+                  newState.down = 1;
+                  newState.toGo = 10;
+                } else {
+                  // Update down if 4th down or if we gained yards but didn't get first down
+                  if (newState.down < 4) {
+                    newState.down += 1;
+                  } else {
+                    // Turnover on downs - change possession
+                    newState.possession = newState.possession === 'player' ? 'ai' : 'player';
+                    newState.down = 1;
+                    newState.toGo = 10;
+                  }
+                }
+
+                // Log the result
+                let resultMessage = '';
+                if (engineResult.yards > 0) {
+                  resultMessage = `Gain of ${engineResult.yards} yards`;
+                } else if (engineResult.yards < 0) {
+                  resultMessage = `Loss of ${Math.abs(engineResult.yards)} yards`;
+                } else {
+                  resultMessage = 'No gain';
+                }
+
+                if (engineResult.turnover && typeof engineResult.turnover !== 'boolean') {
+                  resultMessage += ` - ${engineResult.turnover.type}`;
+                }
+
+                bus.emit('log', { message: `AI Play resolved: ${resultMessage}` });
+
                 try { (window as any).GS_RUNTIME.__lastOffLabel = offPicked.playLabel; (window as any).GS_RUNTIME.__lastDefLabel = (defCard as any).label; }
                 catch (error) { /* ignore telemetry bookkeeping errors */ }
                 (window as any).GS_RUNTIME.state = newState as any;
+
+                // Emit HUD update to refresh UI
+                bus.emit('hudUpdate', {
+                  quarter: newState.quarter,
+                  clock: newState.clock,
+                  down: newState.down,
+                  toGo: newState.toGo,
+                  ballOn: newState.ballOn,
+                  possession: newState.possession,
+                  score: newState.score,
+                } as any);
 
                 // TODO: Update tendencies and AI observations based on engine result
               } catch (error) {
@@ -818,7 +964,7 @@ const runtime: GameRuntime = {
       if ((res as any).safety) events.push({ type: 'safety' });
       return { nextState, outcome: (res as any).outcome, events } as any;
     },
-    // Expose createFlow for tests (typed as any in GameRuntime to avoid leaking internals)
+    // Expose createFlow for dev tools (typed as any in GameRuntime to avoid leaking internals)
     createFlow: (seed?: number) => {
       const rng = createLCG(seed ?? 12345);
       if (!tables.offenseCharts) throw new Error('Offense charts not loaded');

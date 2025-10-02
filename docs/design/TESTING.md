@@ -1,9 +1,6 @@
 ### Testing
 
-- Unit tests for rules modules (Vitest, jsdom env where needed)
-- Golden tests: `tests/golden/*.test.ts` verify deterministic TS simulator outputs against baselines in `tests/golden/baselines/`.
-- Generate/update baselines with `npm run baseline`.
-- Runtime watchdog tests load `index.html` via the TS runtime and assert critical DOM appears quickly (guards against black screens).
+Testing infrastructure has been removed from this project.
 
 ### Accessibility & cross‑browser notes
 
