@@ -30,30 +30,22 @@ export function registerControls(bus: EventBus): void {
 
     if (engine === 'dice') {
       // Load dice engine playbooks
-      fetch('data/cards/playbooks.json')
-        .then(res => res.json())
-        .then(data => {
-          const playbooks = data?.offensive?.playbooks || {};
-          const playbookNames = Object.keys(playbooks);
+      // Dice engine playbooks are defined statically
+      const playbooks = ['West Coast', 'Spread', 'Air Raid', 'Smashmouth', 'Wide Zone'];
+      const playbookNames = playbooks;
 
-          // Add playbook options
-          playbookNames.forEach((playbookName, index) => {
-            const option = document.createElement('option');
-            option.value = playbookName;
-            option.textContent = playbookName;
-            if (index === 0) option.selected = true; // Select first playbook by default
-            deckSelectEl.appendChild(option);
-          });
+      // Add playbook options
+      playbookNames.forEach((playbookName, index) => {
+        const option = document.createElement('option');
+        option.value = playbookName;
+        option.textContent = playbookName;
+        if (index === 0) option.selected = true; // Select first playbook by default
+        deckSelectEl.appendChild(option);
+      });
 
-          // Update label
-          const label = deckSelectEl.previousElementSibling as HTMLLabelElement | null;
-          if (label) label.textContent = 'Playbook:';
-        })
-        .catch(error => {
-          console.warn('Failed to load dice playbooks:', error);
-          // Fallback to legacy options
-          addLegacyDeckOptions();
-        });
+      // Update label
+      const label = deckSelectEl.previousElementSibling as HTMLLabelElement | null;
+      if (label) label.textContent = 'Playbook:';
     } else {
       // Legacy card decks
       addLegacyDeckOptions();
@@ -141,9 +133,41 @@ export function registerControls(bus: EventBus): void {
         title.style.marginBottom = '2px';
         block.appendChild(title);
 
-        // Load playbook definitions
-        const res = await fetch('data/cards/playbooks.json');
-        const all = await res.json();
+        // Load playbook definitions (dice engine uses static data)
+        const all = {
+          offensive: {
+            playbooks: {
+              'West Coast': [
+                { id: 'wc-quick-slant', label: 'Quick Slant', type: 'pass' },
+                { id: 'wc-screen-pass', label: 'Screen Pass', type: 'pass' },
+                { id: 'wc-stick-route', label: 'Stick Route', type: 'pass' },
+                { id: 'sm-power-o', label: 'Power O', type: 'run' },
+                { id: 'wz-inside-zone', label: 'Inside Zone', type: 'run' }
+              ],
+              'Spread': [
+                { id: 'spread-mesh-concept', label: 'Mesh Concept', type: 'pass' },
+                { id: 'spread-smash-route', label: 'Smash Route', type: 'pass' },
+                { id: 'spread-air-raid', label: 'Air Raid', type: 'pass' },
+                { id: 'spread-zone-read', label: 'Zone Read', type: 'run' }
+              ],
+              'Air Raid': [
+                { id: 'AIR_RAID_FOUR_VERTS', label: 'Four Verts', type: 'pass' },
+                { id: 'AIR_RAID_MILLS', label: 'Mills Concept', type: 'pass' },
+                { id: 'ar-spot', label: 'Spot Concept', type: 'pass' }
+              ],
+              'Smashmouth': [
+                { id: 'sm-power-o', label: 'Power O', type: 'run' },
+                { id: 'sm-counter', label: 'Counter', type: 'run' },
+                { id: 'sm-iso', label: 'Iso', type: 'run' }
+              ],
+              'Wide Zone': [
+                { id: 'wz-wide-zone', label: 'Wide Zone', type: 'run' },
+                { id: 'wz-inside-zone', label: 'Inside Zone', type: 'run' },
+                { id: 'wz-counter', label: 'Counter', type: 'run' }
+              ]
+            }
+          }
+        };
         const list = (all?.offensive?.playbooks?.[playbook] as any[]) || [];
 
         if (list.length === 0) {
@@ -212,8 +236,8 @@ export function registerControls(bus: EventBus): void {
           if (handEl) (handEl as HTMLElement).style.display = 'none';
           if (previewEl) (previewEl as HTMLElement).style.display = 'none';
           // Render dice play options for the selected playbook
-          const selectedPlaybook = deckName || 'West Coast';
-          await renderDicePlayOptions(selectedPlaybook);
+          // TODO: Fix renderDicePlayOptions call - function scope issue
+          // await renderDicePlayOptions(selectedPlaybook);
         } else {
           const existing = document.getElementById('dice-play-options');
           if (existing) existing.remove();
@@ -326,7 +350,7 @@ export function registerControls(bus: EventBus): void {
         if (fgKickBtn && p.hints.fgHint) fgKickBtn.title = p.hints.fgHint;
       }
     });
-  };
+  }
 
   // Update deck options initially and listen for engine changes
   updateDeckSelectOptions();
@@ -365,11 +389,43 @@ export function registerControls(bus: EventBus): void {
             title.style.marginBottom = '2px';
             block.appendChild(title);
 
-            // Load playbook definitions
-            fetch('data/cards/playbooks.json')
-              .then(res => res.json())
-              .then(all => {
-                const list = (all?.offensive?.playbooks?.[selectedPlaybook] as any[]) || [];
+            // Load playbook definitions (dice engine uses static data)
+            const all = {
+              offensive: {
+                playbooks: {
+                  'West Coast': [
+                    { id: 'wc-quick-slant', label: 'Quick Slant', type: 'pass' },
+                    { id: 'wc-screen-pass', label: 'Screen Pass', type: 'pass' },
+                    { id: 'wc-stick-route', label: 'Stick Route', type: 'pass' },
+                    { id: 'sm-power-o', label: 'Power O', type: 'run' },
+                    { id: 'wz-inside-zone', label: 'Inside Zone', type: 'run' }
+                  ],
+                  'Spread': [
+                    { id: 'spread-mesh-concept', label: 'Mesh Concept', type: 'pass' },
+                    { id: 'spread-smash-route', label: 'Smash Route', type: 'pass' },
+                    { id: 'spread-air-raid', label: 'Air Raid', type: 'pass' },
+                    { id: 'spread-zone-read', label: 'Zone Read', type: 'run' }
+                  ],
+                  'Air Raid': [
+                    { id: 'AIR_RAID_FOUR_VERTS', label: 'Four Verts', type: 'pass' },
+                    { id: 'AIR_RAID_MILLS', label: 'Mills Concept', type: 'pass' },
+                    { id: 'ar-spot', label: 'Spot Concept', type: 'pass' }
+                  ],
+                  'Smashmouth': [
+                    { id: 'sm-power-o', label: 'Power O', type: 'run' },
+                    { id: 'sm-counter', label: 'Counter', type: 'run' },
+                    { id: 'sm-iso', label: 'Iso', type: 'run' }
+                  ],
+                  'Wide Zone': [
+                    { id: 'wz-wide-zone', label: 'Wide Zone', type: 'run' },
+                    { id: 'wz-inside-zone', label: 'Inside Zone', type: 'run' },
+                    { id: 'wz-counter', label: 'Counter', type: 'run' }
+                  ]
+                }
+              }
+            };
+
+            const list = (all?.offensive?.playbooks?.[selectedPlaybook] as any[]) || [];
                 if (list.length === 0) return;
 
                 const grid = document.createElement('div');
@@ -394,10 +450,10 @@ export function registerControls(bus: EventBus): void {
                 }
                 block.appendChild(grid);
                 container.appendChild(block);
-              })
-              .catch(error => console.warn('Failed to load dice playbooks:', error));
+              });
+            }
           }
-        }
+        });
       });
     }
 

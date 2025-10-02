@@ -1,4 +1,6 @@
-# Custom Deck Examples for Gridiron Strategy
+# Custom Deck Examples (DEPRECATED)
+
+**DEPRECATED**: This document describes legacy custom deck examples that have been replaced by the dice engine.
 
 ## 🏈 Offensive Deck Concepts
 

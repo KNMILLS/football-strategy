@@ -1,4 +1,6 @@
-# Offensive Playbook Designs
+# Offensive Playbook Designs (DEPRECATED)
+
+**DEPRECATED**: This document describes the legacy offensive playbook designs that have been replaced by the dice engine.
 
 ## 🏈 Five Distinct Offensive Playbooks
 

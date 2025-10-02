@@ -1,4 +1,6 @@
-# Custom Card System Design for Gridiron Strategy
+# Custom Card System Design (DEPRECATED)
+
+**DEPRECATED**: This document describes the legacy custom card system design that has been replaced by the dice engine.
 
 ## 🎯 Yes, Absolutely!
 

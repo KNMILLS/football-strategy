@@ -1,8 +1,10 @@
-# Card Catalog Specification
+# Card Catalog Specification (DEPRECATED)
 
 ## Overview
 
-The Gridiron Strategy card catalog system provides a comprehensive collection of 100 offensive cards across five playbooks and a universal 10-card defensive deck. This system enables tactical decision-making through simultaneous card selection and dice resolution.
+**DEPRECATED**: This document describes the legacy card catalog system that has been replaced by the dice engine. The game now uses a dice-driven resolution system with static playbook definitions.
+
+The original card catalog system provided a comprehensive collection of 100 offensive cards across five playbooks and a universal 10-card defensive deck. This system enabled tactical decision-making through simultaneous card selection and dice resolution.
 
 ## Structure
 

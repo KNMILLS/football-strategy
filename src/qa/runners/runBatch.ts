@@ -2,7 +2,7 @@ import type { EventBus } from '../../utils/EventBus';
 import { sleepFrame } from '../util/dom';
 import { createLCG } from '../../sim/RNG';
 import { GameFlow } from '../../flow/GameFlow';
-import { OFFENSE_DECKS, DEFENSE_DECK } from '../../data/decks';
+// Card system removed - using dice engine only
 
 export async function runBatch(bus: EventBus, p: { seeds: number[]; playerPAT?: 'auto'|'kick'|'two' } | any): Promise<void> {
   const seeds = (p && Array.isArray(p.seeds) && p.seeds.length > 0) ? p.seeds.slice() : Array.from({ length: 100 }, (_, i) => i + 1);
@@ -40,10 +40,10 @@ export async function runBatch(bus: EventBus, p: { seeds: number[]; playerPAT?: 
         const ko = (flow as any).performKickoff(state, 'normal', 'ai');
         state = ko.state as any;
         while (!state.gameOver) {
-          const offDeck = state.possession === 'player' ? OFFENSE_DECKS['Pro Style'] : OFFENSE_DECKS['Pro Style'];
-          const play = offDeck[Math.min(state.down % 2, offDeck.length - 1)]?.label || offDeck[0]?.label || 'Run & Pass Option';
-          const defense = DEFENSE_DECK[4]?.label || 'Run & Pass';
-          const res = (flow as any).resolveSnap(state, { deckName: 'Pro Style', playLabel: play, defenseLabel: defense });
+          // Use dice engine play IDs directly
+          const play = state.down <= 2 ? 'sm-power-o' : 'wc-screen-pass'; // Simple play selection for batch testing
+          const defense = 'Cover 2';
+          const res = (flow as any).resolveSnap(state, { deckName: 'West Coast', playLabel: play, defenseLabel: defense });
           state = res.state as any;
         }
         const diff = state.score.player - state.score.ai;

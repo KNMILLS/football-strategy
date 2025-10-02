@@ -1,7 +1,7 @@
 import { getCurrentEngine, getFeatureFlags, type EngineType } from './FeatureFlags';
 import type { GameState } from '../domain/GameState';
 import type { RNG } from '../sim/RNG';
-import { OFFENSE_DECKS, DEFENSE_DECK, type DeckName } from '../data/decks';
+import type { PlaybookName, DefensivePlay } from '../types/dice';
 
 /**
  * Engine interface for consistent API across different resolution engines
@@ -117,16 +117,42 @@ class DeterministicEngine implements Engine {
   }
 
   private findOffenseCard(cardId: string) {
-    for (const deckName of ['Pro Style', 'Ball Control', 'Aerial Style'] as DeckName[]) {
-      const deck = OFFENSE_DECKS[deckName];
-      const card = deck.find(c => c.id === cardId);
-      if (card) return card;
-    }
-    return null;
+    // For dice engine compatibility, we need to map old card IDs to dice engine play IDs
+    // This is a simplified mapping - in a real implementation we'd have a proper mapping table
+    const cardMappings: Record<string, { id: string; label: string; deck: PlaybookName }> = {
+      // Map some common card IDs to dice engine plays
+      'ProStyle_PowerUpMiddle': { id: 'sm-power-o', label: 'Power O', deck: 'Smashmouth' },
+      'ProStyle_PowerOffTackle': { id: 'sm-power-o', label: 'Power O', deck: 'Smashmouth' },
+      'ProStyle_EndRun': { id: 'wz-inside-zone', label: 'Inside Zone', deck: 'Wide Zone' },
+      // Add more mappings as needed for backward compatibility
+    };
+
+    return cardMappings[cardId] || {
+      id: cardId,
+      label: cardId,
+      deck: 'West Coast' as PlaybookName
+    };
   }
 
   private findDefenseCard(cardId: string) {
-    return DEFENSE_DECK.find(c => c.id === cardId) || null;
+    // Map old defense card IDs to dice engine defensive plays
+    const defenseMappings: Record<string, DefensivePlay> = {
+      'Defense_GoalLine': 'Goal Line',
+      'Defense_ShortYardage': 'Short Yardage',
+      'Defense_InsideBlitz': 'Inside Blitz',
+      'Defense_Running': 'Running',
+      'Defense_RunAndPass': 'Run & Pass',
+      'Defense_PassAndRun': 'Pass & Run',
+      'Defense_Passing': 'Passing',
+      'Defense_OutsideBlitz': 'Outside Blitz',
+      'Defense_Prevent': 'Prevent',
+      'Defense_PreventDeep': 'Prevent Deep',
+    };
+
+    return {
+      id: cardId,
+      label: defenseMappings[cardId] || 'Cover 2'
+    };
   }
 }
 
@@ -270,25 +296,42 @@ class DiceEngine implements Engine {
   }
 
   private findOffenseCard(cardId: string) {
-    // First try to find in legacy decks
-    for (const deckName of ['Pro Style', 'Ball Control', 'Aerial Style'] as DeckName[]) {
-      const deck = OFFENSE_DECKS[deckName];
-      const card = deck.find(c => c.id === cardId);
-      if (card) return card;
-    }
+    // For dice engine compatibility, we need to map old card IDs to dice engine play IDs
+    // This is a simplified mapping - in a real implementation we'd have a proper mapping table
+    const cardMappings: Record<string, { id: string; label: string; deck: PlaybookName }> = {
+      // Map some common card IDs to dice engine plays
+      'ProStyle_PowerUpMiddle': { id: 'sm-power-o', label: 'Power O', deck: 'Smashmouth' },
+      'ProStyle_PowerOffTackle': { id: 'sm-power-o', label: 'Power O', deck: 'Smashmouth' },
+      'ProStyle_EndRun': { id: 'wz-inside-zone', label: 'Inside Zone', deck: 'Wide Zone' },
+      // Add more mappings as needed for backward compatibility
+    };
 
-    // If not found in legacy decks, it might be a dice engine playbook play ID
-    // Return a placeholder card object for dice engine compatibility
-    return {
+    return cardMappings[cardId] || {
       id: cardId,
       label: cardId,
-      deck: 'Dice Engine',
-      type: 'unknown'
+      deck: 'West Coast' as PlaybookName
     };
   }
 
   private findDefenseCard(cardId: string) {
-    return DEFENSE_DECK.find(c => c.id === cardId) || null;
+    // Map old defense card IDs to dice engine defensive plays
+    const defenseMappings: Record<string, DefensivePlay> = {
+      'Defense_GoalLine': 'Goal Line',
+      'Defense_ShortYardage': 'Short Yardage',
+      'Defense_InsideBlitz': 'Inside Blitz',
+      'Defense_Running': 'Running',
+      'Defense_RunAndPass': 'Run & Pass',
+      'Defense_PassAndRun': 'Pass & Run',
+      'Defense_Passing': 'Passing',
+      'Defense_OutsideBlitz': 'Outside Blitz',
+      'Defense_Prevent': 'Prevent',
+      'Defense_PreventDeep': 'Prevent Deep',
+    };
+
+    return {
+      id: cardId,
+      label: defenseMappings[cardId] || 'Cover 2'
+    };
   }
 
   public generateTableFilename(offenseCardId: string, defenseCardId: string): string {

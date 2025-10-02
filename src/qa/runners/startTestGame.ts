@@ -1,7 +1,7 @@
 import type { EventBus } from '../../utils/EventBus';
 import { createLCG } from '../../sim/RNG';
 import { GameFlow } from '../../flow/GameFlow';
-import { OFFENSE_DECKS, DEFENSE_DECK, type DeckName, WHITE_SIGN_RESTRICTIONS } from '../../data/decks';
+// Card system removed - using dice engine only
 import type { GameState } from '../../domain/GameState';
 import * as CoachProfiles from '../../ai/CoachProfiles';
 import { chooseOffense, chooseKickoff, type AIContext, PlayerTendenciesMemory } from '../../ai/Playcall';
@@ -42,13 +42,12 @@ export async function startTestGame(bus: EventBus, p: any): Promise<void> {
     setDebugSeed(seed);
     const charts = (globalThis as any).GS?.tables?.offenseCharts;
     const runtimeFlow: any = null;
-    const deckNameFrom = (s: any): DeckName => (s === 'Ball Control' || s === 'Aerial Style' || s === 'Pro Style') ? s : 'Pro Style';
-    const deckNames: DeckName[] = ['Pro Style', 'Ball Control', 'Aerial Style'];
-    const randomDeck = (): DeckName => deckNames[Math.floor(rng() * deckNames.length)]!;
-    const playerDeckName: DeckName = deckNameFrom((p as any)?.playerDeck) || randomDeck();
-    const aiDeckName: DeckName = deckNameFrom((p as any)?.aiDeck) || randomDeck();
-    const playerDeck = OFFENSE_DECKS[playerDeckName] || OFFENSE_DECKS['Pro Style'];
-    const aiDeck = OFFENSE_DECKS[aiDeckName] || OFFENSE_DECKS['Pro Style'];
+    const playbookNameFrom = (s: any): string => (['West Coast', 'Spread', 'Air Raid', 'Smashmouth', 'Wide Zone'].includes(s)) ? s : 'West Coast';
+    const playbookNames: string[] = ['West Coast', 'Spread', 'Air Raid', 'Smashmouth', 'Wide Zone'];
+    const randomPlaybook = (): string => playbookNames[Math.floor(rng() * playbookNames.length)]!;
+    const playerPlaybookName: string = playbookNameFrom((p as any)?.playerDeck) || randomPlaybook();
+    const aiPlaybookName: string = playbookNameFrom((p as any)?.aiDeck) || randomPlaybook();
+    // Dice engine playbooks don't need deck objects
     const coachKeys = Object.keys(CoachProfiles) as Array<keyof typeof CoachProfiles>;
     const pickCoach = () => (CoachProfiles as any)[coachKeys[Math.floor(rng() * coachKeys.length)] as any];
     const playerCoach = (p as any)?.playerCoach && (CoachProfiles as any)[(p as any)?.playerCoach] ? (CoachProfiles as any)[(p as any)?.playerCoach] : pickCoach();
@@ -167,9 +166,14 @@ export async function startTestGame(bus: EventBus, p: any): Promise<void> {
     let currentOffenseDeck: any[] = [];
     const deps = {
       charts: charts!,
-      getOffenseHand: () => currentOffenseDeck.map((c: any) => ({ id: c.id, label: c.label, type: c.type })),
-      getDefenseOptions: () => DEFENSE_DECK.map(d => d.label) as any,
-      getWhiteSignRestriction: (label: string) => (WHITE_SIGN_RESTRICTIONS as any)[label] ?? null,
+      getOffenseHand: () => [
+        { id: 'wc-quick-slant', label: 'Quick Slant', type: 'pass' },
+        { id: 'wc-screen-pass', label: 'Screen Pass', type: 'pass' },
+        { id: 'sm-power-o', label: 'Power O', type: 'run' },
+        { id: 'wz-inside-zone', label: 'Inside Zone', type: 'run' },
+      ],
+      getDefenseOptions: () => ['Goal Line', 'Cover 2', 'Blitz', 'Prevent'],
+      getWhiteSignRestriction: (label: string) => null, // No restrictions in dice engine
     } as const;
     const pcPlayer = new PlayCaller(deps as any, true);
     const pcAI = new PlayCaller(deps as any, true);
@@ -178,8 +182,7 @@ export async function startTestGame(bus: EventBus, p: any): Promise<void> {
     pcAI.reset(seed + 1);
     while (!state.gameOver) {
       const offenseIsPlayer = state.possession === 'player';
-      const offenseDeckName = offenseIsPlayer ? playerDeckName : aiDeckName;
-      const offenseDeck = offenseIsPlayer ? playerDeck : aiDeck;
+      const offensePlaybookName = offenseIsPlayer ? playerPlaybookName : aiPlaybookName;
       const offenseCoach = offenseIsPlayer ? playerCoach : aiCoach;
       const defenseCoach = offenseIsPlayer ? aiCoach : playerCoach;
 
@@ -187,13 +190,18 @@ export async function startTestGame(bus: EventBus, p: any): Promise<void> {
         state,
         charts: charts!,
         coach: forOffense ? offenseCoach : defenseCoach,
-        deckName: offenseDeckName,
+        deckName: offensePlaybookName,
         playerIsHome: true,
         rng,
-        getOffenseHand: () => offenseDeck.map(c => ({ id: c.id, label: c.label, type: c.type } as any)),
-        getDefenseOptions: () => DEFENSE_DECK.map(d => d.label) as any,
+        getOffenseHand: () => [
+          { id: 'wc-quick-slant', label: 'Quick Slant', type: 'pass' },
+          { id: 'wc-screen-pass', label: 'Screen Pass', type: 'pass' },
+          { id: 'sm-power-o', label: 'Power O', type: 'run' },
+          { id: 'wz-inside-zone', label: 'Inside Zone', type: 'run' },
+        ],
+        getDefenseOptions: () => ['Goal Line', 'Cover 2', 'Blitz', 'Prevent'],
         isTwoMinute: (q: number, clock: number) => ((q === 2 || q === 4) && clock <= 120),
-        getWhiteSignRestriction: (label: string) => (WHITE_SIGN_RESTRICTIONS as any)[label] ?? null,
+        getWhiteSignRestriction: (label: string) => null, // No restrictions in dice engine
         getFieldGoalAttemptYards: (st) => {
           const offenseIsHome = (st.possession === 'player');
           const yardsToOpp = offenseIsHome ? (100 - st.ballOn) : st.ballOn;
@@ -202,7 +210,7 @@ export async function startTestGame(bus: EventBus, p: any): Promise<void> {
         tendencies,
       });
 
-      currentOffenseDeck = offenseDeck as any[];
+      // currentOffenseDeck removed - using static dice engine data
       const aiOff = buildAIContext(true);
       const aiDef = buildAIContext(false);
       let offDecision: ReturnType<typeof chooseOffense>;
@@ -210,7 +218,7 @@ export async function startTestGame(bus: EventBus, p: any): Promise<void> {
         offDecision = chooseOffense(aiOff);
       } else {
         const pc = offenseIsPlayer ? pcPlayer : pcAI;
-        const picked = pc.choose_offense_play(state, offenseDeckName);
+        const picked = pc.choose_offense_play(state, offensePlaybookName);
         offDecision = { kind: 'play', deckName: picked.deckName, playLabel: picked.playLabel } as any;
       }
       const pcForDef = offenseIsPlayer ? pcAI : pcPlayer;
@@ -227,7 +235,7 @@ export async function startTestGame(bus: EventBus, p: any): Promise<void> {
         state = fg.state as any;
         translate(fg.events || []);
       } else if (offDecision.kind === 'punt') {
-        const res = resolveSnap(state, { deckName: offenseDeckName, playLabel: 'Punt (4th Down Only)', defenseLabel: defDecision.label });
+        const res = resolveSnap(state, { deckName: offensePlaybookName, playLabel: 'Punt (4th Down Only)', defenseLabel: defDecision.label });
         const choice = (res.events || []).find((e: any) => e.type === 'choice-required' && e.choice === 'penaltyAcceptDecline');
         if (choice && (flow as any)?.finalizePenaltyDecision) {
           const data = choice.data || {};
@@ -244,7 +252,7 @@ export async function startTestGame(bus: EventBus, p: any): Promise<void> {
         }
       } else {
         const before = { ...state };
-        const res = resolveSnap(state, { deckName: offenseDeckName, playLabel: (offDecision as any).playLabel, defenseLabel: defDecision.label });
+        const res = resolveSnap(state, { deckName: offensePlaybookName, playLabel: (offDecision as any).playLabel, defenseLabel: defDecision.label });
         const choice = (res.events || []).find((e: any) => e.type === 'choice-required' && e.choice === 'penaltyAcceptDecline');
         if (choice && (flow as any)?.finalizePenaltyDecision) {
           const data = choice.data || {};

@@ -19,8 +19,7 @@ import { GameFlow, type FlowEvent, type PlayInput } from './flow/GameFlow';
 import { buildPolicy } from './ai/policy/NFL2025Policy';
 import { createLCG } from './sim/RNG';
 // import { validateOffensePlay, canAttemptFieldGoal } from './rules/PlayValidation';
-import { OFFENSE_DECKS, DEFENSE_DECK, WHITE_SIGN_RESTRICTIONS } from './data/decks';
-import type { DeckName } from './data/decks';
+// Card system removed - using dice engine only
 
 let uiRegistered = false;
 const bus = new EventBus();
@@ -540,16 +539,16 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
             }).tempo as any; } catch { return 'normal'; }
           },
         } });
-        // Pick player deck from selection with fallback
-        const validDeck = (name: any): DeckName => (name === 'Pro Style' || name === 'Ball Control' || name === 'Aerial Style') ? name : 'Pro Style';
-        const playerDeck = validDeck(deckName);
-        // Map opponent to an AI deck style
-        let aiDeck: DeckName = 'Pro Style';
-        if (opponentName === 'Andy Reid') aiDeck = 'Aerial Style';
-        else if (opponentName === 'Kliff Kingsbury') aiDeck = 'Aerial Style';
-        else if (opponentName === 'Marty Schottenheimer') aiDeck = 'Ball Control';
-        else if (opponentName === 'Bill Walsh') aiDeck = 'Pro Style';
-        else if (opponentName === 'Mike Shanahan') aiDeck = 'Pro Style';
+        // Pick player playbook from selection with fallback
+        const validPlaybook = (name: any): string => (['West Coast', 'Spread', 'Air Raid', 'Smashmouth', 'Wide Zone'].includes(name)) ? name : 'West Coast';
+        const playerPlaybook = validPlaybook(deckName);
+        // Map opponent to an AI playbook style
+        let aiPlaybook: string = 'West Coast';
+        if (opponentName === 'Andy Reid') aiPlaybook = 'Air Raid';
+        else if (opponentName === 'Kliff Kingsbury') aiPlaybook = 'Air Raid';
+        else if (opponentName === 'Marty Schottenheimer') aiPlaybook = 'Smashmouth';
+        else if (opponentName === 'Bill Walsh') aiPlaybook = 'West Coast';
+        else if (opponentName === 'Mike Shanahan') aiPlaybook = 'Wide Zone';
 
         // Initial state at kickoff
         const initial: import('./domain/GameState').GameState = {
@@ -569,7 +568,7 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
         const ko = flow.performKickoff(initial, 'normal', 'ai');
         const stateAfterKO = ko.state as any;
         // Announce new game and push kickoff events now (translate declared below)
-        bus.emit('log', { message: `New game started — You: ${playerDeck} vs ${String(opponentName || 'AI')} (seed=${seed})` });
+        bus.emit('log', { message: `New game started — You: ${playerPlaybook} vs ${String(opponentName || 'AI')} (seed=${seed})` });
 
         // Emit HUD from kickoff result (already included in events, but ensure baseline)
         bus.emit('hudUpdate', {
@@ -582,29 +581,27 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
           score: stateAfterKO.score,
         } as any);
 
-        // Deal hand immediately based on possession after kickoff
+        // Initialize dice engine UI for player possession
         if (stateAfterKO.possession === 'player') {
-          const deck = OFFENSE_DECKS[playerDeck] || [];
-          const cardsToRender = deck.map((c) => ({ id: c.id, label: c.label, art: c.art, type: c.type }));
-          // Hide legacy hand when using dice engine; Controls will render dice options in left panel
-          const isDice = engineNow === 'dice';
-          if (!isDice) {
-            bus.emit('handUpdate', { cards: cardsToRender, isPlayerOffense: true } as any);
-          } else {
-            try {
-              const handEl = document.getElementById('hand');
-              const previewEl = document.getElementById('card-preview');
-              if (handEl) (handEl as HTMLElement).style.display = 'none';
-              if (previewEl) (previewEl as HTMLElement).style.display = 'none';
-            } catch {}
-          }
+          // Dice engine UI will be handled by the dice components
+          try {
+            const handEl = document.getElementById('hand');
+            const previewEl = document.getElementById('card-preview');
+            if (handEl) (handEl as HTMLElement).style.display = 'none';
+            if (previewEl) (previewEl as HTMLElement).style.display = 'none';
+          } catch {}
         } else {
-          const defCards = DEFENSE_DECK.map((d) => ({ id: (d as any).id, label: (d as any).label, art: `assets/cards/Defense/${(d as any).label}.jpg`, type: 'defense' }));
-          bus.emit('handUpdate', { cards: defCards, isPlayerOffense: false } as any);
+          // AI has possession - dice engine will handle defensive selections
+          try {
+            const handEl = document.getElementById('hand');
+            const previewEl = document.getElementById('card-preview');
+            if (handEl) (handEl as HTMLElement).style.display = 'none';
+            if (previewEl) (previewEl as HTMLElement).style.display = 'none';
+          } catch {}
         }
 
         // Store minimal runtime pointers for potential future interactions
-        (window as any).GS_RUNTIME = { flow, playerDeck, aiDeck, state: stateAfterKO, seed };
+        (window as any).GS_RUNTIME = { flow, playerPlaybook, aiPlaybook, state: stateAfterKO, seed };
 
         // Per-game player tendencies memory for adaptive AI defense
         const tendencies = new PlayerTendenciesMemory();
@@ -649,11 +646,17 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
         const deps = {
           charts: tables.offenseCharts!,
           getOffenseHand: () => {
-            const deck = OFFENSE_DECKS[playerDeck] || [];
-            return deck.map((c: any) => ({ id: c.id, label: c.label, type: c.type } as any));
+            // Return dice engine playbook data instead of card deck data
+            return [
+              { id: 'wc-quick-slant', label: 'Quick Slant', type: 'pass' },
+              { id: 'wc-screen-pass', label: 'Screen Pass', type: 'pass' },
+              { id: 'wc-stick-route', label: 'Stick Route', type: 'pass' },
+              { id: 'sm-power-o', label: 'Power O', type: 'run' },
+              { id: 'wz-inside-zone', label: 'Inside Zone', type: 'run' },
+            ];
           },
-          getDefenseOptions: () => DEFENSE_DECK.map(d => d.label) as any,
-          getWhiteSignRestriction: (label: string) => (WHITE_SIGN_RESTRICTIONS as any)[label] ?? null,
+          getDefenseOptions: () => ['Goal Line', 'Cover 2', 'Blitz', 'Prevent'],
+          getWhiteSignRestriction: (label: string) => null, // No restrictions in dice engine
         } as const;
         const pcPlayer = new PlayCaller(deps as any, true);
         const pcAI = new PlayCaller(deps as any, true);
@@ -673,54 +676,21 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
             console.log('HUD Update:', { possession, down, toGo, ballOn, currentState: rt.state });
 
             if (possession === 'player') {
-              if (engine === 'dice') {
-                // For dice engine, hide the hand and show dice options
-                try {
-                  const handEl = document.getElementById('hand');
-                  const previewEl = document.getElementById('card-preview');
-                  if (handEl) (handEl as HTMLElement).style.display = 'none';
-                  if (previewEl) (previewEl as HTMLElement).style.display = 'none';
-                } catch {}
-              } else {
-                // For deterministic engine, show legacy offense cards or special teams
-                const showSpecialTeams = down === 4 || toGo > 10;
-                console.log('Player possession, showSpecialTeams:', showSpecialTeams, { down, toGo });
-
-                if (showSpecialTeams) {
-                  // Show special teams plays on 4th down or long yardage
-                  const specialTeamsCards = [
-                    { id: 'punt', label: 'Punt', art: 'assets/cards/Special/punt.jpg', type: 'punt' },
-                    { id: 'field-goal', label: 'Field Goal', art: 'assets/cards/Special/field-goal.jpg', type: 'field-goal' }
-                  ];
-                  console.log('Emitting special teams hand update');
-                  bus.emit('handUpdate', { cards: specialTeamsCards, isPlayerOffense: true } as any);
-                } else {
-                  // Show regular offense cards
-                  const deckDef = OFFENSE_DECKS[rt.playerDeck as DeckName] || [];
-                  const cards = deckDef.map((c: any) => ({ id: c.id, label: c.label, art: c.art, type: c.type }));
-                  console.log('Emitting offense hand update, cards:', cards.length);
-                  bus.emit('handUpdate', { cards, isPlayerOffense: true } as any);
-                }
-              }
+              // For dice engine, hide the legacy hand UI
+              try {
+                const handEl = document.getElementById('hand');
+                const previewEl = document.getElementById('card-preview');
+                if (handEl) (handEl as HTMLElement).style.display = 'none';
+                if (previewEl) (previewEl as HTMLElement).style.display = 'none';
+              } catch {}
             } else {
-              // AI has possession - show defense cards for human player to select
-              const showSpecialTeams = down === 4 || toGo > 10;
-              console.log('AI possession, showSpecialTeams:', showSpecialTeams, { down, toGo });
-
-              if (showSpecialTeams) {
-                // Show special teams plays for AI on 4th down or long yardage
-                const specialTeamsCards = [
-                  { id: 'punt', label: 'Punt', art: 'assets/cards/Special/punt.jpg', type: 'punt' },
-                  { id: 'field-goal', label: 'Field Goal', art: 'assets/cards/Special/field-goal.jpg', type: 'field-goal' }
-                ];
-                console.log('Emitting AI special teams hand update');
-                bus.emit('handUpdate', { cards: specialTeamsCards, isPlayerOffense: false } as any);
-              } else {
-                // Show regular defense cards
-                const defCards = DEFENSE_DECK.map((d) => ({ id: (d as any).id, label: (d as any).label, art: `assets/cards/Defense/${(d as any).label}.jpg`, type: 'defense' }));
-                console.log('Emitting defense hand update, cards:', defCards.length);
-                bus.emit('handUpdate', { cards: defCards, isPlayerOffense: false } as any);
-              }
+              // AI has possession - dice engine will handle defensive selections
+              try {
+                const handEl = document.getElementById('hand');
+                const previewEl = document.getElementById('card-preview');
+                if (handEl) (handEl as HTMLElement).style.display = 'none';
+                if (previewEl) (previewEl as HTMLElement).style.display = 'none';
+              } catch {}
             }
           } catch (error) { console.debug('HUD sync failed', error); }
         });
@@ -776,23 +746,15 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
                 return;
               }
 
-              // Player offense: look up offense card from player's deck
-              const playerDeckDef = OFFENSE_DECKS[rt.playerDeck as DeckName] || [];
-              const legacyCard = playerDeckDef.find((c: any) => c.id === cardId);
-              const defPicked = pcAI.choose_defense_play(currentState);
-
-              // Use the new engine system for play resolution
+              // Player offense: use dice engine for play resolution
               const before = { ...currentState };
               try {
-                const offenseId = useDice ? cardId : (legacyCard as any).id;
-                const engine = engineFactory.getEngine(useDice ? 'dice' : undefined as any);
+                const defPicked = pcAI.choose_defense_play(currentState);
+                const engine = engineFactory.getEngine('dice');
 
-                // For dice engine, we need to find the defense card ID that corresponds to the picked defense
-                let defenseId = defPicked.label; // fallback to label if ID lookup fails
-                const defenseCard = DEFENSE_DECK.find(d => (d as any).label === defPicked.label);
-                if (defenseCard) {
-                  defenseId = defenseCard.id;
-                }
+                // For dice engine, use cardId directly as offense play ID
+                const offenseId = cardId;
+                const defenseId = defPicked.label;
 
                 const engineResult = await engine.resolvePlay(offenseId, defenseId, currentState, createLCG(currentState.seed));
 
@@ -878,7 +840,7 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
 
                 bus.emit('log', { message: `Play resolved: ${resultMessage}` });
 
-                try { (window as any).GS_RUNTIME.__lastOffLabel = (legacyCard as any)?.label || String(cardId); (window as any).GS_RUNTIME.__lastDefLabel = defPicked.label; }
+                try { (window as any).GS_RUNTIME.__lastOffLabel = String(cardId); (window as any).GS_RUNTIME.__lastDefLabel = defPicked.label; }
                 catch (error) { /* ignore telemetry bookkeeping errors */ }
                 (window as any).GS_RUNTIME.state = newState as any;
 
@@ -915,7 +877,7 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
               } catch (error) {
                 console.warn('Engine resolution failed, falling back to deterministic:', error);
                 // Fallback to original system
-                const input: PlayInput = { deckName: rt.playerDeck, playLabel: (legacyCard as any)?.label || String(cardId), defenseLabel: defPicked.label } as any;
+                const input: PlayInput = { deckName: rt.playerPlaybook, playLabel: String(cardId), defenseLabel: defPicked.label } as any;
                 const res = flow.resolveSnap(currentState, input);
                 translate(res.events);
                 (window as any).GS_RUNTIME.state = res.state as any;
@@ -958,14 +920,12 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
               }
 
               // AI offense: player's click selects a defense; AI picks offense via PlayCaller
-              const defCard = DEFENSE_DECK.find((d) => (d as any).id === cardId);
-              if (!defCard) return;
-              const offPicked = pcAI.choose_offense_play(currentState, rt.aiDeck as DeckName);
+              const offPicked = pcAI.choose_offense_play(currentState, rt.aiPlaybook);
 
               // Use the new engine system for play resolution
               const before = { ...currentState };
               try {
-                const engineResult = await resolvePlay(offPicked.playLabel, defCard.id, currentState, createLCG(currentState.seed));
+                const engineResult = await resolvePlay(offPicked.playLabel, cardId, currentState, createLCG(currentState.seed));
 
                 // Process dice engine result and update game state for AI
                 const newState = { ...currentState };
@@ -1050,7 +1010,7 @@ async function start(options?: { theme?: 'arcade'|'minimalist'|'retro'|'board'|'
               } catch (error) {
                 console.warn('Engine resolution failed, falling back to deterministic:', error);
                 // Fallback to original system
-                const input: PlayInput = { deckName: rt.aiDeck, playLabel: offPicked.playLabel, defenseLabel: (defCard as any).label } as any;
+                const input: PlayInput = { deckName: rt.aiPlaybook, playLabel: offPicked.playLabel, defenseLabel: cardId } as any;
                 const res = flow.resolveSnap(currentState, input);
                 translate(res.events);
                 (window as any).GS_RUNTIME.state = res.state as any;

@@ -3,7 +3,7 @@ import type { RNG } from '../RNG';
 import { GameFlow, type FlowEvent, type PlayInput } from '../../flow/GameFlow';
 import type { OffenseCharts } from '../../data/schemas/OffenseCharts';
 import type { TimeKeeping } from '../../data/schemas/Timekeeping';
-import { OFFENSE_DECKS, DEFENSE_DECK, WHITE_SIGN_RESTRICTIONS, type DeckName } from '../../data/decks';
+// Card system removed - using dice engine only
 import * as CoachProfiles from '../../ai/CoachProfiles';
 import { chooseOffense, chooseKickoff, type AIContext, PlayerTendenciesMemory } from '../../ai/Playcall';
 import { PlayCaller } from '../../ai/PlayCaller';
@@ -16,8 +16,8 @@ export interface HeadlessSimOptions {
   };
   policy: { choosePAT: (ctx: { diff: number; quarter: number; clock: number; side: 'player'|'ai' }) => 'kick'|'two' };
   seed: number;
-  playerDeck?: DeckName | undefined;
-  aiDeck?: DeckName | undefined;
+  playerPlaybook?: string | undefined;
+  aiPlaybook?: string | undefined;
   playerCoach?: keyof typeof CoachProfiles | undefined;
   aiCoach?: keyof typeof CoachProfiles | undefined;
 }
@@ -31,10 +31,10 @@ export async function runHeadlessSim(seed: number, opts: HeadlessSimOptions): Pr
   const events: FlowEvent[] = [];
   const push = (evs: FlowEvent[]) => { events.push(...evs); };
 
-  const deckNames: DeckName[] = ['Pro Style', 'Ball Control', 'Aerial Style'];
-  const randomDeck = (): DeckName => deckNames[Math.floor((rng() * deckNames.length))]!;
-  const playerDeck: DeckName = (opts.playerDeck && deckNames.includes(opts.playerDeck)) ? opts.playerDeck : randomDeck();
-  const aiDeck: DeckName = (opts.aiDeck && deckNames.includes(opts.aiDeck)) ? opts.aiDeck : randomDeck();
+  const playbookNames: string[] = ['West Coast', 'Spread', 'Air Raid', 'Smashmouth', 'Wide Zone'];
+  const randomPlaybook = (): string => playbookNames[Math.floor((rng() * playbookNames.length))]!;
+  const playerPlaybook: string = (opts.playerPlaybook && playbookNames.includes(opts.playerPlaybook)) ? opts.playerPlaybook : randomPlaybook();
+  const aiPlaybook: string = (opts.aiPlaybook && playbookNames.includes(opts.aiPlaybook)) ? opts.aiPlaybook : randomPlaybook();
   const coachKeys = Object.keys(CoachProfiles) as Array<keyof typeof CoachProfiles>;
   const pickCoach = () => {
     const idx = Math.floor(rng() * Math.max(1, coachKeys.length));
@@ -55,9 +55,14 @@ export async function runHeadlessSim(seed: number, opts: HeadlessSimOptions): Pr
   let currentOffenseDeck: any[] = [];
   const deps = {
     charts,
-    getOffenseHand: () => currentOffenseDeck.map((c: any) => ({ id: c.id, label: c.label, type: c.type })),
-    getDefenseOptions: () => DEFENSE_DECK.map(d => d.label),
-    getWhiteSignRestriction: (label: string) => (WHITE_SIGN_RESTRICTIONS as any)[label] ?? null,
+    getOffenseHand: () => [
+      { id: 'wc-quick-slant', label: 'Quick Slant', type: 'pass' },
+      { id: 'wc-screen-pass', label: 'Screen Pass', type: 'pass' },
+      { id: 'sm-power-o', label: 'Power O', type: 'run' },
+      { id: 'wz-inside-zone', label: 'Inside Zone', type: 'run' },
+    ],
+    getDefenseOptions: () => ['Goal Line', 'Cover 2', 'Blitz', 'Prevent'],
+    getWhiteSignRestriction: (label: string) => null, // No restrictions in dice engine
   } as const;
   const pcPlayer = new PlayCaller(deps as any, true);
   const pcAI = new PlayCaller(deps as any, true);
@@ -67,8 +72,7 @@ export async function runHeadlessSim(seed: number, opts: HeadlessSimOptions): Pr
   const MAX_SNAPS = 400;
   for (let i = 0; i < MAX_SNAPS && !state.gameOver; i++) {
     const offenseIsPlayer = state.possession === 'player';
-    const offenseDeckName = offenseIsPlayer ? playerDeck : aiDeck;
-    const offenseDeck = OFFENSE_DECKS[offenseDeckName] || OFFENSE_DECKS['Pro Style'];
+    const offensePlaybookName = offenseIsPlayer ? playerPlaybook : aiPlaybook;
     const offenseCoach = offenseIsPlayer ? playerCoach : aiCoach;
     const defenseCoach = offenseIsPlayer ? aiCoach : playerCoach;
 
@@ -76,13 +80,18 @@ export async function runHeadlessSim(seed: number, opts: HeadlessSimOptions): Pr
       state,
       charts: charts!,
       coach: forOffense ? offenseCoach : defenseCoach,
-      deckName: offenseDeckName,
+      deckName: offensePlaybookName,
       playerIsHome: true,
       rng,
-      getOffenseHand: () => offenseDeck.map(c => ({ id: c.id, label: c.label, type: c.type } as any)),
-      getDefenseOptions: () => DEFENSE_DECK.map(d => d.label) as any,
+      getOffenseHand: () => [
+        { id: 'wc-quick-slant', label: 'Quick Slant', type: 'pass' },
+        { id: 'wc-screen-pass', label: 'Screen Pass', type: 'pass' },
+        { id: 'sm-power-o', label: 'Power O', type: 'run' },
+        { id: 'wz-inside-zone', label: 'Inside Zone', type: 'run' },
+      ],
+      getDefenseOptions: () => ['Goal Line', 'Cover 2', 'Blitz', 'Prevent'],
       isTwoMinute: (q: number, clock: number) => ((q === 2 || q === 4) && clock <= 120),
-      getWhiteSignRestriction: (label: string) => (WHITE_SIGN_RESTRICTIONS as any)[label] ?? null,
+      getWhiteSignRestriction: (label: string) => null, // No restrictions in dice engine
       getFieldGoalAttemptYards: (st) => {
         const offenseIsHome = (st.possession === 'player');
         const yardsToOpp = offenseIsHome ? (100 - st.ballOn) : st.ballOn;

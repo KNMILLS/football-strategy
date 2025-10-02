@@ -1,23 +1,73 @@
 import type { EventBus } from '../../utils/EventBus';
 import type { ButtonCard, ButtonDefensiveCard, PlaybookSelectionState, DefensiveSelectionState, DiceUIConfig } from './types';
-import { CardCatalogAccessor } from '../../data/cards/CardCatalog';
+import type { PlaybookName, CardType, DefensivePlay } from '../../types/dice';
 
 // Tier-1 play mappings (only show these in the UI for MVP)
-const TIER_1_PLAYS: Record<string, string[]> = {
-  'WEST_COAST': [
+const TIER_1_PLAYS: Record<PlaybookName, string[]> = {
+  'West Coast': [
     'wc-quick-slant', 'wc-screen-pass', 'wc-stick-route', 'wc-slants', 'wc-rb-screen', 'wc-flood-concept'
   ],
-  'SPREAD': [
+  'Spread': [
     'spread-mesh-concept', 'spread-smash-route', 'spread-air-raid', 'spread-rpo-bubble', 'spread-zone-read', 'spread-rpo-bubble'
   ],
-  'AIR_RAID': [
+  'Air Raid': [
     'AIR_RAID_FOUR_VERTS', 'AIR_RAID_MILLS', 'ar-spot', 'AIR_RAID_PA_DEEP_SHOT', 'ar-y-stick', 'ar-spot'
   ],
-  'SMASHMOUTH': [
+  'Smashmouth': [
     'sm-power-o', 'sm-counter', 'sm-iso', 'sm-toss', 'sm-bootleg', 'sm-te-seam'
   ],
-  'WIDE_ZONE': [
+  'Wide Zone': [
     'wz-wide-zone', 'wz-inside-zone', 'wz-counter', 'wz-bootleg', 'wz-play-action', 'wz-toss-sweep'
+  ]
+};
+
+// Static dice engine play definitions
+const DICE_ENGINE_PLAYS: Record<PlaybookName, Array<{
+  id: string;
+  label: string;
+  type: CardType;
+  description: string;
+  riskLevel: 1 | 2 | 3 | 4 | 5;
+}>> = {
+  'West Coast': [
+    { id: 'wc-quick-slant', label: 'Quick Slant', type: 'pass', description: 'Fast-developing slant route for quick yards', riskLevel: 2 },
+    { id: 'wc-screen-pass', label: 'Screen Pass', type: 'pass', description: 'Screen pass behind the line of scrimmage', riskLevel: 2 },
+    { id: 'wc-stick-route', label: 'Stick Route', type: 'pass', description: 'Short crossing routes underneath coverage', riskLevel: 3 },
+    { id: 'wc-slants', label: 'Slants', type: 'pass', description: 'Multiple slant routes across the field', riskLevel: 3 },
+    { id: 'wc-rb-screen', label: 'RB Screen', type: 'pass', description: 'Screen pass to running back', riskLevel: 2 },
+    { id: 'wc-flood-concept', label: 'Flood Concept', type: 'pass', description: 'Three-level flood route combination', riskLevel: 4 }
+  ],
+  'Spread': [
+    { id: 'spread-mesh-concept', label: 'Mesh Concept', type: 'pass', description: 'Crossing routes creating mesh underneath', riskLevel: 3 },
+    { id: 'spread-smash-route', label: 'Smash Route', type: 'pass', description: 'Corner and hitch routes for intermediate yards', riskLevel: 3 },
+    { id: 'spread-air-raid', label: 'Air Raid', type: 'pass', description: 'Vertical stretch with multiple deep routes', riskLevel: 5 },
+    { id: 'spread-rpo-bubble', label: 'RPO Bubble', type: 'pass', description: 'Run-pass option with bubble screen threat', riskLevel: 3 },
+    { id: 'spread-zone-read', label: 'Zone Read', type: 'run', description: 'Zone read handoff to running back', riskLevel: 2 },
+    { id: 'spread-rpo-bubble', label: 'RPO Bubble', type: 'pass', description: 'Run-pass option with bubble screen', riskLevel: 3 }
+  ],
+  'Air Raid': [
+    { id: 'AIR_RAID_FOUR_VERTS', label: 'Four Verts', type: 'pass', description: 'Four vertical routes stretching the field', riskLevel: 5 },
+    { id: 'AIR_RAID_MILLS', label: 'Mills Concept', type: 'pass', description: 'Y-Stick with corner route combination', riskLevel: 4 },
+    { id: 'ar-spot', label: 'Spot Concept', type: 'pass', description: 'Spot route with underneath options', riskLevel: 3 },
+    { id: 'AIR_RAID_PA_DEEP_SHOT', label: 'PA Deep Shot', type: 'pass', description: 'Play-action deep shot downfield', riskLevel: 5 },
+    { id: 'ar-y-stick', label: 'Y-Stick', type: 'pass', description: 'Stick route with Y receiver option', riskLevel: 3 },
+    { id: 'ar-spot', label: 'Spot Route', type: 'pass', description: 'Spot route underneath coverage', riskLevel: 3 }
+  ],
+  'Smashmouth': [
+    { id: 'sm-power-o', label: 'Power O', type: 'run', description: 'Power run off-tackle with lead blocker', riskLevel: 2 },
+    { id: 'sm-counter', label: 'Counter', type: 'run', description: 'Counter run with misdirection', riskLevel: 3 },
+    { id: 'sm-iso', label: 'Iso', type: 'run', description: 'Isolation run with pulling guard', riskLevel: 3 },
+    { id: 'sm-toss', label: 'Toss', type: 'run', description: 'Toss sweep to the perimeter', riskLevel: 3 },
+    { id: 'sm-bootleg', label: 'Bootleg', type: 'run', description: 'Quarterback bootleg with run threat', riskLevel: 4 },
+    { id: 'sm-te-seam', label: 'TE Seam', type: 'pass', description: 'Tight end seam route down the middle', riskLevel: 4 }
+  ],
+  'Wide Zone': [
+    { id: 'wz-wide-zone', label: 'Wide Zone', type: 'run', description: 'Wide zone run with cutback lanes', riskLevel: 2 },
+    { id: 'wz-inside-zone', label: 'Inside Zone', type: 'run', description: 'Inside zone run with multiple gaps', riskLevel: 2 },
+    { id: 'wz-counter', label: 'Counter', type: 'run', description: 'Counter run with misdirection', riskLevel: 3 },
+    { id: 'wz-bootleg', label: 'Bootleg', type: 'run', description: 'Quarterback bootleg with run threat', riskLevel: 4 },
+    { id: 'wz-play-action', label: 'Play Action', type: 'pass', description: 'Play-action pass off run fake', riskLevel: 4 },
+    { id: 'wz-toss-sweep', label: 'Toss Sweep', type: 'run', description: 'Toss sweep to the perimeter', riskLevel: 3 }
   ]
 };
 
@@ -51,7 +101,7 @@ export class CardSelector {
     this.bus = bus;
     this.config = config;
     this.playbookState = {
-      availablePlaybooks: ['West Coast', 'Spread', 'Air Raid', 'Smashmouth', 'Wide Zone'],
+      availablePlaybooks: ['West Coast', 'Spread', 'Air Raid', 'Smashmouth', 'Wide Zone'] as PlaybookName[],
       cards: []
     };
     this.defensiveState = {
@@ -253,53 +303,46 @@ export class CardSelector {
     return 'Very high risk';
   }
 
-  private async applyPlaybookSelection(playbook: string): Promise<void> {
-    if (!this.playbookState.availablePlaybooks.includes(playbook)) {
+  private applyPlaybookSelection(playbook: string): void {
+    if (!this.playbookState.availablePlaybooks.includes(playbook as PlaybookName)) {
       console.warn(`Invalid playbook selected: ${playbook}`);
       return;
     }
 
     this.playbookState.selectedPlaybook = playbook;
 
-    try {
-      // Get all cards for this playbook from the catalog
-      const allCards = await CardCatalogAccessor.getPlaybookCards(playbook as any);
+    // Get all cards for this playbook from static data
+    const allCards = DICE_ENGINE_PLAYS[playbook as PlaybookName] || [];
 
-      // Filter to only Tier-1 plays
-      const tier1PlayIds = TIER_1_PLAYS[playbook] || [];
-      const tier1Cards = allCards.filter(card => tier1PlayIds.includes(card.id));
+    // Filter to only Tier-1 plays
+    const tier1PlayIds = TIER_1_PLAYS[playbook as PlaybookName] || [];
+    const tier1Cards = allCards.filter(card => tier1PlayIds.includes(card.id));
 
-      // Map to button cards with risk information
-      this.playbookState.cards = tier1Cards.map((card, index) => {
-        const riskLevel = this.mapRiskLevel(card.riskLevel);
-        const riskText = this.getRiskText(riskLevel);
+    // Map to button cards with risk information
+    this.playbookState.cards = tier1Cards.map((card, index) => {
+      const riskLevel = card.riskLevel;
+      const riskText = this.getRiskText(riskLevel);
 
-        return {
-          label: card.label,
-          type: card.type,
-          description: card.description,
-          riskLevel,
-          id: `${playbook.toLowerCase().replace(' ', '-')}-card-${index}`,
-          playbook: playbook as any,
-          isSelected: false,
-          isDisabled: false,
-          isHovered: false,
-          ariaLabel: `${card.label}: ${card.description}. Risk level: ${riskText}`,
-          variant: 'primary' as const
-        };
-      });
+      return {
+        label: card.label,
+        type: card.type,
+        description: card.description,
+        riskLevel,
+        id: `${playbook.toLowerCase().replace(' ', '-')}-card-${index}`,
+        playbook: playbook as PlaybookName,
+        isSelected: false,
+        isDisabled: false,
+        isHovered: false,
+        ariaLabel: `${card.label}: ${card.description}. Risk level: ${riskText}`,
+        variant: 'primary' as const
+      };
+    });
 
-      this.renderPlaybookCards();
+    this.renderPlaybookCards();
 
-      // Announce selection for screen readers
-      if (this.config.accessibility.announceCardSelections) {
-        this.announceToScreenReader(`Playbook changed to ${playbook}. ${tier1Cards.length} plays available`);
-      }
-    } catch (error) {
-      console.error('Failed to load playbook cards:', error);
-      // Fallback to empty cards
-      this.playbookState.cards = [];
-      this.renderPlaybookCards();
+    // Announce selection for screen readers
+    if (this.config.accessibility.announceCardSelections) {
+      this.announceToScreenReader(`Playbook changed to ${playbook}. ${tier1Cards.length} plays available`);
     }
   }
 
