@@ -159,7 +159,7 @@ export class GameFlowCore {
    */
   resolvePATAndRestart(state: GameState, side: TeamSide): { state: GameState; events: FlowEvent[] } {
     return resolvePATAndRestartExt(state, side, {
-      rng: () => this.ctx.rng?.() || Math.random(),
+      rng: () => this.ctx.rng?.() ?? (() => { throw new Error('RNG not provided'); })(),
       attemptPatInternal: (r) => attemptPatInternal(r as any),
       scoringSideToDelta: (s, p) => scoringSideToDelta(s, p),
       isTrailing: (s, score) => isTrailing(s, score),
@@ -178,10 +178,10 @@ export class GameFlowCore {
    */
   attemptFieldGoal(state: GameState, attemptYards: number, side: TeamSide): { state: GameState; events: FlowEvent[] } {
     return attemptFieldGoalFlow(state, attemptYards, side, {
-      rng: () => this.ctx.rng?.() || Math.random(),
+      rng: () => this.ctx.rng?.() ?? (() => { throw new Error('RNG not provided'); })(),
       attemptFieldGoalKick: (r, y) => attemptFieldGoalKick(r as any, y),
       scoringSideToDelta: (s, p) => scoringSideToDelta(s, p),
-      randomHash: () => randomHash(this.ctx.rng),
+      randomHash: () => randomHash(this.ctx.rng!),
       formatClock: (n) => formatClock(n),
       formatTeamYardLine: (p, b) => formatTeamYardLine(p, b),
       performKickoff: (st, type, kicking) => this.performKickoff(st, type, kicking),
@@ -443,7 +443,7 @@ export class GameFlowCore {
     return buildResultSummaryExt(pre, next, outcome, flags, currentPlayLabel, defenseLabel, {
       formatOrdinal: (n) => formatOrdinal(n),
       formatTeamYardLine: (p, b) => formatTeamYardLine(p, b),
-      rng: () => this.ctx.rng?.() || Math.random(),
+      rng: () => this.ctx.rng?.() ?? (() => { throw new Error('RNG not provided'); })(),
       getLastNotesForSide: (side) => this.tracker.getLastNotesForSide(side),
       setLastNotesForSide: (side, notes) => this.tracker.setLastNotesForSide(side, notes),
     });

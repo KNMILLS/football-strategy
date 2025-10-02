@@ -1,5 +1,5 @@
-import { EventBus } from '../utils/EventBus';
-import type { DeckName } from '../data/decks';
+import { EventBus, getErrorMessage } from '../../utils/EventBus';
+import type { DeckName } from '../../data/decks';
 
 /**
  * UI automation tester specifically designed for Gridiron football game
@@ -76,7 +76,7 @@ export class UIAutomationTester {
       return { success: true };
 
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -125,7 +125,7 @@ export class UIAutomationTester {
       return { success: true };
 
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -174,7 +174,7 @@ export class UIAutomationTester {
       return { success: true };
 
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -222,7 +222,7 @@ export class UIAutomationTester {
       return { success: true };
 
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -262,7 +262,7 @@ export class UIAutomationTester {
       return { success: true };
 
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -358,7 +358,7 @@ export class UIAutomationTester {
       return { success: true };
 
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 

@@ -1,4 +1,4 @@
-import { EventBus } from '../utils/EventBus';
+import { EventBus, getErrorMessage } from '../../utils/EventBus';
 /**
  * Game flow validator specifically designed for Gridiron football simulation
  * Tests core game mechanics, rule compliance, and AI behavior
@@ -68,7 +68,7 @@ export class GameFlowValidator {
             }
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -92,7 +92,7 @@ export class GameFlowValidator {
             }
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -116,7 +116,7 @@ export class GameFlowValidator {
             }
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -140,7 +140,7 @@ export class GameFlowValidator {
             }
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -161,7 +161,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -174,7 +174,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -187,7 +187,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -200,7 +200,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -213,7 +213,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -226,7 +226,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -239,7 +239,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -253,7 +253,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -267,7 +267,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -280,7 +280,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -293,7 +293,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -306,7 +306,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -319,7 +319,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -332,7 +332,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -345,7 +345,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -358,7 +358,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -371,7 +371,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -384,7 +384,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -397,7 +397,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -410,7 +410,7 @@ export class GameFlowValidator {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**

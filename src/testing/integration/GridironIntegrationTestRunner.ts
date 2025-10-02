@@ -1,10 +1,10 @@
-import { EventBus } from '../utils/EventBus';
+import { EventBus, getErrorMessage } from '../../utils/EventBus';
 import { RuntimeValidator } from './RuntimeValidator';
 import { ComponentHealthMonitor } from './ComponentHealthMonitor';
 import { GameFlowValidator } from './GameFlowValidator';
 import { UIAutomationTester } from './UIAutomationTester';
-import type { GameState, TeamSide } from '../domain/GameState';
-import type { DeckName } from '../data/decks';
+import type { GameState, TeamSide } from '../../domain/GameState';
+import type { DeckName } from '../../data/decks';
 
 /**
  * Main integration test runner specifically tailored for Gridiron football simulation
@@ -57,7 +57,7 @@ export class GridironIntegrationTestRunner {
       await this.runPostTestValidation();
 
     } catch (error) {
-      this.recordTestResult('critical_error', 'FAILED', error.message);
+      this.recordTestResult('critical_error', 'FAILED', getErrorMessage(error));
     }
 
     const duration = performance.now() - startTime;
@@ -214,7 +214,7 @@ export class GridironIntegrationTestRunner {
         gameValidation.isValid ? undefined : gameValidation.errors.join(', '));
 
     } catch (error) {
-      this.recordTestResult(`game_scenario_${scenarioName}`, 'FAILED', error.message);
+      this.recordTestResult(`game_scenario_${scenarioName}`, 'FAILED', getErrorMessage(error));
     }
   }
 
@@ -289,7 +289,7 @@ export class GridironIntegrationTestRunner {
     return new Promise((resolve) => {
       // Use existing QA harness to start automated game
       this.bus.emit('qa:startTestGame', {
-        seed: Math.floor(Math.random() * 1e9),
+        seed: 123456789,
         playerDeck: config.playerDeck,
         aiDeck: config.aiDeck,
         startingPossession: 'player'
@@ -393,7 +393,7 @@ export class GridironIntegrationTestRunner {
     this.testResults.push({
       name: testName,
       status,
-      message,
+      ...(message !== undefined && { message }),
       timestamp: Date.now()
     });
   }
@@ -420,8 +420,7 @@ export class GridironIntegrationTestRunner {
       },
       results: this.testResults,
       timestamp: Date.now(),
-      baselineComparison: this.baselineData ?
-        this.compareWithBaseline() : undefined
+      ...(this.baselineData && { baselineComparison: this.compareWithBaseline() })
     };
   }
 

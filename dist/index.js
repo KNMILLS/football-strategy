@@ -11,6 +11,7 @@ import * as CoachProfiles from './ai/CoachProfiles';
 import { PlayerTendenciesMemory } from './ai/Playcall';
 import { PlayCaller } from './ai/PlayCaller';
 import { resolvePlayCore } from './rules/ResolvePlayCore';
+import { resolvePlay, engineFactory } from './config/EngineSelector';
 import { EventBus } from './utils/EventBus';
 import { GameFlow } from './flow/GameFlow';
 import { buildPolicy } from './ai/policy/NFL2025Policy';
@@ -39,6 +40,9 @@ async function ensureUIRegistered() {
         await registerInteractiveUI(ErrorBoundary, createFallbackHand, createFallbackControls, createGenericFallback);
         // Register optional UI components (non-critical features)
         await registerOptionalUI();
+        // Initialize engine indicator
+        const { registerEngineIndicator } = await import('./ui/EngineIndicator');
+        registerEngineIndicator(bus);
         uiRegistered = true;
         hideLoadingSpinner();
         // Emit ready event for progressive enhancement
@@ -612,12 +616,14 @@ async function start(options) {
                     catch { }
                 });
                 // Listen for player selection; if player has ball, it's an offense play; if AI has ball, selection is defense
-                bus.on('ui:playCard', ({ cardId }) => {
+                bus.on('ui:playCard', async ({ cardId }) => {
                     try {
                         const rt = window.GS_RUNTIME || {};
                         const currentState = rt.state;
                         if (!currentState || currentState.gameOver)
                             return;
+                        // Initialize engine factory if not already done
+                        await engineFactory.initialize();
                         if (currentState.possession === 'player') {
                             // Player offense: look up offense card from player's deck
                             const playerDeckDef = OFFENSE_DECKS[rt.playerDeck] || [];
@@ -625,34 +631,49 @@ async function start(options) {
                             if (!card)
                                 return;
                             const defPicked = pcAI.choose_defense_play(currentState);
-                            const input = { deckName: rt.playerDeck, playLabel: card.label, defenseLabel: defPicked.label };
+                            // Use the new engine system for play resolution
                             const before = { ...currentState };
-                            const res = flow.resolveSnap(currentState, input);
                             try {
-                                window.GS_RUNTIME.__lastOffLabel = card.label;
-                                window.GS_RUNTIME.__lastDefLabel = defPicked.label;
+                                const defenseCard = DEFENSE_DECK.find(d => d.label === defPicked.label);
+                                const engineResult = await resolvePlay(card.id, defenseCard?.id || defPicked.label, currentState, createLCG(currentState.seed));
+                                // Convert engine result back to flow events (simplified for now)
+                                // TODO: Implement proper event translation from engine result
+                                bus.emit('log', { message: `Play resolved: ${engineResult.yards > 0 ? 'Gain' : engineResult.yards < 0 ? 'Loss' : 'No gain'} of ${Math.abs(engineResult.yards)} yards` });
+                                if (engineResult.turnover) {
+                                    bus.emit('log', { message: `${engineResult.turnover.type} - ${engineResult.turnover.return_yards ? `${engineResult.turnover.return_yards} yard return` : 'Turnover'}` });
+                                }
+                                // Update game state based on result (simplified)
+                                const newState = { ...currentState };
+                                if (engineResult.yards !== 0) {
+                                    newState.ballOn = Math.max(0, Math.min(100, newState.ballOn + (newState.possession === 'player' ? engineResult.yards : -engineResult.yards)));
+                                }
+                                try {
+                                    window.GS_RUNTIME.__lastOffLabel = card.label;
+                                    window.GS_RUNTIME.__lastDefLabel = defPicked.label;
+                                }
+                                catch { }
+                                window.GS_RUNTIME.state = newState;
+                                // TODO: Update tendencies and AI observations based on engine result
+                                try {
+                                    const playType = (/pass/i.test(card.label) ? 'pass' : 'run');
+                                    tendencies.record('player', playType, {
+                                        down: before.down,
+                                        toGo: before.toGo,
+                                        ballOnFromHome: before.ballOn,
+                                        playerIsHome: true,
+                                        possessing: before.possession,
+                                    });
+                                }
+                                catch { }
                             }
-                            catch { }
-                            translate(res.events);
-                            window.GS_RUNTIME.state = res.state;
-                            try {
-                                pcPlayer.add_observation(before, card.label, defPicked.label);
-                                pcAI.add_observation(before, card.label, defPicked.label);
-                                pcPlayer.stepDecay();
-                                pcAI.stepDecay();
+                            catch (error) {
+                                console.warn('Engine resolution failed, falling back to deterministic:', error);
+                                // Fallback to original system
+                                const input = { deckName: rt.playerDeck, playLabel: card.label, defenseLabel: defPicked.label };
+                                const res = flow.resolveSnap(currentState, input);
+                                translate(res.events);
+                                window.GS_RUNTIME.state = res.state;
                             }
-                            catch { }
-                            try {
-                                const playType = (/pass/i.test(card.label) ? 'pass' : 'run');
-                                tendencies.record('player', playType, {
-                                    down: before.down,
-                                    toGo: before.toGo,
-                                    ballOnFromHome: before.ballOn,
-                                    playerIsHome: true,
-                                    possessing: before.possession,
-                                });
-                            }
-                            catch { }
                         }
                         else {
                             // AI offense: player's click selects a defense; AI picks offense via PlayCaller
@@ -660,23 +681,37 @@ async function start(options) {
                             if (!defCard)
                                 return;
                             const offPicked = pcAI.choose_offense_play(currentState, rt.aiDeck);
-                            const input = { deckName: rt.aiDeck, playLabel: offPicked.playLabel, defenseLabel: defCard.label };
+                            // Use the new engine system for play resolution
                             const before = { ...currentState };
-                            const res = flow.resolveSnap(currentState, input);
                             try {
-                                window.GS_RUNTIME.__lastOffLabel = offPicked.playLabel;
-                                window.GS_RUNTIME.__lastDefLabel = defCard.label;
+                                const engineResult = await resolvePlay(offPicked.playLabel, defCard.id, currentState, createLCG(currentState.seed));
+                                // Convert engine result back to flow events (simplified for now)
+                                // TODO: Implement proper event translation from engine result
+                                bus.emit('log', { message: `AI Play resolved: ${engineResult.yards > 0 ? 'Gain' : engineResult.yards < 0 ? 'Loss' : 'No gain'} of ${Math.abs(engineResult.yards)} yards` });
+                                if (engineResult.turnover) {
+                                    bus.emit('log', { message: `AI ${engineResult.turnover.type} - ${engineResult.turnover.return_yards ? `${engineResult.turnover.return_yards} yard return` : 'Turnover'}` });
+                                }
+                                // Update game state based on result (simplified)
+                                const newState = { ...currentState };
+                                if (engineResult.yards !== 0) {
+                                    newState.ballOn = Math.max(0, Math.min(100, newState.ballOn + (newState.possession === 'player' ? engineResult.yards : -engineResult.yards)));
+                                }
+                                try {
+                                    window.GS_RUNTIME.__lastOffLabel = offPicked.playLabel;
+                                    window.GS_RUNTIME.__lastDefLabel = defCard.label;
+                                }
+                                catch { }
+                                window.GS_RUNTIME.state = newState;
+                                // TODO: Update tendencies and AI observations based on engine result
                             }
-                            catch { }
-                            translate(res.events);
-                            window.GS_RUNTIME.state = res.state;
-                            try {
-                                pcPlayer.add_observation(before, offPicked.playLabel, defCard.label);
-                                pcAI.add_observation(before, offPicked.playLabel, defCard.label);
-                                pcPlayer.stepDecay();
-                                pcAI.stepDecay();
+                            catch (error) {
+                                console.warn('Engine resolution failed, falling back to deterministic:', error);
+                                // Fallback to original system
+                                const input = { deckName: rt.aiDeck, playLabel: offPicked.playLabel, defenseLabel: defCard.label };
+                                const res = flow.resolveSnap(currentState, input);
+                                translate(res.events);
+                                window.GS_RUNTIME.state = res.state;
                             }
-                            catch { }
                         }
                     }
                     catch (err) {

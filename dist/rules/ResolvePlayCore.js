@@ -1,4 +1,4 @@
-import { determineOutcomeFromCharts } from './Charts';
+import { determineOutcomeFromCharts, getTelemetryCollector } from './Charts';
 // import { parseResultString } from './ResultParsing';
 import { timeOffWithTwoMinute } from './Timekeeping';
 import { administerPenalty } from './PenaltyAdmin';
@@ -39,6 +39,16 @@ function handleScoring(state) {
 }
 export function resolvePlayCore(input) {
     let { state } = input;
+    // Capture game state before play resolution for telemetry
+    const gameStateBefore = {
+        quarter: state.quarter,
+        clock: state.clock,
+        down: state.down,
+        toGo: state.toGo,
+        ballOn: state.ballOn,
+        possession: state.possession,
+        score: { ...state.score }
+    };
     const outcome = determineOutcomeFromCharts({
         deckName: input.deckName,
         playLabel: input.playLabel,
@@ -124,9 +134,87 @@ export function resolvePlayCore(input) {
     const wasFirstDown = !possessionChanged && (outcome.category === 'gain' && outcome.yards > 0 && outcome.yards >= state.toGo);
     const timeOff = timeOffWithTwoMinute(outcome, false /* caller should pass real two-minute later */, wasFirstDown);
     next.clock = Math.max(0, state.clock - timeOff);
+    // Capture game state after play resolution for telemetry
+    const gameStateAfter = {
+        quarter: next.quarter,
+        clock: next.clock,
+        down: next.down,
+        toGo: next.toGo,
+        ballOn: next.ballOn,
+        possession: next.possession,
+        score: { ...next.score }
+    };
     // Scoring check
     const scoreRes = handleScoring(next);
     next = scoreRes.state;
+    // Update gameStateAfter with final state after scoring
+    gameStateAfter.quarter = next.quarter;
+    gameStateAfter.score.player = next.score.player;
+    gameStateAfter.score.ai = next.score.ai;
+    // Record telemetry events if collector is available
+    const telemetryCollector = getTelemetryCollector();
+    if (telemetryCollector) {
+        // Record play resolution event
+        telemetryCollector.recordPlayResolved({
+            playLabel: input.playLabel,
+            defenseLabel: input.defenseLabel,
+            deckName: input.deckName,
+            gameStateBefore,
+            gameStateAfter,
+            outcome: {
+                category: outcome.category || 'other',
+                yards: outcome.yards,
+                touchdown: scoreRes.touchdown,
+                safety: scoreRes.safety,
+                possessionChanged
+            }
+        });
+        // Record game state change if state changed significantly
+        if (gameStateBefore.ballOn !== gameStateAfter.ballOn ||
+            gameStateBefore.down !== gameStateAfter.down ||
+            gameStateBefore.possession !== gameStateAfter.possession) {
+            telemetryCollector.recordGameStateChange({
+                changeType: 'field_position',
+                oldState: gameStateBefore,
+                newState: gameStateAfter,
+                reason: 'play_resolution'
+            });
+        }
+        // Record time update
+        if (gameStateBefore.clock !== gameStateAfter.clock) {
+            telemetryCollector.recordTimeUpdate({
+                clockBefore: gameStateBefore.clock,
+                clockAfter: gameStateAfter.clock,
+                timeElapsed: gameStateBefore.clock - gameStateAfter.clock,
+                quarter: gameStateBefore.quarter,
+                reason: 'play_resolution'
+            });
+        }
+        // Record possession change if possession changed
+        if (possessionChanged && gameStateBefore.possession !== gameStateAfter.possession) {
+            telemetryCollector.recordPossessionChange({
+                possessionBefore: gameStateBefore.possession,
+                possessionAfter: gameStateAfter.possession,
+                reason: 'turnover',
+                spot: gameStateAfter.ballOn,
+                down: gameStateAfter.down,
+                toGo: gameStateAfter.toGo
+            });
+        }
+        // Record scoring event if touchdown or safety
+        if (scoreRes.touchdown || scoreRes.safety) {
+            const scoringTeam = scoreRes.touchdown ?
+                (gameStateBefore.possession === 'player' ? 'player' : 'ai') :
+                (gameStateBefore.possession === 'player' ? 'ai' : 'player');
+            telemetryCollector.recordScoringEvent({
+                scoringTeam,
+                points: scoreRes.touchdown ? 6 : 2,
+                scoreType: scoreRes.touchdown ? 'TD' : 'Safety',
+                gameStateBefore,
+                gameStateAfter
+            });
+        }
+    }
     return { state: next, outcome, touchdown: scoreRes.touchdown, safety: scoreRes.safety, possessionChanged };
 }
 //# sourceMappingURL=ResolvePlayCore.js.map

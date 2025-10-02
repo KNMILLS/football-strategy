@@ -18,7 +18,7 @@ export class DriveTracker {
   };
 
   constructor(private rng: RNG) {
-    const pick = <T>(arr: T[]): T => arr[Math.floor(((this.rng?.() || Math.random())) * arr.length)]!;
+    const pick = <T>(arr: T[]): T => arr[Math.floor(this.rng() * arr.length)]!;
     this.weather = {
       temp: pick(['crisp','mild','warm','hot']),
       wind: pick(['calm','light breeze','gusty','quartering wind']),

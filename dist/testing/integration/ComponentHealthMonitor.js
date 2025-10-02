@@ -1,4 +1,4 @@
-import { EventBus } from '../utils/EventBus';
+import { EventBus, getErrorMessage } from '../../utils/EventBus';
 /**
  * Component health monitor specifically designed for Gridiron UI components
  * Validates component registration, rendering, event handling, and error boundaries
@@ -26,7 +26,7 @@ export class ComponentHealthMonitor {
         this.bus.on('component:error', ({ componentName, error }) => {
             this.updateComponentHealth(componentName, {
                 status: 'error',
-                error: error.message,
+                error: getErrorMessage(error),
                 lastError: Date.now()
             });
         });
@@ -34,7 +34,7 @@ export class ComponentHealthMonitor {
         this.bus.on('errorBoundary:error', ({ componentName, error }) => {
             this.updateComponentHealth(componentName, {
                 status: 'error_boundary',
-                error: error.message,
+                error: getErrorMessage(error),
                 errorBoundaryTriggered: true
             });
         });
@@ -74,7 +74,7 @@ export class ComponentHealthMonitor {
         }
         catch (error) {
             health.status = 'error';
-            health.error = error.message;
+            health.error = getErrorMessage(error);
             health.lastCheck = Date.now();
             this.componentHealth.set(componentName, health);
             return health;

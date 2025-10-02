@@ -1,3 +1,15 @@
+/**
+ * Safely extracts an error message from an unknown error object
+ */
+export function getErrorMessage(error) {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    if (typeof error === 'string') {
+        return error;
+    }
+    return 'Unknown error occurred';
+}
 export class EventBus {
     listeners = {};
     on(event, handler) {

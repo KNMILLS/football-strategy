@@ -30,9 +30,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">55% </span>
+                <span class="strong">52.17% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>11/20</span>
+                <span class='fraction'>12/23</span>
             </div>
         
             
@@ -135,7 +135,12 @@
 <a name='L70'></a><a href='#L70'>70</a>
 <a name='L71'></a><a href='#L71'>71</a>
 <a name='L72'></a><a href='#L72'>72</a>
-<a name='L73'></a><a href='#L73'>73</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -154,6 +159,10 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -189,6 +198,7 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
@@ -205,8 +215,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { RNG } from '../../sim/RNG';
 &nbsp;
 export const PUNT_DISTANCE_TABLE: Record&lt;number, number&gt; = {
@@ -237,6 +247,10 @@ export interface PuntOutcome {
   possessionFlips: boolean;
   fumbleRecoveredByKickingTeam: boolean;
   touchback: boolean;
+  // Optional narration aids
+  distance?: number;
+  returnYards?: number;
+  returnType?: 'LG'|'FC'|'YDS';
 }
 &nbsp;
 export function rollD6(rng: RNG): number { return Math.floor(rng() * 6) + 1; }
@@ -252,7 +266,7 @@ export function resolvePunt(ctx: PuntContext, rng: RNG, resolveLongGain: (rng: R
     const receiving = puntingIsPlayer ? <span class="branch-0 cbranch-no" title="branch not covered" >'ai' : 'player';</span>
     // Inline to avoid circular imports if any; mirrors Spots.puntTouchback
     const tbBallOn = receiving === <span class="branch-0 cbranch-no" title="branch not covered" >'player' ? 20 : 8</span>0;
-    return { ballOn: tbBallOn, possessionFlips: true, fumbleRecoveredByKickingTeam: false, touchback: true };
+    return { ballOn: tbBallOn, possessionFlips: true, fumbleRecoveredByKickingTeam: false, touchback: true, distance: puntDistance, returnYards: 0, returnType: 'YDS' };
   }
   // In play: resolve return
   const retRoll = rollD6(rng) + rollD6(rng);
@@ -261,6 +275,7 @@ export function resolvePunt(ctx: PuntContext, rng: RNG, resolveLongGain: (rng: R
   let fumbleTurnover = false;
   if (ret.type === 'FC') <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >    returnYards = 0;</span>
+    // Fair catch: no fumble chance
   } else if (ret.type === 'LG') <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >    returnYards = resolveLongGain(rng);</span>
   } else {
@@ -275,9 +290,9 @@ export function resolvePunt(ctx: PuntContext, rng: RNG, resolveLongGain: (rng: R
   ballOn = Math.max(0, Math.min(100, ballOn));
   if (fumbleTurnover) {
     // Kicking team recovers: possession does not flip
-    return { ballOn, possessionFlips: false, fumbleRecoveredByKickingTeam: true, touchback: false };
+    return { ballOn, possessionFlips: false, fumbleRecoveredByKickingTeam: true, touchback: false, distance: puntDistance, returnYards, returnType: ret.<span class="branch-0 cbranch-no" title="branch not covered" >type ? ret.type : '</span>YDS' };
   }
-  return { ballOn, possessionFlips: true, fumbleRecoveredByKickingTeam: false, touchback: false };
+  return { ballOn, possessionFlips: true, fumbleRecoveredByKickingTeam: false, touchback: false, distance: puntDistance, returnYards, returnType: ret.<span class="branch-0 cbranch-no" title="branch not covered" >type ? ret.type : '</span>YDS' };
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -286,7 +301,7 @@ export function resolvePunt(ctx: PuntContext, rng: RNG, resolveLongGain: (rng: R
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-29T23:11:06.660Z
+                at 2025-10-02T00:30:21.178Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

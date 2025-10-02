@@ -43,7 +43,7 @@ export function performKickoff(
   try {
     const receiverSide: TeamSide = next.possession;
     const yardText = deps.formatTeamYardLine(receiverSide, next.ballOn);
-    const pick = <T>(arr: T[]): T => arr[Math.floor(((deps.rng?.() || Math.random())) * arr.length)]!;
+    const pick = <T>(arr: T[]): T => arr[Math.floor(deps.rng() * arr.length)]!;
     const traj = pick(['a high hanger','a booming end-over-end','a wobbly spiral','a knuckleball','a low liner']);
     const angle = pick(['toward the near numbers','to the far sideline','between the hashes','to the right numbers','to the left numbers']);
     const caughtAt = pick(['the goal line','the five','the three']);
@@ -90,7 +90,7 @@ export function handleFourthDownPunt(
   const toYL = deps.formatTeamYardLine(punt.possessionFlips ? receiving : puntingTeam, punt.ballOn);
   const dist = typeof punt.distance === 'number' ? punt.distance : undefined;
   const ret = punt.returnYards || 0;
-  const pick = <T>(arr: T[]): T => arr[Math.floor(((deps.rng?.() || Math.random())) * arr.length)]!;
+  const pick = <T>(arr: T[]): T => arr[Math.floor(deps.rng() * arr.length)]!;
   const traj = pick(['booming end-over-end','tight spiral','wobbly spiral','low driving kick','high hanging punt']);
   const angle = pick(['toward the boundary','angling to the near hash','to the far numbers','middle of the field']);
   const retPath = ret >= 15 ? pick(['up the seam','bounces outside','cuts back against pursuit']) : pick(['met square by the first wave','slips one, then wrapped','no room, stacked early']);

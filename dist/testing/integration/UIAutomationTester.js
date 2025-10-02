@@ -1,4 +1,4 @@
-import { EventBus } from '../utils/EventBus';
+import { EventBus, getErrorMessage } from '../../utils/EventBus';
 /**
  * UI automation tester specifically designed for Gridiron football game
  * Tests user interface interactions, controls responsiveness, and visual elements
@@ -62,7 +62,7 @@ export class UIAutomationTester {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -100,7 +100,7 @@ export class UIAutomationTester {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -138,7 +138,7 @@ export class UIAutomationTester {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -175,7 +175,7 @@ export class UIAutomationTester {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -208,7 +208,7 @@ export class UIAutomationTester {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**
@@ -292,7 +292,7 @@ export class UIAutomationTester {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getErrorMessage(error) };
         }
     }
     /**

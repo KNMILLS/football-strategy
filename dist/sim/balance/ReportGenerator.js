@@ -189,8 +189,9 @@ export class ReportGenerator {
         }
         // Convert sets to arrays and find most common issues per playbook
         for (const playbook of Object.keys(byPlaybook)) {
-            byPlaybook[playbook].mostCommonIssues = Array.from(byPlaybook[playbook].issues).slice(0, 3);
-            delete byPlaybook[playbook].issues;
+            const playbookData = byPlaybook[playbook];
+            playbookData.mostCommonIssues = Array.from(playbookData.issues).slice(0, 3);
+            delete playbookData.issues;
         }
         // Generate recommendations
         const recommendations = [

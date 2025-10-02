@@ -82,7 +82,7 @@ export function buildBroadcastCall(
     if (y > 0) {
       const runPhrases = [' slips through left guard.',' dives into the pile.',' cuts back against pursuit.',' bounces outside.',' spins forward.'];
       const passPhrases = [' quick hitter underneath.',' slant left, caught.',' button hook at the sticks.',' out to the flat.',' screen forms.'];
-      const pick = <T>(arr: T[]): T => arr[Math.floor(((deps.rng?.() || Math.random())) * arr.length)]!;
+      const pick = <T>(arr: T[]): T => arr[Math.floor((deps.rng() * arr.length))]!;
       const tail = isRun ? pick(runPhrases) : pick(passPhrases);
       resultPart = `${tail} Gain of ${y}.`;
       if (y >= 20) { try { deps.quarterStats.explosives += 1; } catch {}
@@ -100,7 +100,7 @@ export function buildBroadcastCall(
   const offenseTeam = (pre.possession === 'player') ? 'HOME' : 'AWAY';
   const opener = ((): string => {
     const choices = ['Here we go —','They set —','Quick to the line —','They take their time —','Snap comes —','Ball is snapped —','Here’s the play —','They roll it out —'];
-    return choices[Math.floor(((deps.rng?.() || Math.random())) * choices.length)]!;
+    return choices[Math.floor(deps.rng() * choices.length)]!;
   })();
   const presnap = `${offenseTeam} ${deps.playInDrive > 1 ? 'sets' : 'breaks the huddle'} on the ${hash}, ${formation}. Defense shows ${defLook}${motion ? `, ${motion}` : ''}.`;
   const snap = `${opener} quarterback ${action}${resultPart}`;
@@ -122,7 +122,7 @@ export function buildBroadcastCall(
     }
     return '';
   })();
-  const concise = ((deps.rng?.() || Math.random())) < 0.35;
+  const concise = deps.rng() < 0.35;
   const pbp = (concise
     ? `${downText} at ${deps.formatTeamYardLine(pre.possession, pre.ballOn)}… ${snap} ${reset}${pressure}${crowd}`
     : `${downText} from ${spotPhrase}, Q${pre.quarter} ${clock} — ${scoreText}. ${presnap} ${snap} ${reset}${pressure}${crowd}`

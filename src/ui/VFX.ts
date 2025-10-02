@@ -55,9 +55,9 @@ function particles(count?: number, gold?: boolean): void {
 	for (let i = 0; i < n; i++) {
 		const p = document.createElement('div');
 		p.className = 'vfx-particle' + (gold ? ' gold' : '');
-		// Randomize position within viewport area
-		const leftPct = clampPercent(Math.floor((Math.random() * 80) + 10));
-		const topPct = clampPercent(Math.floor((Math.random() * 60) + 10));
+		// Pseudo-randomize position within viewport area deterministically based on index
+		const leftPct = clampPercent(10 + ((i * 37) % 80));
+		const topPct = clampPercent(10 + ((i * 53) % 60));
 		(p as HTMLElement).style.left = `${leftPct}%`;
 		(p as HTMLElement).style.top = `${topPct}%`;
 		setAriaHidden(p);

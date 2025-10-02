@@ -1,0 +1,69 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CommentaryEngine > generateCommentary > should generate consistent analyst commentary for completion 1`] = `"Good underneath route; took what the defense gave him."`;
+
+exports[`CommentaryEngine > generateCommentary > should generate consistent commentary for deep completion 1`] = `"Deep ball connects! 8 yards downfield."`;
+
+exports[`CommentaryEngine > generateCommentary > should generate consistent commentary for explosive play 1`] = `"Explosive play! 25 yards."`;
+
+exports[`CommentaryEngine > generateCommentary > should generate consistent commentary for incompletion 1`] = `"Pass falls incomplete."`;
+
+exports[`CommentaryEngine > generateCommentary > should generate consistent commentary for red zone situation 1`] = `"Quick hitter underneath for 8 yards."`;
+
+exports[`CommentaryEngine > generateCommentary > should generate consistent commentary for run play 1`] = `"Runs it up the gut for 8 yards."`;
+
+exports[`CommentaryEngine > generateCommentary > should generate consistent commentary for turnover 1`] = `"Intercepted! Defense takes over."`;
+
+exports[`CommentaryEngine > generateCommentary > should generate consistent commentary for two-minute situation 1`] = `"Quick hitter underneath for 8 yards."`;
+
+exports[`CommentaryEngine > generateCommentary > should generate consistent play-by-play commentary for completion 1`] = `"Quick hitter underneath for 8 yards."`;
+
+exports[`CommentaryEngine > generateCommentary > should handle negative yards correctly 1`] = `"Runs it up the gut for 3 yards."`;
+
+exports[`CommentaryEngine > generateCommentary > should handle zero yards correctly 1`] = `"Runs it up the gut for 0 yards."`;
+
+exports[`CommentaryEngine > generateOOBCommentary > should generate consistent commentary for out of bounds completion 1`] = `"Completion goes out of bounds after 8 yards."`;
+
+exports[`CommentaryEngine > generateOOBCommentary > should generate consistent commentary for out of bounds incompletion 1`] = `"Pass goes out of bounds, incomplete."`;
+
+exports[`CommentaryEngine > generatePenaltyCommentary > should generate consistent commentary for accepted offensive penalty 1`] = `
+{
+  "analyst": "Discipline is key; that penalty stalls the drive.",
+  "pbp": "Offensive penalty: Offensive Holding. Loss of 10 yards.",
+}
+`;
+
+exports[`CommentaryEngine > generatePenaltyCommentary > should generate consistent commentary for declined penalty 1`] = `
+{
+  "analyst": "Smart decision to decline; better field position.",
+  "pbp": "Penalty declined. Gain of 8 yards.",
+}
+`;
+
+exports[`CommentaryEngine > generatePenaltyCommentary > should handle defensive penalty correctly 1`] = `
+{
+  "analyst": "That penalty extends the drive; defense needs to be smarter.",
+  "pbp": "Defensive penalty: Offensive Holding. Gain of 10 yards.",
+}
+`;
+
+exports[`CommentaryEngine > generateTurnoverReturnCommentary > should generate consistent commentary for fumble with no return 1`] = `
+{
+  "analyst": "Defense just falls on the ball; no return.",
+  "pbp": "Fumble at the line of scrimmage.",
+}
+`;
+
+exports[`CommentaryEngine > generateTurnoverReturnCommentary > should generate consistent commentary for interception with return 1`] = `
+{
+  "analyst": "Returner makes something out of nothing.",
+  "pbp": "Interception returned 15 yards.",
+}
+`;
+
+exports[`CommentaryEngine > generateTurnoverReturnCommentary > should generate consistent commentary for long return 1`] = `
+{
+  "analyst": "Great field position after the turnover.",
+  "pbp": "Interception returned 35 yards!",
+}
+`;

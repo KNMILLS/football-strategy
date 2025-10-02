@@ -22,4 +22,24 @@ export function resolveLongGain(rng) {
     const m = entry.match(/\+(\d+)/);
     return m && m[1] ? parseInt(m[1], 10) : 30;
 }
+export function resolveLongGainWithDice(rng) {
+    const roll = rollD6(rng);
+    const diceRolls = [roll];
+    const entry = LONG_GAIN_TABLE[roll];
+    let result;
+    if (!entry) {
+        result = 30;
+    }
+    else if (entry.includes('and')) {
+        // "+50 and (+10 x 1D6)"
+        const extraRoll = rollD6(rng);
+        diceRolls.push(extraRoll);
+        result = 50 + (extraRoll * 10);
+    }
+    else {
+        const m = entry.match(/\+(\d+)/);
+        result = m && m[1] ? parseInt(m[1], 10) : 30;
+    }
+    return { result, diceRolls };
+}
 //# sourceMappingURL=LongGain.js.map

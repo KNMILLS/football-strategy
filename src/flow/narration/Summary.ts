@@ -52,7 +52,7 @@ export function buildResultSummary(
   }
   const playLabel = String(currentPlayLabel || '');
   const defNote = (dl: string): string | null => {
-    const pick = <T>(arr: T[]): T => arr[Math.floor((deps.rng?.() || Math.random()) * arr.length)]!;
+    const pick = <T>(arr: T[]): T => arr[Math.floor(deps.rng() * arr.length)]!;
     if (/goal line/i.test(dl)) return pick(['Stacked front, safeties pinched.', 'Stacked box, gaps corked.']);
     if (/short yardage/i.test(dl)) return pick(['Tight box, gaps packed.', 'Heavy front, gaps corked.']);
     if (/passing/i.test(dl)) return pick(['Light box, two-high shell.', 'Nickel spacing, umbrella coverage.']);
@@ -121,7 +121,7 @@ export function buildResultSummary(
     const firstDownNow = (pre.possession === next.possession) && pre.down !== 1 && next.down === 1;
     const verbsGain = ['slashes for', 'rumbles for', 'bursts for', 'powers for', 'cuts for'];
     const verbsLoss = ['stacked for', 'dropped for', 'stuffed for', 'spilled for'];
-    const pick = <T>(arr: T[]): T => arr[Math.floor(((deps.rng?.() || Math.random())) * arr.length)]!;
+    const pick = <T>(arr: T[]): T => arr[Math.floor(deps.rng() * arr.length)]!;
     const action = y >= 0 ? `${pick(verbsGain)} ${Math.abs(y)}.` : `${pick(verbsLoss)} ${Math.abs(y)}.`;
     const path = Math.abs(y) >= 20 ? (() => {
       const start = deps.formatTeamYardLine(pre.possession, pre.ballOn);

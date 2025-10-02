@@ -8,6 +8,19 @@ export type HudUpdatePayload = {
   score: { player: number; ai: number };
 };
 
+/**
+ * Safely extracts an error message from an unknown error object
+ */
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return 'Unknown error occurred';
+}
+
 export type HandCardPayload = {
   id: string;
   label: string;
@@ -54,6 +67,7 @@ export type EventMap = {
   'ui:newGame': UINewGamePayload;
   'ui:devModeChanged': UIDevModeChangedPayload;
   'ui:themeChanged': UIThemeChangedPayload;
+  'ui:engineChanged': { engine: string };
   'ui:sfxToggle': UISfxTogglePayload;
   'ui:sfxVolume': UISfxVolumePayload;
   'ui:choosePAT': UIChoosePATPayload;

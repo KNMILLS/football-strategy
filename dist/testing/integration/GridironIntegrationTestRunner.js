@@ -1,4 +1,4 @@
-import { EventBus } from '../utils/EventBus';
+import { EventBus, getErrorMessage } from '../../utils/EventBus';
 import { RuntimeValidator } from './RuntimeValidator';
 import { ComponentHealthMonitor } from './ComponentHealthMonitor';
 import { GameFlowValidator } from './GameFlowValidator';
@@ -44,7 +44,7 @@ export class GridironIntegrationTestRunner {
             await this.runPostTestValidation();
         }
         catch (error) {
-            this.recordTestResult('critical_error', 'FAILED', error.message);
+            this.recordTestResult('critical_error', 'FAILED', getErrorMessage(error));
         }
         const duration = performance.now() - startTime;
         return this.generateReport(duration);
@@ -166,7 +166,7 @@ export class GridironIntegrationTestRunner {
             this.recordTestResult(`game_scenario_${scenarioName}`, status, gameValidation.isValid ? undefined : gameValidation.errors.join(', '));
         }
         catch (error) {
-            this.recordTestResult(`game_scenario_${scenarioName}`, 'FAILED', error.message);
+            this.recordTestResult(`game_scenario_${scenarioName}`, 'FAILED', getErrorMessage(error));
         }
     }
     /**
@@ -322,7 +322,7 @@ export class GridironIntegrationTestRunner {
         this.testResults.push({
             name: testName,
             status,
-            message,
+            ...(message !== undefined && { message }),
             timestamp: Date.now()
         });
     }
@@ -346,8 +346,7 @@ export class GridironIntegrationTestRunner {
             },
             results: this.testResults,
             timestamp: Date.now(),
-            baselineComparison: this.baselineData ?
-                this.compareWithBaseline() : undefined
+            ...(this.baselineData && { baselineComparison: this.compareWithBaseline() })
         };
     }
     /**
